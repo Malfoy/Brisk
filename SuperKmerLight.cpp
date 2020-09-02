@@ -27,9 +27,14 @@ SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
 	this->bytes_used=ceil((float)k/4);
 };
 
+
+
 uint which_byte(uint i){
-	return (byte_nuc-i/4);
+	//~ return (byte_nuc-i/4);
+	return (byte_nuc+1-(ceil((float)i/4)));
 }
+
+
 
 uint8_t SKCL::get_nucleotide(uint8_t position) {
 	uint byte_pos = which_byte(position);
@@ -39,6 +44,7 @@ uint8_t SKCL::get_nucleotide(uint8_t position) {
 	nucl &= 0b11;
 	return nucl;
 }
+
 
 
 uint64_t SKCL::interleaved_value() {
@@ -104,9 +110,13 @@ kint SKCL::get_ith_kmer(uint ind)const{
 	kint result(0);
 	
 	int skm_nuc(compacted_size+size-1);
+	cout<<"ind:	"<<ind<<endl;
 	int start (which_byte(compacted_size+ind-1));
+	cout<<"start:	"<<start<<endl;
 	int length_to_read (which_byte(ind)-start+1);
-	int last_bytes(which_byte(ind));
+	cout<<"length_to_read:	"<<length_to_read<<endl;
+	//~ int last_bytes(which_byte(ind));
+	//~ cout<<"start:	"<<start<endl;
 	
 	
 	memcpy(&result, &nucleotides[start], length_to_read);
@@ -157,16 +167,22 @@ bool SKCL::query_kmer_bool(const kmer_full& kmer)const {
 	if(start_idx<0 or (start_idx>=this->size)){
 		return false;
 	}
-	return get_ith_kmer(size-start_idx) == kmer.get_compacted();//THE GET COMPACTED SHOULE BE MADE ABOVE
+	print_kmer( get_ith_kmer(size-start_idx),k);
+	cout<<endl;
+	print_kmer( kmer.get_compacted(),k);
+	return get_ith_kmer(size-start_idx) == kmer.get_compacted();//THE GET COMPACTED SHOULD BE MADE ABOVE
 }
 
 
 
 uint32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
-	//~ cout<<"query_kmer_hash"<<endl;
+	//~ cout<<"query_kmer_hash"<<endl;	
 	if(this->query_kmer_bool(kmer)){
+		cout<<"query kmer bool true"<<endl;
 		return indice_value+kmer.minimizer_idx - (minimizer_idx-size+1);
 	}
+	cout<<"query kmer bool FAIL"<<endl;
+
 	return -1;
 }
 

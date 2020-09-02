@@ -17,7 +17,7 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
 	}
-	if(skml.size()-sorted_size>1000000){
+	if(skml.size()-sorted_size>1000000000){
 		insert_buffer();
 	}
 	kmers.clear();
@@ -37,6 +37,7 @@ void Bucket::insert_buffer(){
 
 
 void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
+	cout<<"add kmer buffer"<<endl;
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -48,10 +49,10 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 			kmer_full& kmer = kmers[ik];
 			if (kmer.minimizer_idx!=69) {
 				uint32_t indice_v(skc.query_kmer_hash(kmer));
-				//~ cout<<"indice_v from query kmer hash:	"<<(int)indice_v<<endl;
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
+					cout<<"inserted"<<endl;
 					kmers[ik].minimizer_idx=69;
 				}else{
 				}
@@ -70,6 +71,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 						if(values.capacity()==values.size()){
 							values.reserve(values.size()*1.5);
 						}
+						cout<<"compact"<<endl;
 						values.push_back(1);
 						continue;
 					}
@@ -81,6 +83,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
+						cout<<"inserted2"<<endl;
 						break;
 					}else{
 					}
@@ -89,9 +92,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if(skml.size()==skml.capacity()){
 						skml.reserve(skml.capacity()*1.5);
 					}
-					//~ cout<<"LEPUSH	"<<(int)kmer.get_minimizer_idx()<<endl;
-					//~ print_kmer(kmer.kmer_s,k);
-					//~ cout<<endl;
+					cout<<"le push"<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
 					if(values.capacity()==values.size()){
 						values.reserve(values.size()*1.5);
@@ -145,6 +146,10 @@ bool compSKM(const SKCL& s1, const SKCL& s2){
 
 
 bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
+	if(sorted_size==0){
+		return false;
+	}
+	cout<<"add kmer sorted"<<endl;
 	//OPTIMIZATION POSSIBLE HERE?
 	int insert(0);
 	for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {

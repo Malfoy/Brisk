@@ -8,8 +8,8 @@ using namespace std;
 
 
 
-const uint64_t k = 63;
-const uint64_t minimizer_size = 12;
+const uint64_t k = 31;
+const uint64_t minimizer_size = 10;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 const uint64_t byte_nuc=ceil((2*k-minimizer_size)/4)-1;
