@@ -6,9 +6,9 @@
 using namespace std;
 
 
-
+#include <bitset>
 /** Construct a superkmer from one kmer and the minimizer position.
-	* @param kmer The unsigned int 64 used to represent the binary kmer.
+	* @param kmer The unsigned int used to represent the binary kmer. The minimizer is not present
 	* @param mini_idx The minimizer position in the kmer.
 	*/
 SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
@@ -21,6 +21,8 @@ SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
 		//~ cout<<"loop:	"<<byte_nuc-i<<endl;
 		//~ print_kmer(kmer/anc,4);cout<<endl;
 		nucleotides[byte_nuc-i]=kmer/anc;
+		bitset<8> b(nucleotides[byte_nuc-i]);
+		cout << (byte_nuc-i) << " " << b << endl;
 		//~ print_kmer(nucleotides[byte_nuc-i],4);cout<<endl;
 		kmer%=anc;
 		anc>>=8;
@@ -36,6 +38,62 @@ SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
 	//~ cout<<get_string()<<endl;
 };
 
+uint which_byte(uint i){
+	return (byte_nuc-i/4);
+}
+
+uint8_t SKCL::get_nucleotide(uint8_t position) {
+	uint byte_pos = which_byte(position);
+	// cout << byte_pos << endl;
+	uint8_t nucl = nucleotides[byte_pos];
+	nucl >>= 2 * (position%4);
+	nucl &= 0b11;
+	return nucl;
+}
+
+
+uint64_t SKCL::interleaved_value() {
+	uint64_t value = 0;
+
+	// cout << "Hello" << endl;
+
+	// Suffix interleaved
+	uint8_t max_suffix = min(16ul, k-minimizer_size-minimizer_idx);
+	for (uint8_t i=0 ; i<max_suffix ; i++) {
+		// Get the nucleotide position
+		uint8_t position = minimizer_idx + i;
+		// cout << "position " << (uint64_t)position << endl;
+		// Get the value of the nucleotide at the position
+		uint64_t nucl_value = get_nucleotide(position);
+		// cout << "value " << nucl_value << endl;
+		// shift the value to the right place
+		nucl_value <<= i*4;
+		// cout << "shift " << nucl_value << endl;
+		// Add the nucleotide to the interleaved
+		value |= nucl_value;
+	}
+
+	// cout << "Hello" << endl;
+
+
+	// prefix interleaved
+	uint8_t max_prefix = min(16u, static_cast<unsigned int>(minimizer_idx));
+	for (uint8_t i=0 ; i<max_prefix ; i++) {
+		// Get the nucleotide position
+		uint8_t position = minimizer_idx - i - 1;
+		// Get the value of the nucleotide at the position
+		uint64_t nucl_value = get_nucleotide(position);
+		// shift the value to the right place
+		nucl_value <<= 2 + i*4;
+		// Add the nucleotide to the interleaved
+		value |= nucl_value;
+	}
+
+
+	// cout << "Hello" << endl;
+
+	return value;
+}
 
 
 
@@ -62,12 +120,6 @@ string SKCL::get_string(const string& mini)const {
 	//~ cout<<"prefix:	"<<prefix<<endl;
 	//~ cin.get();
 	return(prefix+mini+suffix);
-}
-
-
-uint which_byte(uint i){
-	//~ cout<<"WB "<<i<<" "<<(ceil((float)i/4))<<endl;
-	return (byte_nuc+1-(ceil((float)i/4)));
 }
 
 

@@ -20,6 +20,8 @@ public:
 
 
 	SKCL(kint kmer, const uint8_t mini_idx,uint32_t indice_v);
+	uint64_t interleaved_value();
+	uint8_t get_nucleotide(uint8_t position);
 	string get_string(const string& mini) const ;
 	kint get_ith_kmer(uint ind)const;
 	kint get_suffix()const;
