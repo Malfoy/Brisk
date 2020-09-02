@@ -33,7 +33,7 @@ void Bucket::insert_buffer(){
 
 
 
-void  Bucket::add_kmers_buffer( vector<kmer_full>& kmers){
+void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -108,48 +108,110 @@ bool compSKM(const SKCL& s1, const SKCL& s2){
 
 
 
-bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers){
+bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 	if(sorted_size==0){
 		return false;
 	}
 	uint64_t inserted(0);
 	//FOREACH KMER
-		kmer_full kmer = kmers[0];
-		SKCL mockskm( kmer.kmer_s, kmer.minimizer_idx,0);
-		uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;}) - skml.begin();
-		// low=0;
-		//FOREACH SUPERKMER
-		while (low<(uint64_t)sorted_size) {
-			if(not skml[low].suffix_is_prefix(kmer)){
-				break;
-			}
-			//FOREACH KMER
-			for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
-				if(kmers[iikk].minimizer_idx==69){continue;}
-				uint32_t indice_v(skml[low].query_kmer_hash(kmers[iikk]));
-				if (indice_v!=-1) {
-					values[indice_v]++;
-					kmers[iikk].minimizer_idx=69;
-					inserted++;
-					if(inserted==kmers.size()){
-						return true;
-					}
+	kmer_full kmer = kmers[0];
+	SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
+	uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;}) - skml.begin();
+	//FOREACH SUPERKMER
+	while (low<(uint64_t)sorted_size) {
+		if(not skml[low].suffix_is_prefix(kmer)){
+			break;
+		}
+		//FOREACH KMER
+		for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
+			if(kmers[iikk].minimizer_idx==69){continue;}
+			uint32_t indice_v(skml[low].query_kmer_hash(kmers[iikk]));
+			if (indice_v!=-1) {
+				values[indice_v]++;
+				kmers[iikk].minimizer_idx=69;
+				inserted++;
+				if(inserted==kmers.size()){
+					return true;
 				}
 			}
-			low++;
 		}
+		low++;
+	}
 	return false;
 }
 
 
 
+bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
+	uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
+	while (low<(uint64_t)sorted_size) {
+		if(not skml[low].suffix_is_prefix(kmer)){
+			break;
+		}
+		uint32_t indice_v(skml[low].query_kmer_hash(kmer));
+		if (indice_v!=-1) {
+			values[indice_v]++;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+bool Bucket::find_kmer(kmer_full& kmer){
+	SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
+	uint size_interleave(min((int)mockskm.size-mockskm.minimizer_idx,(int)mockskm.minimizer_idx)*2);
+	if(size_interleave>=4){
+		return find_kmer_from_interleave(kmer,mockskm);
+	}else{
+		if(mockskm.size-mockskm.minimizer_idx>mockskm.minimizer_idx){
+			//SUFFIX IS LARGER PREFIX IS MISSING
+			if(size_interleave==1){
+				for(uint i(0);i<4;++i){
+					mockskm.interleaved+=i<<6;
+					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+					mockskm.interleaved-=i<<6;
+				}
+			}
+			if(size_interleave==0){
+				for(uint ii(0);ii<4;++ii){
+					mockskm.interleaved+=ii<<2;
+					for(uint i(0);i<4;++i){
+						mockskm.interleaved+=i<<6;
+						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+						mockskm.interleaved-=i<<6;
+					}
+					mockskm.interleaved-=ii<<2;
+				}
+			}
+		}else{
+			//PREFIX IS LARGER, SUFFIX IS MISSING
+			if(size_interleave==1){
+				for(uint i(0);i<4;++i){
+					mockskm.interleaved+=i<<4;
+					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+					mockskm.interleaved-=i<<4;
+				}
+			}
+			if(size_interleave==0){
+				for(uint ii(0);ii<4;++ii){
+					mockskm.interleaved+=ii;
+					for(uint i(0);i<4;++i){
+						mockskm.interleaved+=i<<4;
+						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+						mockskm.interleaved-=i<<4;
+					}
+					mockskm.interleaved-=ii;
+				}
+			}
+		}
+	}
+}
+
+
 void  Bucket::print_kmers(string& result,const  string& mini)const {
 	for(uint64_t isk(0);isk<skml.size();++isk){
-		// cout<<k-1+skml[isk].size-minimizer_size<<endl
-		// string skm=kmer2str(skml[isk].sk, k-1+skml[isk].size-minimizer_size);
-		// string prefix=skm.substr(0,skm.size()-skml[isk].minimizer_idx);
-		// string suffix=skm.substr(prefix.size());
-		// skm=prefix+mini+suffix;
 		string skm=skml[isk].get_string(mini);
 		for (uint64_t i(0); i < skml[isk].size; ++i) {
 			result+=skm.substr(i,k)+'	'+to_string(values[skml[isk].indice_value+i])+'\n';
