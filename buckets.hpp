@@ -23,6 +23,9 @@ public:
 	void print_kmers(string& result,const  string& mini)const ;
 	uint64_t size()const;
 	uint64_t number_kmer()const;
+	bool  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm);
+	bool find_kmer(kmer_full& kmer);
+
 	Bucket(){sorted_size=0;}
 };
 
