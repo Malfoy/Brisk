@@ -26,6 +26,9 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 
 
 void Bucket::insert_buffer(){
+	for(auto it(skml.begin()+sorted_size);it<skml.end();++it){
+		it->interleaved=it->interleaved_value();
+	}
 	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;});
 	inplace_merge(skml.begin(), skml.begin()+sorted_size ,skml.end() ,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;});
 	sorted_size=skml.size();
@@ -108,37 +111,51 @@ bool compSKM(const SKCL& s1, const SKCL& s2){
 
 
 
+//~ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
+	//~ if(sorted_size==0){
+		//~ return false;
+	//~ }
+	//~ uint64_t inserted(0);
+	//~ //FOREACH KMER
+	//~ kmer_full kmer = kmers[0];
+	//~ SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
+	//~ uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;}) - skml.begin();
+	//~ //FOREACH SUPERKMER
+	//~ while (low<(uint64_t)sorted_size) {
+		//~ if(not skml[low].suffix_is_prefix(kmer)){
+			//~ break;
+		//~ }
+		//~ //FOREACH KMER
+		//~ for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
+			//~ if(kmers[iikk].minimizer_idx==69){continue;}
+			//~ uint32_t indice_v(skml[low].query_kmer_hash(kmers[iikk]));
+			//~ if (indice_v!=-1) {
+				//~ values[indice_v]++;
+				//~ kmers[iikk].minimizer_idx=69;
+				//~ inserted++;
+				//~ if(inserted==kmers.size()){
+					//~ return true;
+				//~ }
+			//~ }
+		//~ }
+		//~ low++;
+	//~ }
+	//~ return false;
+//~ }
+
+
 bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
-	if(sorted_size==0){
-		return false;
-	}
-	uint64_t inserted(0);
-	//FOREACH KMER
-	kmer_full kmer = kmers[0];
-	SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
-	uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs < rhs;}) - skml.begin();
-	//FOREACH SUPERKMER
-	while (low<(uint64_t)sorted_size) {
-		if(not skml[low].suffix_is_prefix(kmer)){
-			break;
+	//OPTIMIZATION POSSIBLE HERE?
+	int insert(0);
+	for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
+		if(find_kmer(kmers[iikk])){
+			kmers[iikk].minimizer_idx=69;
+			insert++;
 		}
-		//FOREACH KMER
-		for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
-			if(kmers[iikk].minimizer_idx==69){continue;}
-			uint32_t indice_v(skml[low].query_kmer_hash(kmers[iikk]));
-			if (indice_v!=-1) {
-				values[indice_v]++;
-				kmers[iikk].minimizer_idx=69;
-				inserted++;
-				if(inserted==kmers.size()){
-					return true;
-				}
-			}
-		}
-		low++;
 	}
-	return false;
+	return insert==kmers.size();
 }
+
 
 
 
@@ -210,6 +227,7 @@ bool Bucket::find_kmer(kmer_full& kmer){
 }
 
 
+
 void  Bucket::print_kmers(string& result,const  string& mini)const {
 	for(uint64_t isk(0);isk<skml.size();++isk){
 		string skm=skml[isk].get_string(mini);
@@ -218,9 +236,6 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
 					cout<<"skm:	"<<skm<<endl;
-					// cout<<"prefix:	"<<prefix<<endl;
-					// cout<<"minimizer:	"<<mini<<endl;
-					// cout<<"suffix:	"<<suffix<<endl;
 					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i<<" "<<(int)skml[isk].size<<endl;
 					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
 					cout<<"	instead of ";
