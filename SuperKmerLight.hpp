@@ -11,7 +11,14 @@
 
 class SKCL {
 public:
+	/**
+	  * Array of bytes storing the superkmer.
+	  * The storage is done using little endian encoding.
+	  * The last byte store the first nucleotides of the superkmer.
+	  * The array is filled backward when new kmers are compacted.
+	  */
 	uint8_t nucleotides[byte_nuc+1];
+
 	uint32_t indice_value;//4B
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
@@ -22,7 +29,6 @@ public:
 
 	SKCL(kint kmer, const uint8_t mini_idx,uint32_t indice_v);
 	uint64_t interleaved_value();
-	uint8_t get_nucleotide(uint8_t position);
 	bool  suffix_is_prefix(const SKCL& kmf)const;
 	string get_string(const string& mini) const ;
 	kint get_ith_kmer(uint ind)const;
@@ -35,6 +41,25 @@ public:
 	bool suffix_is_prefix(const kmer_full& kmf)const;
 	uint64_t interleaved_value()const;
 	void print_all()const;
+
+private:
+	/**
+  * Return the byte index corresponding to the nucletide position.
+  * Position 0 is the first nucleotide of the prefix.
+  * The minimizer nucleotides doesn't count.
+  * 
+  * @param position Nucleotide position in the sequence
+  *
+  * @return The Byte index in the datastructure.
+  * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
+  */
+	uint8_t get_nucleotide(uint8_t position);
+	/**
+  * Get the nucleotide value at the position in parameter.
+  * Position 0 is the first nucleotide of the prefix.
+  * The minimizer nucleotides doesn't count.
+  */
+	uint byte_index(uint position);
 } __attribute__((packed));
 
 

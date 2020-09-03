@@ -23,7 +23,6 @@
 #include "Kmers.cpp"
 #include "SuperKmerLight.cpp"
 #include "buckets.cpp"
-#include "DenseMenu.hpp"
 #include "DenseMenuYo.hpp"
 #include "pow2.hpp"
 #include "robin_hood.h"
@@ -328,6 +327,7 @@ void read_fasta_file(const string& filename) {
 }
 
 
+	#include <bitset>
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
@@ -346,6 +346,13 @@ int main(int argc, char** argv) {
 		check = true;
 		cout << "LETS CHECK THE RESULTS" << endl;
 	}
+
+	//0000000000000000000000000000001100110011001100110011001100110000
+	SKCL skcl(0b11111111, 0, 0);
+	cout << skcl.interleaved_value() << endl;
+	bitset<64> x(skcl.interleaved_value());
+	cout << x << endl;
+	return 0;
 
 
 	cout << "\n\n\nI count " << argv[1] << endl;

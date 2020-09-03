@@ -36,8 +36,27 @@ uint which_byte(uint i){
 
 
 
+/**
+  * Return the byte index corresponding to the nucletide position.
+  * Position 0 is the first nucleotide of the prefix.
+  * The minimizer nucleotides doesn't count.
+  * 
+  * @param position Nucleotide position in the sequence
+  *
+  * @return The Byte index in the datastructure.
+  * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
+  */
+uint SKCL::byte_index(uint position){
+	return byte_nuc - position / 4;
+}
+
+/**
+  * Get the nucleotide value at the position in parameter.
+  * Position 0 is the first nucleotide of the prefix.
+  * The minimizer nucleotides doesn't count.
+  */
 uint8_t SKCL::get_nucleotide(uint8_t position) {
-	uint byte_pos = which_byte(position);
+	uint byte_pos = byte_index(position);
 	// cout << byte_pos << endl;
 	uint8_t nucl = nucleotides[byte_pos];
 	nucl >>= 2 * (position%4);
@@ -62,7 +81,7 @@ uint64_t SKCL::interleaved_value() {
 		uint64_t nucl_value = get_nucleotide(position);
 		// cout << "value " << nucl_value << endl;
 		// shift the value to the right place
-		nucl_value <<= i*4;
+		nucl_value <<= 62 - i*4;
 		// cout << "shift " << nucl_value << endl;
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
@@ -79,7 +98,7 @@ uint64_t SKCL::interleaved_value() {
 		// Get the value of the nucleotide at the position
 		uint64_t nucl_value = get_nucleotide(position);
 		// shift the value to the right place
-		nucl_value <<= 2 + i*4;
+		nucl_value <<= 60 - i*4;
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
