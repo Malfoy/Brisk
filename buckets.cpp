@@ -169,14 +169,21 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 
 bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 	cout<<"find_kmer_from_interleave"<<endl;
-	uint64_t low=lower_bound (skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
-	//~ low=0;
+	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
+	low=0;
+	//~ cout<<low<<endl;
 	while (low<(uint64_t)sorted_size) {
-		cout<<low<<" sorted size "<<sorted_size<<endl;
-		if(skml[low].interleaved>mockskm.interleaved){
-			cout<<"break suffix is prefix"<<endl;
-			break;
-		}
+		cout<<(int)kmer.minimizer_idx<<endl;
+		print_kmer(mockskm.interleaved,32);
+		cout<<endl;
+		print_kmer(skml[low].interleaved,32);
+		cout<<endl;
+		
+		cin.get();
+		//~ if(skml[low].interleaved>mockskm.interleaved){
+			//~ cout<<"break suffix is prefix"<<endl;
+			//~ break;
+		//~ }
 		uint32_t indice_v(skml[low].query_kmer_hash(kmer));
 		if (indice_v!=-1){
 			values[indice_v]++;
@@ -199,7 +206,7 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	cout<<" size: "<<(int)mockskm.size+(int)compacted_size<<" prefix size"<<prefix_size<<" suffix size"
 	<<suffix_size<<endl;
 	cout<<"size_interleave "<<size_interleave<<endl;
-	if(size_interleave>=4){
+	if(size_interleave>=0){
 		return find_kmer_from_interleave(kmer,mockskm);
 	}else{
 		if(suffix_size>prefix_size){

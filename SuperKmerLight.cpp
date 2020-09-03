@@ -66,9 +66,8 @@ uint8_t SKCL::get_nucleotide(uint8_t position) {
 
 
 
-uint64_t SKCL::interleaved_value() {
+uint64_t SKCL::interleaved_value(){
 	uint64_t value = 0;
-	// cout << "Hello" << endl;
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, suffix_size());
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
@@ -85,8 +84,6 @@ uint64_t SKCL::interleaved_value() {
 		value |= nucl_value;
 	}
 
-	// cout << "Hello" << endl;
-
 	// prefix interleaved
 	uint8_t max_prefix = min((uint)8,prefix_size());
 	for (uint8_t i=0 ; i<max_prefix ; i++) {
@@ -99,9 +96,10 @@ uint64_t SKCL::interleaved_value() {
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
-
-	// cout << "Hello" << endl;
-
+	cout<<get_string("	")<<endl;
+	print_kmer(value,32);
+	cout<<endl;
+	cin.get();
 	return value;
 }
 
