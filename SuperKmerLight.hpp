@@ -41,6 +41,10 @@ public:
 	bool suffix_is_prefix(const kmer_full& kmf)const;
 	uint64_t interleaved_value()const;
 	void print_all()const;
+	bool  is_lex_inferior(const SKCL& kmf)const;	
+	uint suffix_size()const;
+	uint prefix_size()const;
+	uint interleaved_size()const;
 
 private:
 	/**

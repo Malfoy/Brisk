@@ -68,11 +68,9 @@ uint8_t SKCL::get_nucleotide(uint8_t position) {
 
 uint64_t SKCL::interleaved_value() {
 	uint64_t value = 0;
-
 	// cout << "Hello" << endl;
-
 	// Suffix interleaved
-	uint8_t max_suffix = min(16ul, k-minimizer_size-minimizer_idx);
+	uint8_t max_suffix = min((uint)8, suffix_size());
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
 		// Get the nucleotide position
 		uint8_t position = minimizer_idx + i;
@@ -89,9 +87,8 @@ uint64_t SKCL::interleaved_value() {
 
 	// cout << "Hello" << endl;
 
-
 	// prefix interleaved
-	uint8_t max_prefix = min(16u, static_cast<unsigned int>(minimizer_idx));
+	uint8_t max_prefix = min((uint)8,prefix_size());
 	for (uint8_t i=0 ; i<max_prefix ; i++) {
 		// Get the nucleotide position
 		uint8_t position = minimizer_idx - i - 1;
@@ -102,7 +99,6 @@ uint64_t SKCL::interleaved_value() {
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
-
 
 	// cout << "Hello" << endl;
 
@@ -129,14 +125,13 @@ kint SKCL::get_ith_kmer(uint ind)const{
 	kint result(0);
 	
 	int skm_nuc(compacted_size+size-1);
-	cout<<"ind:	"<<ind<<endl;
+	//~ cout<<"ind:	"<<ind<<endl;
 	int start (which_byte(compacted_size+ind-1));
-	cout<<"start:	"<<start<<endl;
+	//~ cout<<"start:	"<<start<<endl;
 	int length_to_read (which_byte(ind)-start+1);
-	cout<<"length_to_read:	"<<length_to_read<<endl;
+	//~ cout<<"length_to_read:	"<<length_to_read<<endl;
 	//~ int last_bytes(which_byte(ind));
 	//~ cout<<"start:	"<<start<endl;
-	
 	
 	memcpy(&result, &nucleotides[start], length_to_read);
 	
@@ -183,12 +178,16 @@ bool  SKCL::operator < (const  SKCL& str) const {
 
 bool SKCL::query_kmer_bool(const kmer_full& kmer)const {
 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
+	
 	if(start_idx<0 or (start_idx>=this->size)){
+		cout<<"IDX DEAD"<<endl;
 		return false;
 	}
 	print_kmer( get_ith_kmer(size-start_idx),k);
 	cout<<endl;
 	print_kmer( kmer.get_compacted(),k);
+	cout<<endl;
+
 	return get_ith_kmer(size-start_idx) == kmer.get_compacted();//THE GET COMPACTED SHOULD BE MADE ABOVE
 }
 
@@ -197,11 +196,10 @@ bool SKCL::query_kmer_bool(const kmer_full& kmer)const {
 uint32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
 	//~ cout<<"query_kmer_hash"<<endl;	
 	if(this->query_kmer_bool(kmer)){
-		cout<<"query kmer bool true"<<endl;
+		//~ cout<<"query kmer bool true"<<endl;
 		return indice_value+kmer.minimizer_idx - (minimizer_idx-size+1);
 	}
-	cout<<"query kmer bool FAIL"<<endl;
-
+	//~ cout<<"query kmer bool FAIL"<<endl;
 	return -1;
 }
 
@@ -226,10 +224,55 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 }
 
 
+uint SKCL::suffix_size()const{
+	return (size+compacted_size-minimizer_idx);
+}
+
+
+uint SKCL::prefix_size()const{
+	return (minimizer_idx);
+}
+
+
+
+uint SKCL::interleaved_size()const{
+	return min(prefix_size(),suffix_size())*2;
+}
+
+
+
+bool  SKCL::is_lex_inferior(const SKCL& kmf)const{
+	cout<<"is_lex_inferior"<<endl;
+	uint64_t interleaved_index(interleaved);
+	uint64_t interleaved_query(kmf.interleaved);
+	uint interleaved_size_index(interleaved_size());
+	uint interleaved_size_query(kmf.interleaved_size());
+	cout<<interleaved_size_index<<" "<<interleaved_size_query<<endl;
+	//~ if(interleaved_size_index>interleaved_size_query){
+		//~ interleaved_index>>=(2*(interleaved_size_index-interleaved_size_query));
+	//~ }
+	//~ if(interleaved_size_index<interleaved_size_query){
+		//~ interleaved_query>>=(2*(interleaved_size_query-interleaved_size_index));
+	//~ }
+	return true;
+	print_kmer(interleaved_index,31);
+	cout<<endl;
+	print_kmer(interleaved_query,31);
+	cout<<endl;
+	cin.get();
+	return interleaved_index<=interleaved_query;
+}
+
+
+
 
 bool  SKCL::suffix_is_prefix(const kmer_full& kmf)const{
 	kint suffix_kmer(kmf.suffix);
 	kint suffix_superkmer(this->get_suffix());
+	print_kmer(suffix_kmer,k);
+	cout<<endl;
+	print_kmer(suffix_superkmer,k);
+	cout<<endl;
 	if(minimizer_idx>=kmf.minimizer_idx){
 		suffix_superkmer>>=(2*(minimizer_idx-kmf.minimizer_idx));
 	}else{
