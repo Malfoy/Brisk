@@ -347,12 +347,11 @@ int main(int argc, char** argv) {
 		cout << "LETS CHECK THE RESULTS" << endl;
 	}
 
-	//0000000000000000000000000000001100110011001100110011001100110000
-	SKCL skcl(0b11111111, 0, 0);
-	cout << skcl.interleaved_value() << endl;
-	bitset<64> x(skcl.interleaved_value());
-	cout << x << endl;
-	return 0;
+	// SKCL skcl(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFul, 0, 0);
+	// cout << skcl.interleaved_value() << endl;
+	// bitset<64> x(skcl.interleaved_value());
+	// cout << x << endl;
+	// return 0;
 
 
 	cout << "\n\n\nI count " << argv[1] << endl;
