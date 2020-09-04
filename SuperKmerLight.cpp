@@ -67,12 +67,21 @@ uint SKCL::byte_index(uint position){
 
 
 uint8_t SKCL::get_nucleotide(uint8_t position) {
-	uint8_t compacted_length = k - minimizer_size + size - 1;
-	uint8_t byte_pos = (compacted_length - position - 1)/4;
+	cout<<"position:	"<<(int)position<<endl;
+	//~ uint8_t compacted_length = k - minimizer_size + size - 1;
+	uint8_t byte_pos = allocated_bytes-(position/4)-1;
+	cout<<"bp "<<(int)byte_pos<<endl;
 
 	uint8_t nucl = nucleotides[byte_pos];
-	nucl >>= 2 * ((compacted_length - position - 1)%4);
+	print_kmer(nucl,4);
+	cout<<endl;
+	print_all();
+	nucl >>= 2 * (((allocated_bytes - position - 1)%4));
 	nucl &= 0b11;
+	cout<<endl;
+	print_kmer(nucl,1);
+	cout<<endl;
+	cout<<" end"<<endl;
 	return nucl;
 }
 
