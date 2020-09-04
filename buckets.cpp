@@ -198,8 +198,21 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 
 bool Bucket::find_kmer(kmer_full& kmer){
 	cout<<"find_kmer"<<endl;
+	cout<<"THIS IS MOCK SM"<<endl;
+	
+	cout<<"KMER"<<endl;
+	print_kmer(kmer.kmer_s,31);
+	cout<<endl;
+	cout<<(int)kmer.minimizer_idx<<endl;
+	
 	SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
+	cout<<mockskm.get_string("	mini	")<<endl;
+	
 	mockskm.interleaved=mockskm.interleaved_value();
+	cout<<"interleave"<<endl;
+	print_kmer(mockskm.interleaved,32);
+	cout<<endl;
+	
 	uint prefix_size(mockskm.minimizer_idx);
 	uint suffix_size((int)mockskm.size+(int)compacted_size-(int)mockskm.minimizer_idx);
 	uint size_interleave(min(prefix_size,suffix_size)*2);

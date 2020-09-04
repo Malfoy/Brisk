@@ -96,10 +96,10 @@ uint64_t SKCL::interleaved_value(){
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
-	cout<<get_string("	")<<endl;
-	print_kmer(value,32);
-	cout<<endl;
-	cin.get();
+	//~ cout<<get_string("	")<<endl;
+	//~ print_kmer(value,32);
+	//~ cout<<endl;
+	//~ cin.get();
 	return value;
 }
 
@@ -319,7 +319,6 @@ void SKCL::print_all()const{
 		
 	}
 }
-
 
 
 
