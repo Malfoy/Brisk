@@ -13,7 +13,6 @@ const uint64_t minimizer_size = 8;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
-const uint64_t byte_nuc=ceil((2*k-minimizer_size)/4)-1;
 uint64_t counting_errors=0;
 bool check=false;
 robin_hood::unordered_flat_map<string, uint64_t> real_count;

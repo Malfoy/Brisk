@@ -11,15 +11,15 @@ using namespace std;
 	* @param mini_idx The minimizer position in the kmer.
 	*/
 SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
-	memset(nucleotides,0,byte_nuc+1);
+	memset(nucleotides,0,SKCL::byte_nuc+1);
 	Pow2<kint> anc(2*compacted_size-8);
 	for(uint i(0);i<(compacted_size/4);i++){
-		nucleotides[byte_nuc-i]=kmer/anc;
+		nucleotides[SKCL::byte_nuc-i]=kmer/anc;
 		kmer%=anc;
 		anc>>=8;
 	}
 	if(compacted_size%4!=0){
-		nucleotides[byte_nuc-(compacted_size/4)]=(kmer<<(2*(4-compacted_size%4)));
+		nucleotides[SKCL::byte_nuc-(compacted_size/4)]=(kmer<<(2*(4-compacted_size%4)));
 	}
 	this->size          = 1;
 	indice_value=indice_v;
@@ -29,9 +29,9 @@ SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
 
 
 
-uint which_byte(uint i){
-	//~ return (byte_nuc-i/4);
-	return (byte_nuc+1-(ceil((float)i/4)));
+uint SKCL::which_byte(uint i){
+	//~ return (SKCL::byte_nuc-i/4);
+	return (SKCL::byte_nuc+1-(ceil((float)i/4)));
 }
 
 
@@ -47,7 +47,7 @@ uint which_byte(uint i){
   * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
   */
 uint SKCL::byte_index(uint position){
-	return byte_nuc - position / 4;
+	return SKCL::byte_nuc - 1 - position / 4;
 }
 
 /**
@@ -108,9 +108,9 @@ uint64_t SKCL::interleaved_value(){
 string SKCL::get_string(const string& mini)const {
 	string result;
 	for(uint i(0);i<bytes_used;++i){
-		result+=kmer2str(nucleotides[byte_nuc-i],4);
+		result+=kmer2str(nucleotides[SKCL::byte_nuc-i],4);
 	}
-	result+=kmer2str(nucleotides[byte_nuc-bytes_used],4);
+	result+=kmer2str(nucleotides[SKCL::byte_nuc-bytes_used],4);
 	
 	result=result.substr(0,size+compacted_size-1);
 	string suffix(result.substr(result.size()-minimizer_idx));
@@ -210,7 +210,7 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 	kmer_overlap>>=2;
 	kmer_overlap%=((kint)1<<(2*(k-1-minimizer_size)));
 	if(super_kmer_overlap==kmer_overlap){
-		int byte_to_update(byte_nuc-((compacted_size+size-1)/4));
+		int byte_to_update(SKCL::byte_nuc-((compacted_size+size-1)/4));
 		int padding((4-((compacted_size+size)%4))%4);
 		nucleotides[byte_to_update] += (nuc<<(2*padding));
 		size++;
@@ -314,16 +314,12 @@ void print_bin(uint8_t n) {
 
 void SKCL::print_all()const{
 	for(uint i(0);i<(compacted_size+size)/4+1;++i){
-		cout<<byte_nuc-i;
-		print_kmer(nucleotides[byte_nuc-i],4);cout<<" ";
+		cout<<SKCL::byte_nuc-i;
+		print_kmer(nucleotides[SKCL::byte_nuc-i],4);cout<<" ";
 		
 	}
 }
 
-
-uint64_t SKCL::interleaved_value()const{
-	return 0;
-}
 
 
 
