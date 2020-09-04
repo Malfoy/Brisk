@@ -68,11 +68,10 @@ uint SKCL::byte_index(uint position){
 
 uint8_t SKCL::get_nucleotide(uint8_t position) {
 	uint8_t compacted_length = k - minimizer_size + size - 1;
-	uint8_t memory_position = compacted_length - position - 1;
-	uint byte_pos = byte_index(memory_position);
+	uint8_t byte_pos = (compacted_length - position - 1)/4;
 
 	uint8_t nucl = nucleotides[byte_pos];
-	nucl >>= 2 * (memory_position%4);
+	nucl >>= 2 * ((compacted_length - position - 1)%4);
 	nucl &= 0b11;
 	return nucl;
 }
@@ -81,11 +80,13 @@ uint8_t SKCL::get_nucleotide(uint8_t position) {
 uint64_t SKCL::interleaved_value(){
 	uint64_t value = 0;
 	// Suffix interleaved
-	uint8_t max_suffix = min((uint)8, suffix_size());
+	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
 		uint8_t position = minimizer_idx - 1 - i;
+		cout << (uint64_t)i << " " << (uint64_t)position << endl;
 		// Get the value of the nucleotide at the position
 		uint64_t nucl_value = get_nucleotide(position);
+		cout << nucl_value << endl;
 		// shift the value to the right place
 		nucl_value <<= 62 - i*4;
 		// Add the nucleotide to the interleaved
