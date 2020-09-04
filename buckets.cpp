@@ -203,9 +203,11 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	cout<<"KMER"<<endl;
 	print_kmer(kmer.kmer_s,31);
 	cout<<endl;
+	print_kmer(kmer.get_compacted(),31-8);
+	cout<<endl;
 	cout<<(int)kmer.minimizer_idx<<endl;
 	
-	SKCL mockskm(kmer.kmer_s, kmer.minimizer_idx,0);
+	SKCL mockskm(kmer.get_compacted(), kmer.minimizer_idx,0);
 	cout<<mockskm.get_string("	mini	")<<endl;
 	
 	mockskm.interleaved=mockskm.interleaved_value();

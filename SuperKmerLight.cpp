@@ -11,27 +11,28 @@ using namespace std;
 	* @param mini_idx The minimizer position in the kmer.
 	*/
 SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
-	memset(nucleotides,0,SKCL::byte_nuc+1);
+	memset(nucleotides,0,SKCL::allocated_bytes);
 	Pow2<kint> anc(2*compacted_size-8);
 	for(uint i(0);i<(compacted_size/4);i++){
-		nucleotides[SKCL::byte_nuc-i]=kmer/anc;
+		nucleotides[SKCL::allocated_bytes-1-i]=kmer/anc;
 		kmer%=anc;
 		anc>>=8;
 	}
 	if(compacted_size%4!=0){
-		nucleotides[SKCL::byte_nuc-(compacted_size/4)]=(kmer<<(2*(4-compacted_size%4)));
+		nucleotides[SKCL::allocated_bytes-1-(compacted_size/4)]=(kmer<<(2*(4-compacted_size%4)));
 	}
 	this->size          = 1;
 	indice_value=indice_v;
 	this->minimizer_idx = mini_idx;
-	this->bytes_used=ceil((float)k/4);
+
+	this->bytes_used=ceil(static_cast<float>(k - minimizer_size)/4.);
 };
 
 
 
 uint SKCL::which_byte(uint i){
-	//~ return (SKCL::byte_nuc-i/4);
-	return (SKCL::byte_nuc+1-(ceil((float)i/4)));
+	//~ return (SKCL::allocated_bytes-i/4);
+	return (SKCL::allocated_bytes-1-(ceil((float)i/4)));
 }
 
 
@@ -47,7 +48,7 @@ uint SKCL::which_byte(uint i){
   * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
   */
 uint SKCL::byte_index(uint position){
-	return SKCL::byte_nuc - 1 - position / 4;
+	return SKCL::allocated_bytes - 1 - position / 4;
 }
 
 /**
@@ -55,15 +56,26 @@ uint SKCL::byte_index(uint position){
   * Position 0 is the first nucleotide of the prefix.
   * The minimizer nucleotides doesn't count.
   */
+// uint8_t SKCL::get_nucleotide(uint8_t position) {
+// 	uint byte_pos = byte_index(position);
+// 	// cout << byte_pos << endl;
+// 	uint8_t nucl = nucleotides[byte_pos];
+// 	nucl >>= 2 * (position%4);
+// 	nucl &= 0b11;
+// 	return nucl;
+// }
+
+
 uint8_t SKCL::get_nucleotide(uint8_t position) {
-	uint byte_pos = byte_index(position);
-	// cout << byte_pos << endl;
+	uint8_t compacted_length = k - minimizer_size + size - 1;
+	uint8_t memory_position = compacted_length - position - 1;
+	uint byte_pos = byte_index(memory_position);
+
 	uint8_t nucl = nucleotides[byte_pos];
-	nucl >>= 2 * (position%4);
+	nucl >>= 2 * (memory_position%4);
 	nucl &= 0b11;
 	return nucl;
 }
-
 
 
 uint64_t SKCL::interleaved_value(){
@@ -71,15 +83,11 @@ uint64_t SKCL::interleaved_value(){
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, suffix_size());
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		// Get the nucleotide position
-		uint8_t position = minimizer_idx + i;
-		// cout << "position " << (uint64_t)position << endl;
+		uint8_t position = minimizer_idx - 1 - i;
 		// Get the value of the nucleotide at the position
 		uint64_t nucl_value = get_nucleotide(position);
-		// cout << "value " << nucl_value << endl;
 		// shift the value to the right place
 		nucl_value <<= 62 - i*4;
-		// cout << "shift " << nucl_value << endl;
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
@@ -88,7 +96,7 @@ uint64_t SKCL::interleaved_value(){
 	uint8_t max_prefix = min((uint)8,prefix_size());
 	for (uint8_t i=0 ; i<max_prefix ; i++) {
 		// Get the nucleotide position
-		uint8_t position = minimizer_idx - i - 1;
+		uint8_t position = minimizer_idx + i;
 		// Get the value of the nucleotide at the position
 		uint64_t nucl_value = get_nucleotide(position);
 		// shift the value to the right place
@@ -108,13 +116,16 @@ uint64_t SKCL::interleaved_value(){
 string SKCL::get_string(const string& mini)const {
 	string result;
 	for(uint i(0);i<bytes_used;++i){
-		result+=kmer2str(nucleotides[SKCL::byte_nuc-i],4);
-	}
-	result+=kmer2str(nucleotides[SKCL::byte_nuc-bytes_used],4);
+		result+=kmer2str(nucleotides[SKCL::allocated_bytes-1-i],4);
+	};
 	
+	// Remove the nucleotides that are not needed in the last byte
 	result=result.substr(0,size+compacted_size-1);
-	string suffix(result.substr(result.size()-minimizer_idx));
-	string prefix(result.substr(0,result.size()-suffix.size()));
+	auto l = result.length();
+
+	// Extract pref-suff (kmer are reversed)
+	string suffix(result.substr(l-minimizer_idx, minimizer_idx));
+	string prefix(result.substr(0, l-minimizer_idx));
 	return(prefix+mini+suffix);
 }
 
@@ -210,11 +221,12 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 	kmer_overlap>>=2;
 	kmer_overlap%=((kint)1<<(2*(k-1-minimizer_size)));
 	if(super_kmer_overlap==kmer_overlap){
-		int byte_to_update(SKCL::byte_nuc-((compacted_size+size-1)/4));
+		int byte_to_update(SKCL::allocated_bytes-1-((compacted_size+size-1)/4));
 		int padding((4-((compacted_size+size)%4))%4);
 		nucleotides[byte_to_update] += (nuc<<(2*padding));
 		size++;
-		bytes_used=ceil(((float)size+(float)k)/4);
+		// Size of a kmer - size of minimizer + 1 for each supplementary nucleotide
+		bytes_used=ceil(static_cast<float>(k - minimizer_size + size - 1)/4.);
 		minimizer_idx++;
 		return true;
 	}	
@@ -314,8 +326,8 @@ void print_bin(uint8_t n) {
 
 void SKCL::print_all()const{
 	for(uint i(0);i<(compacted_size+size)/4+1;++i){
-		cout<<SKCL::byte_nuc-i;
-		print_kmer(nucleotides[SKCL::byte_nuc-i],4);cout<<" ";
+		cout<<SKCL::allocated_bytes-1-i;
+		print_kmer(nucleotides[SKCL::allocated_bytes-1-i],4);cout<<" ";
 		
 	}
 }

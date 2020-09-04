@@ -11,7 +11,7 @@
 
 class SKCL {
 private:
-	static const uint64_t byte_nuc=ceil(((float)(2*k-minimizer_size))/4.);
+	static const uint64_t allocated_bytes=ceil(((float)(2*k-minimizer_size))/4.);
 	/**
   * Return the byte index corresponding to the nucletide position.
   * Position 0 is the first nucleotide of the prefix.
@@ -39,11 +39,14 @@ public:
 	  * The last byte store the first nucleotides of the superkmer.
 	  * The array is filled backward when new kmers are compacted.
 	  */
-	uint8_t nucleotides[SKCL::byte_nuc+1];
+	uint8_t nucleotides[SKCL::allocated_bytes];
 
 	uint32_t indice_value;//4B
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
+	/**
+	 * The number of bytes that are really occupied by the nucleotides
+	 */
 	uint8_t bytes_used;
 	uint64_t interleaved;
 
