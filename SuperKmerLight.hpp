@@ -31,6 +31,7 @@ private:
 	uint byte_index(uint position);
 
 	static uint which_byte(uint i);
+	uint nb_nucl();
 
 public:
 	/**
