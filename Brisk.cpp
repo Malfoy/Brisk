@@ -337,7 +337,7 @@ int main(int argc, char** argv) {
 		cout << "2 DEBUG MODE COUNT AND CHECK WITH HASHTABLE" << endl;
 		exit(0);
 	}
-	int mode(1);
+	int mode(2);
 	if (argc > 2) {
 		mode = stoi(argv[2]);
 	}

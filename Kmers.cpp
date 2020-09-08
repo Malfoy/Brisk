@@ -9,7 +9,7 @@ using namespace std;
 
 
 const uint64_t k = 31;
-const uint64_t minimizer_size = 8;
+const uint64_t minimizer_size = 6;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
