@@ -37,7 +37,7 @@ uint SKCL::nb_nucl(){
 
 uint SKCL::which_byte(uint i){
 	//~ return (SKCL::allocated_bytes-i/4);
-	return (SKCL::allocated_bytes-1-(ceil((float)i/4)));
+	return (SKCL::allocated_bytes-(ceil((float)i/4)));
 }
 
 
@@ -154,7 +154,9 @@ kint SKCL::get_ith_kmer(uint ind)const{
 
 
 kint SKCL::get_right_overlap()const {
+	//~ cout<<"right overlap"<<endl;
 	kint result(get_ith_kmer(size));
+	//~ print_kmer(result,31);cout<<endl;
 	result%=((kint)1<<(2*(k-1-minimizer_size)));
 	return result;
 }
@@ -190,13 +192,13 @@ bool SKCL::query_kmer_bool(const kmer_full& kmer)const {
 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
 	
 	if(start_idx<0 or (start_idx>=this->size)){
-		cout<<"IDX DEAD"<<endl;
+		//~ cout<<"IDX DEAD"<<endl;
 		return false;
 	}
-	print_kmer( get_ith_kmer(size-start_idx),k);
-	cout<<endl;
-	print_kmer( kmer.get_compacted(),k);
-	cout<<endl;
+	//~ print_kmer( get_ith_kmer(size-start_idx),k);
+	//~ cout<<endl;
+	//~ print_kmer( kmer.get_compacted(),k);
+	//~ cout<<endl;
 
 	return get_ith_kmer(size-start_idx) == kmer.get_compacted();//THE GET COMPACTED SHOULD BE MADE ABOVE
 }
@@ -216,11 +218,16 @@ uint32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
 
 
 bool SKCL::compact_right(const kmer_full& kmf) {
+	
 	kint super_kmer_overlap(get_right_overlap());
 	kint kmer_overlap(kmf.get_compacted());
+	print_kmer(kmer_overlap,31);cout<<endl;
 	int nuc(kmer_overlap%4);
 	kmer_overlap>>=2;
 	kmer_overlap%=((kint)1<<(2*(k-1-minimizer_size)));
+	
+	print_kmer(super_kmer_overlap,31);cout<<endl;
+	print_kmer(kmer_overlap,31);cout<<endl;
 	if(super_kmer_overlap==kmer_overlap){
 		int byte_to_update(SKCL::allocated_bytes-1-((compacted_size+size-1)/4));
 		int padding((4-((compacted_size+size)%4))%4);
@@ -270,7 +277,7 @@ bool  SKCL::is_lex_inferior(const SKCL& kmf)const{
 	cout<<endl;
 	print_kmer(interleaved_query,31);
 	cout<<endl;
-	cin.get();
+	//~ cin.get();
 	return interleaved_index<=interleaved_query;
 }
 

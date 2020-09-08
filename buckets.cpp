@@ -17,7 +17,7 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
 	}
-	if(skml.size()-sorted_size>000000000){
+	if(skml.size()-sorted_size>0000000){
 		insert_buffer();
 	}
 	kmers.clear();
@@ -37,7 +37,7 @@ void Bucket::insert_buffer(){
 
 
 void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
-	//~ cout<<"add kmer buffer"<<endl;
+	cout<<"add kmer buffer"<<endl;
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -61,6 +61,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 	}
 	//HERE WE CREATE NEW SUPERKMERS (OR ellongate THEM)
 	if(inserted!=kmers.size()){
+		cout<<"NEW superkmers"<<endl;
 		//FOREACH KMER
 		for (uint64_t ik = 0; ik < kmers.size(); ++ik) {
 			kmer_full& kmer = kmers[ik];
@@ -93,7 +94,12 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 						skml.reserve(skml.capacity()*1.5);
 					}
 					cout<<"le push"<<endl;
+					print_kmer(kmer.get_compacted(),31);cout<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
+					cout<<"print all after constructor"<<endl;
+					skml[skml.size()-1].print_all();
+					kint super_kmer_overlap(skml[skml.size()-1].get_right_overlap());
+					print_kmer(super_kmer_overlap,31);cout<<endl;
 					if(values.capacity()==values.size()){
 						values.reserve(values.size()*1.5);
 					}
@@ -101,6 +107,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				}
 			}
 		}
+		cout<<"NEW superkmers END"<<endl;
 	}
 }
 
@@ -170,20 +177,20 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 	cout<<"find_kmer_from_interleave"<<endl;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
-	low=0;
+	//~ low=0;
 	//~ cout<<low<<endl;
 	while (low<(uint64_t)sorted_size) {
-		cout<<(int)kmer.minimizer_idx<<endl;
-		print_kmer(mockskm.interleaved,32);
-		cout<<endl;
-		print_kmer(skml[low].interleaved,32);
-		cout<<endl;
+		//~ cout<<(int)kmer.minimizer_idx<<endl;
+		//~ print_kmer(mockskm.interleaved,32);
+		//~ cout<<endl;
+		//~ print_kmer(skml[low].interleaved,32);
+		//~ cout<<endl;
 		
-		cin.get();
-		//~ if(skml[low].interleaved>mockskm.interleaved){
-			//~ cout<<"break suffix is prefix"<<endl;
-			//~ break;
-		//~ }
+		//~ cin.get();
+		if(skml[low].interleaved>mockskm.interleaved){
+			cout<<"break suffix is prefix"<<endl;
+			break;
+		}
 		uint32_t indice_v(skml[low].query_kmer_hash(kmer));
 		if (indice_v!=-1){
 			values[indice_v]++;
