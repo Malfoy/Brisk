@@ -63,8 +63,8 @@ uint SKCL::byte_index(uint nucl_position)const{
   */
 uint8_t SKCL::get_nucleotide(uint8_t nucl_position)const {
 	uint byte_pos = byte_index(nucl_position);
-	// cout << " alloc " << SKCL::allocated_bytes << " B " << byte_pos;
-	// cout << "Byte: " << byte_pos << endl;
+	//~ cout << " alloc " << SKCL::allocated_bytes << " B " << byte_pos<<" nucl position:	"<<(int)nucl_position<<endl;;
+	//~ cout << "Byte: " << byte_pos << endl;
 	uint8_t nucl = nucleotides[byte_pos];
 	nucl >>= 2 * (3 - (nucl_position%4));
 	nucl &= 0b11;
@@ -78,13 +78,17 @@ uint64_t SKCL::interleaved_value()const{
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
-		// Get the value of the nucleotide at the position
-		uint64_t nucl_value = get_nucleotide(nucl_position);
-		// shift the value to the right place
-		nucl_value <<= 62 - i*4;
-		// Add the nucleotide to the interleaved
-		value |= nucl_value;
+		if(nb_nucl()>=minimizer_idx -i){
+			uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
+			// Get the value of the nucleotide at the position
+			uint64_t nucl_value = get_nucleotide(nucl_position);
+			// shift the value to the right place
+			nucl_value <<= 62 - i*4;
+			// Add the nucleotide to the interleaved
+			value |= nucl_value;
+		}else{
+			break;
+		}
 	}
 
 
@@ -116,13 +120,17 @@ uint64_t SKCL::interleaved_value_max()const {
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
-		// Get the value of the nucleotide at the position
-		int64_t nucl_value =3- get_nucleotide(nucl_position);
-		// shift the value to the right place
-		nucl_value <<= 62 - i*4;
-		// Add the nucleotide to the interleaved
-		value -= nucl_value;
+		if(nb_nucl()>=minimizer_idx + i + 1){
+			uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
+			// Get the value of the nucleotide at the position
+			int64_t nucl_value =3- get_nucleotide(nucl_position);
+			// shift the value to the right place
+			nucl_value <<= 62 - i*4;
+			// Add the nucleotide to the interleaved
+			value -= nucl_value;
+		}else{
+			break;
+		}
 	}
 
 
@@ -259,13 +267,13 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 	
 	kint super_kmer_overlap(get_right_overlap());
 	kint kmer_overlap(kmf.get_compacted());
-	print_kmer(kmer_overlap,31);cout<<endl;
+	//~ print_kmer(kmer_overlap,31);cout<<endl;
 	int nuc(kmer_overlap%4);
 	kmer_overlap>>=2;
 	kmer_overlap%=((kint)1<<(2*(k-1-minimizer_size)));
 	
-	print_kmer(super_kmer_overlap,31);cout<<endl;
-	print_kmer(kmer_overlap,31);cout<<endl;
+	//~ print_kmer(super_kmer_overlap,31);cout<<endl;
+	//~ print_kmer(kmer_overlap,31);cout<<endl;
 	if(super_kmer_overlap==kmer_overlap){
 		int byte_to_update(SKCL::allocated_bytes-1-((compacted_size+size-1)/4));
 		int padding((4-((compacted_size+size)%4))%4);

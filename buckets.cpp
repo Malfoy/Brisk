@@ -34,7 +34,7 @@ void Bucket::insert_buffer(){
 
 
 void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
-	cout<<"add kmer buffer"<<endl;
+	//~ cout<<"add kmer buffer"<<endl;
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -49,7 +49,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
-					cout<<"inserted unsorted"<<endl;
+					//~ cout<<"inserted unsorted"<<endl;
 					kmers[ik].minimizer_idx=69;
 				}else{
 				}
@@ -58,7 +58,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 	}
 	//HERE WE CREATE NEW SUPERKMERS (OR ellongate THEM)
 	if(inserted!=kmers.size()){
-		cout<<"NEW superkmers"<<endl;
+		//~ cout<<"NEW superkmers"<<endl;
 		//FOREACH KMER
 		for (uint64_t ik = 0; ik < kmers.size(); ++ik) {
 			kmer_full& kmer = kmers[ik];
@@ -69,7 +69,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 						if(values.capacity()==values.size()){
 							values.reserve(values.size()*1.5);
 						}
-						cout<<"compact"<<endl;
+						//~ cout<<"compact"<<endl;
 						values.push_back(1);
 						continue;
 					}
@@ -81,7 +81,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
-						cout<<"inserted unsorted2"<<endl;
+						//~ cout<<"inserted unsorted2"<<endl;
 						break;
 					}else{
 					}
@@ -90,13 +90,13 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if(skml.size()==skml.capacity()){
 						skml.reserve(skml.capacity()*1.5);
 					}
-					cout<<"le push"<<endl;
-					print_kmer(kmer.get_compacted(),31);cout<<endl;
+					//~ cout<<"le push"<<endl;
+					//~ print_kmer(kmer.get_compacted(),31);cout<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
-					cout<<"print all after constructor"<<endl;
-					skml[skml.size()-1].print_all();
+					//~ cout<<"print all after constructor"<<endl;
+					//~ skml[skml.size()-1].print_all();
 					kint super_kmer_overlap(skml[skml.size()-1].get_right_overlap());
-					print_kmer(super_kmer_overlap,31);cout<<endl;
+					//~ print_kmer(super_kmer_overlap,31);cout<<endl;
 					if(values.capacity()==values.size()){
 						values.reserve(values.size()*1.5);
 					}
@@ -104,7 +104,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				}
 			}
 		}
-		cout<<"NEW superkmers END"<<endl;
+		//~ cout<<"NEW superkmers END"<<endl;
 	}
 }
 
@@ -120,16 +120,16 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 	if(sorted_size==0){
 		return false;
 	}
-	cout<<"add kmer sorted"<<endl;
+	//~ cout<<"add kmer sorted"<<endl;
 	//OPTIMIZATION POSSIBLE HERE?
 	int insert(0);
 	for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
 		if(find_kmer(kmers[iikk])){
 			kmers[iikk].minimizer_idx=69;
 			insert++;
-			cout<<"INSERT SORTED"<<endl;
+			//~ cout<<"INSERT SORTED"<<endl;
 		}else{
-			cout<<"FAIL FIND KMER"<<endl;
+			//~ cout<<"FAIL FIND KMER"<<endl;
 		}
 	}
 	return insert==kmers.size();
@@ -139,7 +139,7 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 
 
 bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
-	cout<<"find_kmer_from_interleave"<<endl;
+	//~ cout<<"find_kmer_from_interleave"<<endl;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
 	//~ low=0;
 	//~ cout<<low<<endl;
@@ -199,8 +199,8 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	if(size_interleave>=2){
 		return find_kmer_from_interleave(kmer,mockskm);
 	}else{
-		cout<<"noway"<<endl;
-		cin.get();
+		//~ cout<<"noway"<<endl;
+		//~ cin.get();
 		if(suffix_size>prefix_size){
 			//SUFFIX IS LARGER PREFIX IS MISSING
 			if(size_interleave==2){
@@ -243,7 +243,7 @@ bool Bucket::find_kmer(kmer_full& kmer){
 			}
 		}
 	}
-	cout<<"FAIL"<<endl;
+	//~ cout<<"FAIL"<<endl;
 	//~ cin.get();
 	return false;
 }
