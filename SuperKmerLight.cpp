@@ -169,9 +169,11 @@ string SKCL::get_string(const string& mini)const {
 	// Remove the nucleotides that are not needed in the last byte
 	result=result.substr(0,size+compacted_size-1);
 	auto l = result.length();
-
+	string suffix;
 	// Extract pref-suff (kmer are reversed)
-	string suffix(result.substr(l-minimizer_idx, minimizer_idx));
+	if(l>=minimizer_idx){
+		suffix=(result.substr(l-minimizer_idx, minimizer_idx));
+	}
 	string prefix(result.substr(0, l-minimizer_idx));
 	return(prefix+mini+suffix);
 }
