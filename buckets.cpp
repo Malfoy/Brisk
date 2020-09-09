@@ -142,7 +142,7 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 	//~ cout<<"find_kmer_from_interleave"<<endl;
 	//~ return false;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
-	//~ low=0;
+	low=0;
 	//~ cout<<low<<endl;
 	while (low<(uint64_t)sorted_size) {
 		//~ cout<<(int)kmer.minimizer_idx<<endl;
@@ -157,14 +157,7 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 		}
 		int32_t indice_v(skml[low].query_kmer_hash(kmer));
 		if (indice_v!=-1){
-			//~ cout<<"FIND KMER INTERLEAVE"<<endl;
-			//~ print_kmer(kmer.kmer_s,31);
-			//~ cout<<endl;
-			//~ cout<<indice_v<<" "<<values.size()<<endl;
-			//~ cout<<(int)values[indice_v]<<endl;
 			values[indice_v]++;
-			//~ kmer.minimizer_idx=69;
-			//~ cout<<(int)values[indice_v]<<endl;
 			return true;
 		}
 		low++;
@@ -183,8 +176,8 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	//~ print_kmer(kmer.get_compacted(),31-8);
 	//~ cout<<endl;
 	//~ cout<<(int)kmer.minimizer_idx<<endl;
-	
-	SKCL mockskm(kmer.get_compacted(), kmer.minimizer_idx,0);
+
+	SKCL mockskm(kmer.get_compacted(), kmer.get_minimizer_idx(),0);
 	//~ cout<<mockskm.get_string("	mini	")<<endl;
 	
 	mockskm.interleaved=mockskm.interleaved_value();
@@ -263,6 +256,7 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
 					cout<<"skm:	"<<skm<<endl;
+					cout << "mini " << mini << endl;
 					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
 					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
 					cout<<"	instead of ";
