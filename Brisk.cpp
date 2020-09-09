@@ -195,13 +195,15 @@ void count_line(string& line) {
 	}
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
-	if(minimizer<0){
-		cout << "kmer init " << (k-relative_min_position-super_minimizer_size+4) << endl;
-		kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
-	}else{
-		if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
-			kmers.push_back({relative_min_position+4, kmer_seq});
-			cout << "kmer init " << (relative_min_position+4) << endl;
+	if (multiple_min) {
+		cerr << "TODO: Multi minimizer" << endl;
+	} else {
+		if(minimizer<0){
+			kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
+		}else{
+			if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
+				kmers.push_back({relative_min_position+4, kmer_seq});
+			}
 		}
 	}
 
@@ -264,19 +266,21 @@ void count_line(string& line) {
 				relative_min_position++;
 			}
 		}
-		// Normal add of the kmer into kmer list
-		if(minimizer<0){
-			kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
-			cout << "kmer init 1 " << (k-relative_min_position-super_minimizer_size+4) << endl;
-		}else{
-			if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
-				kmers.push_back({relative_min_position+4, kmer_seq});
-				cout << "kmer init 2 " << (relative_min_position+4) << endl;
+
+		// TODO: Multi-minimizer process
+		if (multiple_min) {
+			cerr << "TODO: Multi minimizer" << endl;
+		} else {
+			// Normal add of the kmer into kmer list
+			if(minimizer<0){
+				int8_t val = ((int8_t)k) - ((int8_t)relative_min_position) - ((int8_t)super_minimizer_size) + 4;
+				// kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
+				kmers.push_back({val, kmer_rc_seq});
+			}else{
+				if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
+					kmers.push_back({relative_min_position+4, kmer_seq});
+				}
 			}
-		}
-		if (kmers[kmers.size()-1].minimizer_idx == 43) {
-			cout << "PARAPOUET" << endl;
-			exit(0);
 		}
 		if (check) {
 			real_count[getCanonical(line.substr(i + 1, k))]++;

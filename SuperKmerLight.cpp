@@ -80,7 +80,6 @@ uint64_t SKCL::interleaved_value()const{
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		if(nb_nucl()>=minimizer_idx -i){
 			uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
 			// Get the value of the nucleotide at the position
 			uint64_t nucl_value = get_nucleotide(nucl_position);
@@ -88,13 +87,6 @@ uint64_t SKCL::interleaved_value()const{
 			nucl_value <<= 62 - i*4;
 			// Add the nucleotide to the interleaved
 			value |= nucl_value;
-		}else{
-			cout << nb_nucl() << " " << (uint)minimizer_idx << endl;
-			cout << (uint)compacted_size << " " << (uint)size << endl;
-			cout << "ELSE" << endl;
-			exit(0);
-			break;
-		}
 	}
 
 

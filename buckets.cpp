@@ -142,7 +142,7 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 	//~ cout<<"find_kmer_from_interleave"<<endl;
 	//~ return false;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
-	low=0;
+	// low=0;
 	//~ cout<<low<<endl;
 	while (low<(uint64_t)sorted_size) {
 		//~ cout<<(int)kmer.minimizer_idx<<endl;
@@ -256,7 +256,6 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
 					cout<<"skm:	"<<skm<<endl;
-					cout << "mini " << mini << endl;
 					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
 					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
 					cout<<"	instead of ";
