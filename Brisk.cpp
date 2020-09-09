@@ -188,7 +188,8 @@ void count_line(string& line) {
 	bool multiple_min  = relative_min_position < 0;
 
 	uint8_t position_minimizer_in_kmer;
-	if (multiple_min){
+	
+	if (minimizer<0){
 		position_minimizer_in_kmer = (uint8_t)(-relative_min_position - 1);
 	}else{
 		position_minimizer_in_kmer = relative_min_position;
@@ -196,7 +197,11 @@ void count_line(string& line) {
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
-		cerr << "TODO: Multi minimizer" << endl;
+		if(minimizer<0){
+			cursed_kmers[kmer_rc_seq]++;
+		}else{
+			cursed_kmers[kmer_seq]++;
+		}
 	} else {
 		if(minimizer<0){
 			kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
@@ -269,7 +274,11 @@ void count_line(string& line) {
 
 		// TODO: Multi-minimizer process
 		if (multiple_min) {
-			cerr << "TODO: Multi minimizer" << endl;
+			if(minimizer<0){
+				cursed_kmers[kmer_rc_seq]++;
+			}else{
+				cursed_kmers[kmer_seq]++;
+			}
 		} else {
 			// Normal add of the kmer into kmer list
 			if(minimizer<0){

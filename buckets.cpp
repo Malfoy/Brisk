@@ -256,12 +256,15 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			count+=values[skml[isk].indice_value+i];
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
-					cout<<"skm:	"<<skm<<endl;
-					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
-					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
-					cout<<"	instead of ";
-					cout<<real_count[getCanonical(skm.substr(i,k))]<<endl;
-					counting_errors++;
+					if(real_count[getCanonical(skm.substr(i,k))]!=cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]){
+						cout<<"skm:	"<<skm<<endl;
+						cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
+						cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
+						cout<<"	instead of ";
+						cout<<(int)real_count[getCanonical(skm.substr(i,k))]<<endl;
+						cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]<<endl;
+						counting_errors++;
+					}
 				}
 				real_count[getCanonical(skm.substr(i,k))]=0;
 			}

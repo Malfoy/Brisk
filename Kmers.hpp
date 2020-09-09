@@ -21,7 +21,8 @@ typedef __uint128_t skint;
 
 
 
-extern robin_hood::unordered_flat_map<string, uint64_t> real_count;
+extern robin_hood::unordered_flat_map<string, uint8_t> real_count;
+extern robin_hood::unordered_flat_map<kint, uint8_t> cursed_kmers;
 extern uint64_t counting_errors;
 extern const uint64_t k;
 extern const kint k_mask;
@@ -31,6 +32,17 @@ extern const  uint64_t super_minimizer_size;
 extern const uint64_t min_mask;
 extern const uint64_t compacted_size;
 extern const uint64_t byte_nuc;
+
+namespace std {
+ template <> struct hash<kint>
+  {
+    size_t operator()(const kint & x) const
+    {
+      /* your code here, e.g. "return hash<int>()(x.value);" */
+      return hash<uint64_t>()((uint64_t)x);
+    }
+  };
+}
 
 
 

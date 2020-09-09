@@ -15,7 +15,8 @@ const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
 uint64_t counting_errors=0;
 bool check=false;
-robin_hood::unordered_flat_map<string, uint64_t> real_count;
+robin_hood::unordered_flat_map<string, uint8_t> real_count;
+robin_hood::unordered_flat_map<kint, uint8_t> cursed_kmers;
 const kint k_mask = (((kint)1) << (2*k)) - 1;
 const kint compact_mask = (((kint)1) << (2*compacted_size)) - 1;
 
