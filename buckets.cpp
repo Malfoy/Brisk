@@ -24,6 +24,7 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 
 void Bucket::insert_buffer(){
 	for(auto it(skml.begin()+sorted_size);it<skml.end();++it){
+		// cout << "mini_idx " << (uint)it->minimizer_idx << endl;
 		it->interleaved=it->interleaved_value();
 	}
 	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;});

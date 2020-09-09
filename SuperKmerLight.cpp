@@ -80,13 +80,13 @@ uint64_t SKCL::interleaved_value()const{
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-			uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
-			// Get the value of the nucleotide at the position
-			uint64_t nucl_value = get_nucleotide(nucl_position);
-			// shift the value to the right place
-			nucl_value <<= 62 - i*4;
-			// Add the nucleotide to the interleaved
-			value |= nucl_value;
+		uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
+		// Get the value of the nucleotide at the position
+		uint64_t nucl_value = get_nucleotide(nucl_position);
+		// shift the value to the right place
+		nucl_value <<= 62 - i*4;
+		// Add the nucleotide to the interleaved
+		value |= nucl_value;
 	}
 
 
@@ -94,17 +94,13 @@ uint64_t SKCL::interleaved_value()const{
 	uint8_t max_prefix = min((uint)8,prefix_size());
 	for (uint8_t i=0 ; i<max_prefix ; i++) {
 		// Get the nucleotide position
-		if(nb_nucl()>=minimizer_idx + i + 1){
-			uint8_t nucl_position = nb_nucl() - minimizer_idx - i - 1;
-			// Get the value of the nucleotide at the position
-			uint64_t nucl_value = get_nucleotide(nucl_position);
-			// shift the value to the right place
-			nucl_value <<= 60 - i*4;
-			// Add the nucleotide to the interleaved
-			value |= nucl_value;
-		}else{
-			break;
-		}
+		uint8_t nucl_position = nb_nucl() - minimizer_idx - i - 1;
+		// Get the value of the nucleotide at the position
+		uint64_t nucl_value = get_nucleotide(nucl_position);
+		// shift the value to the right place
+		nucl_value <<= 60 - i*4;
+		// Add the nucleotide to the interleaved
+		value |= nucl_value;
 	}
 	return value;
 }
@@ -294,12 +290,12 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 
 
 uint SKCL::suffix_size()const{
-	return (size+compacted_size-minimizer_idx);
+	return minimizer_size;
 }
 
 
 uint SKCL::prefix_size()const{
-	return (minimizer_idx);
+	return (size + compacted_size - 1 - minimizer_idx);
 }
 
 
