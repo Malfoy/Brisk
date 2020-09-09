@@ -170,11 +170,15 @@ string SKCL::get_string(const string& mini)const {
 	result=result.substr(0,size+compacted_size-1);
 	auto l = result.length();
 	string suffix;
+	
 	// Extract pref-suff (kmer are reversed)
 	if(l>=minimizer_idx){
 		suffix=(result.substr(l-minimizer_idx, minimizer_idx));
 	}
 	string prefix(result.substr(0, l-minimizer_idx));
+	//~ cout<<"prefix:	"<<prefix<<endl;
+	//~ cout<<"mini:	"<<mini<<endl;
+	//~ cout<<"suffix:	"<<suffix<<endl;
 	return(prefix+mini+suffix);
 }
 
@@ -253,7 +257,7 @@ bool SKCL::query_kmer_bool(const kmer_full& kmer)const {
 
 
 
-uint32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
+int32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
 	//~ cout<<"query_kmer_hash"<<endl;	
 	if(this->query_kmer_bool(kmer)){
 		//~ cout<<"query kmer bool true"<<endl;
@@ -288,6 +292,7 @@ bool SKCL::compact_right(const kmer_full& kmf) {
 	}	
 	return false;
 }
+
 
 
 uint SKCL::suffix_size()const{

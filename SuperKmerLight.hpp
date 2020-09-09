@@ -63,7 +63,7 @@ public:
 	kint get_right_overlap()const;
 	bool operator < (const  SKCL& str) const;
 	bool query_kmer_bool(const kmer_full& kmer)const ;
-	uint32_t query_kmer_hash(const kmer_full& kmer)const;
+	int32_t query_kmer_hash(const kmer_full& kmer)const;
 	bool compact_right(const kmer_full& kmf);
 	bool suffix_is_prefix(const kmer_full& kmf)const;
 	void print_all()const;

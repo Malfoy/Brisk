@@ -99,14 +99,15 @@ public:
 			}
 		}
 		if(check){
-			for (auto e:real_count) {
-				if(e.second!=0){
-					cout<<"I forgot	"<<e.first<<" "<<e.second<<endl;
-					counting_errors++;
-				}
-			}
+			//~ for (auto e:real_count) {
+				//~ if(e.second!=0){
+					//~ cout<<"I forgot	"<<e.first<<" "<<e.second<<endl;
+					//~ counting_errors++;
+				//~ }
+			//~ }
 			if(counting_errors!=0){
 				cout<< counting_errors<<"	errors"<<endl;
+				cin.get();
 			}else{
 				cout << "The results are OK" << endl;
 			}

@@ -279,6 +279,7 @@ void count_line(string& line) {
 		minimizer*=-1;
 	}
 	menu.add_kmers(kmers,minimizer/256);
+	//~ menu.dump_counting();
 }
 
 

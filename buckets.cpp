@@ -3,13 +3,13 @@
 #include "Kmers.hpp"
 
 
+
 using namespace std;
 
 
 
-
-
 void  Bucket::add_kmers(vector<kmer_full>& kmers){
+	//~ cout<<"ADD KMERS:	"<<kmers.size()<<endl;
 	if(kmers.empty()){return;}
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
@@ -45,7 +45,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 		for (uint64_t ik = 0; ik < kmers.size(); ++ik) {
 			kmer_full& kmer = kmers[ik];
 			if (kmer.minimizer_idx!=69) {
-				uint32_t indice_v(skc.query_kmer_hash(kmer));
+				int32_t indice_v(skc.query_kmer_hash(kmer));
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
@@ -64,7 +64,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 			kmer_full& kmer = kmers[ik];
 			if (kmer.minimizer_idx!=69) {
 				//WE TRY TO COMPACT IT TO THE LAST SUPERKMER
-				if(not skml.empty()){
+				if( skml.size()-sorted_size!=0){
 					if(skml[skml.size()-1].compact_right(kmer)){
 						if(values.capacity()==values.size()){
 							values.reserve(values.size()*1.5);
@@ -77,7 +77,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				bool isinserted=false;
 				//FOREACH new SUPERKMER
 				for (uint64_t i = buffsize; i < skml.size(); i++) {
-					uint32_t indice_v(skml[i].query_kmer_hash(kmer));
+					int32_t indice_v(skml[i].query_kmer_hash(kmer));
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
@@ -140,6 +140,7 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 
 bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 	//~ cout<<"find_kmer_from_interleave"<<endl;
+	//~ return false;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
 	//~ low=0;
 	//~ cout<<low<<endl;
@@ -152,17 +153,18 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 		
 		//~ cin.get();
 		if(skml[low].interleaved>mockskm.interleaved_value_max()){
-			//~ cout<<"break suffix is prefix"<<endl;
-			//~ print_kmer(skml[low].interleaved,32);
-			//~ cout<<endl;
-			//~ print_kmer(mockskm.interleaved_value_max(),32);
-			//~ cout<<endl;
-			//~ cin.get();
 			return false;
 		}
-		uint32_t indice_v(skml[low].query_kmer_hash(kmer));
+		int32_t indice_v(skml[low].query_kmer_hash(kmer));
 		if (indice_v!=-1){
+			//~ cout<<"FIND KMER INTERLEAVE"<<endl;
+			//~ print_kmer(kmer.kmer_s,31);
+			//~ cout<<endl;
+			//~ cout<<indice_v<<" "<<values.size()<<endl;
+			//~ cout<<(int)values[indice_v]<<endl;
 			values[indice_v]++;
+			//~ kmer.minimizer_idx=69;
+			//~ cout<<(int)values[indice_v]<<endl;
 			return true;
 		}
 		low++;
@@ -251,14 +253,17 @@ bool Bucket::find_kmer(kmer_full& kmer){
 
 
 void  Bucket::print_kmers(string& result,const  string& mini)const {
+	int count(0);
 	for(uint64_t isk(0);isk<skml.size();++isk){
 		string skm=skml[isk].get_string(mini);
+		//~ cout<<"superkmer:	"<<skm<<endl;
 		for (uint64_t i(0); i < skml[isk].size; ++i) {
 			result+=skm.substr(i,k)+'	'+to_string(values[skml[isk].indice_value+i])+'\n';
+			count+=values[skml[isk].indice_value+i];
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
 					cout<<"skm:	"<<skm<<endl;
-					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i<<" "<<(int)skml[isk].size<<endl;
+					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
 					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
 					cout<<"	instead of ";
 					cout<<real_count[getCanonical(skm.substr(i,k))]<<endl;
@@ -268,6 +273,7 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			}
 		}
 	}
+	//~ cout<<"COUNT PRINT KMERS:	"<<count<<endl;
 }
 
 
