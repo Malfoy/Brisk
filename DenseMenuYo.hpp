@@ -16,8 +16,8 @@
 #define DENSEMENUYO_H
 
 
-#define mutex_order (6)
-#define mutex_number (1<<(2*mutex_order)) /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
+uint64_t mutex_order (min((uint64_t)6,minimizer_size));
+uint64_t mutex_number (1<<(2*mutex_order)); /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
 
 
 
@@ -25,17 +25,18 @@ class DenseMenuYo{
 public:
 	uint32_t * indexes;
 	// std::vector<Bucket> bucketList;
-	std::vector<Bucket> * bucketMatrix;
+	vector<Bucket> * bucketMatrix;
 	uint64_t minimizer_size;
 	uint64_t bucket_number;
 	uint64_t matrix_column_number;
-	omp_lock_t MutexWall[mutex_number];
+	vector<omp_lock_t> MutexWall;
 	u_int64_t call_ad;
 	u_int64_t skm_total_size;
 	map<uint,uint> size_sk;
 
 
 	DenseMenuYo(uint64_t minisize){
+		MutexWall.resize(mutex_number);
 		for (uint64_t i(0); i < mutex_number; ++i) {
 			omp_init_lock(&MutexWall[i]);
 		}
@@ -44,7 +45,7 @@ public:
 		matrix_column_number = bucket_number / mutex_number;
 		// indexes = new uint32_t[mutex_number][bucket_number/mutex_number];
 		indexes = new uint32_t[bucket_number];
-		bucketMatrix = new std::vector<Bucket>[mutex_number];
+		bucketMatrix = new vector<Bucket>[mutex_number];
 		skm_total_size=call_ad=0;
 	}
 
@@ -59,27 +60,27 @@ public:
 			skm_total_size+=v.size();
 			size_sk[v.size()]++;
 		}
-		// cout << "add" << endl;
+		cout << "add" << endl;
 		uint64_t mutex_idx = get_mutex(minimizer);
 		uint64_t column_idx = get_column(minimizer);
 		uint64_t matrix_idx = matrix_position(mutex_idx, column_idx);
 		omp_set_lock(&MutexWall[mutex_idx]);
 			uint32_t idx = indexes[matrix_idx];
-			// cout << idx << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
+			cout << idx << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
 			if (idx == 0) {
-				// cout << "new bucket" << endl;
+				cout << "new bucket" << endl;
 				bucketMatrix[mutex_idx].push_back(Bucket());
 				indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 				idx = indexes[matrix_idx];
-				// cout << "/new bucket" << endl;
+				cout << "/new bucket" << endl;
 			}
 			// else cout << "fill bucket" << endl;
-		// cout << "True add" << endl;
-		// cout << idx << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
+		cout << "True add" << endl;
+		cout << idx -1 << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
 		bucketMatrix[mutex_idx][idx-1].add_kmers(v);
 		omp_unset_lock(&MutexWall[mutex_idx]);
 		v.clear();
-		// cout << "/add" << endl;
+		cout << "/add" << endl;
 	}
 
 
