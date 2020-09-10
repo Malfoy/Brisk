@@ -109,22 +109,16 @@ uint64_t SKCL::interleaved_value()const{
 
 uint64_t SKCL::interleaved_value_max()const {
 	uint64_t value = -1;
-	//~ print_kmer(value,32);
-	//~ cout<<endl;
 	// Suffix interleaved
 	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
 	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		if(nb_nucl()>=minimizer_idx + i + 1){
-			uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
-			// Get the value of the nucleotide at the position
-			int64_t nucl_value =3- get_nucleotide(nucl_position);
-			// shift the value to the right place
-			nucl_value <<= 62 - i*4;
-			// Add the nucleotide to the interleaved
-			value -= nucl_value;
-		}else{
-			break;
-		}
+		uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
+		// Get the value of the nucleotide at the position
+		int64_t nucl_value =3- get_nucleotide(nucl_position);
+		// shift the value to the right place
+		nucl_value <<= 62 - i*4;
+		// Add the nucleotide to the interleaved
+		value -= nucl_value;
 	}
 
 
@@ -144,11 +138,7 @@ uint64_t SKCL::interleaved_value_max()const {
 			break;
 		}
 	}
-	//~ print_kmer(value,32);
-	//~ cout<<endl;
-	//~ print_kmer(interleaved_value(),32);
-	//~ cout<<endl;
-	//~ cin.get();
+
 	return value;
 }
 
