@@ -9,7 +9,7 @@ using namespace std;
 
 
 const uint64_t k = 31;
-const uint64_t minimizer_size = 5;
+const uint64_t minimizer_size = 7;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
@@ -281,7 +281,7 @@ int64_t get_minimizer(kint seq, int8_t& min_position) {
 	bool multiple_mini = false;
 	bool reversed=(mini!=fwd_mini);
 	min_position = 0;
-	uint8_t max_prefix = reversed ? k - super_minimizer_size : 0;
+	// uint8_t max_prefix = reversed ? k - super_minimizer_size : 0;
 
 	// print_kmer(mmer, super_minimizer_size);
 	// cout << " " << hash_mini << endl;
@@ -299,24 +299,27 @@ int64_t get_minimizer(kint seq, int8_t& min_position) {
 
 		if (hash_mini > hash) {
 			min_position = i;
-				mini = mmer;
+			mini = mmer;
 			reversed=(mini!=fwd_mini);
-			max_prefix = reversed ? k - super_minimizer_size - i : i;			
+			// max_prefix = reversed ? k - super_minimizer_size - i : i;			
 			hash_mini = hash;
 			multiple_mini = false;
 		} else if (hash_mini == hash) {
 			multiple_mini = true;
 
+			min_position = i;
+			reversed=(mini!=fwd_mini);
+
 			// Compute the prefix length
-			bool is_reversed = (mmer != fwd_mini);
-			uint8_t prefix_size = reversed ? k - super_minimizer_size - i : i;
+			// bool is_reversed = (mmer != fwd_mini);
+			// uint8_t prefix_size = reversed ? k - super_minimizer_size - i : i;
 
 			// If the prefix length is larger, save the new position
-			if (prefix_size > max_prefix) {
-				min_position = i;
-				reversed = is_reversed;
-				max_prefix = prefix_size;
-			}
+			// if (prefix_size > max_prefix) {
+			// 	min_position = i;
+			// 	reversed = is_reversed;
+			// 	max_prefix = prefix_size;
+			// }
 
 			// Complement A 1 the position to say that there are multiple minimizers
 			if (min_position >= 0)
@@ -326,6 +329,11 @@ int64_t get_minimizer(kint seq, int8_t& min_position) {
 	// cout << (int)min_position << " " << endl;
 	// print_kmer(mini, super_minimizer_size);
 	// cout << endl;
+	// if (multiple_mini)
+	// 	cout << "CURSED" << endl;
+	// else
+	// 	cout << "BLESSED BY ALL GODS" << endl;
+	// cout << "min pos " << (int)min_position << endl;
 
 	if(reversed){
 		mini*=-1;
