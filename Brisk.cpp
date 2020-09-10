@@ -179,6 +179,7 @@ void count_line(string& line) {
 	}
 	clean(line);
 	vector<kmer_full> kmers;
+	cout<<"count line"<<endl;
 	// Init Sequences
 	kint kmer_seq = (str2num(line.substr(0, k))), kmer_rc_seq(rcb(kmer_seq));
 	uint64_t min_seq  = (uint64_t)(str2num(line.substr(k - super_minimizer_size, super_minimizer_size))), min_rcseq(rcbc(min_seq, super_minimizer_size)), min_canon(min(min_seq, min_rcseq));
@@ -197,11 +198,8 @@ void count_line(string& line) {
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
-		if(minimizer<0){
-			cursed_kmers[kmer_rc_seq]++;
-		}else{
-			cursed_kmers[kmer_seq]++;
-		}
+		cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+		//~ print_kmer(kmer_seq,31);cout<<endl;
 	} else {
 		if(minimizer<0){
 			kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
@@ -279,11 +277,8 @@ void count_line(string& line) {
 
 		// TODO: Multi-minimizer process
 		if (multiple_min) {
-			if(minimizer<0){
-				cursed_kmers[kmer_rc_seq]++;
-			}else{
-				cursed_kmers[kmer_seq]++;
-			}
+			cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+			//~ print_kmer((uint64_t)kmer_rc_seq,31);cout<<endl;
 		} else {
 			// Normal add of the kmer into kmer list
 			if(minimizer<0){

@@ -14,7 +14,7 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
 	}
-	if(skml.size()-sorted_size>000000){
+	if(skml.size()-sorted_size>10000000){
 		insert_buffer();
 	}
 	kmers.clear();
@@ -35,7 +35,7 @@ void Bucket::insert_buffer(){
 
 
 void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
-	//~ cout<<"add kmer buffer"<<endl;
+	cout<<"add kmer buffer"<<endl;
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -50,7 +50,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
-					//~ cout<<"inserted unsorted"<<endl;
+					cout<<"inserted unsorted"<<endl;
 					kmers[ik].minimizer_idx=69;
 				}else{
 				}
@@ -65,16 +65,16 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 			kmer_full& kmer = kmers[ik];
 			if (kmer.minimizer_idx!=69) {
 				//WE TRY TO COMPACT IT TO THE LAST SUPERKMER
-				if( skml.size()-sorted_size!=0){
-					if(skml[skml.size()-1].compact_right(kmer)){
-						if(values.capacity()==values.size()){
-							values.reserve(values.size()*1.5);
-						}
-						//~ cout<<"compact"<<endl;
-						values.push_back(1);
-						continue;
-					}
-				}
+				//~ if( skml.size()-sorted_size!=0){
+					//~ if(skml[skml.size()-1].compact_right(kmer)){
+						//~ if(values.capacity()==values.size()){
+							//~ values.reserve(values.size()*1.5);
+						//~ }
+						//~ // cout<<"compact"<<endl;
+						//~ values.push_back(1);
+						//~ continue;
+					//~ }
+				//~ }
 				bool isinserted=false;
 				//FOREACH new SUPERKMER
 				for (uint64_t i = buffsize; i < skml.size(); i++) {
@@ -82,7 +82,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
-						//~ cout<<"inserted unsorted2"<<endl;
+						cout<<"inserted unsorted2"<<endl;
 						break;
 					}else{
 					}
@@ -91,7 +91,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if(skml.size()==skml.capacity()){
 						skml.reserve(skml.capacity()*1.5);
 					}
-					//~ cout<<"le push"<<endl;
+					cout<<"le push"<<endl;
 					//~ print_kmer(kmer.get_compacted(),31);cout<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
 					//~ cout<<"print all after constructor"<<endl;
@@ -105,7 +105,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				}
 			}
 		}
-		//~ cout<<"NEW superkmers END"<<endl;
+		cout<<"NEW superkmers END"<<endl;
 	}
 }
 
@@ -256,7 +256,7 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 			count+=values[skml[isk].indice_value+i];
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
-					if(real_count[getCanonical(skm.substr(i,k))]!=cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]){
+					if(real_count[getCanonical(skm.substr(i,k))]!=cursed_kmers[min(str2num(((skm.substr(i,k)))),str2num((revComp(skm.substr(i,k)))))]){
 						cout<<"skm:	"<<skm<<endl;
 						cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
 						cout << "minimizer " << mini << endl;
