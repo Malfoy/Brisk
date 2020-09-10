@@ -126,17 +126,13 @@ uint64_t SKCL::interleaved_value_max()const {
 	uint8_t max_prefix = min((uint)8,prefix_size());
 	for (uint8_t i=0 ; i<max_prefix ; i++) {
 		// Get the nucleotide position
-		if(nb_nucl()>=minimizer_idx + i + 1){
-			uint8_t nucl_position = nb_nucl() - minimizer_idx - i - 1;
-			// Get the value of the nucleotide at the position
-			int64_t nucl_value = 3-get_nucleotide(nucl_position);
-			// shift the value to the right place
-			nucl_value <<= 60 - i*4;
-			// Add the nucleotide to the interleaved
-			value -= nucl_value;
-		}else{
-			break;
-		}
+		uint8_t nucl_position = nb_nucl() - minimizer_idx - i - 1;
+		// Get the value of the nucleotide at the position
+		int64_t nucl_value = 3-get_nucleotide(nucl_position);
+		// shift the value to the right place
+		nucl_value <<= 60 - i*4;
+		// Add the nucleotide to the interleaved
+		value -= nucl_value;
 	}
 
 	return value;
