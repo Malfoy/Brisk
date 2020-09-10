@@ -9,7 +9,7 @@ using namespace std;
 
 
 const uint64_t k = 31;
-const uint64_t minimizer_size = 6;
+const uint64_t minimizer_size = 7;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
@@ -94,37 +94,6 @@ string kmer2str(__uint128_t num, uint k) {
 
 
 
-//~ string kmer2str(uint256_t num, uint k) {
-	//~ string res;
-	//~ Pow2<uint256_t> anc(2 * (k - 1));
-	//~ for (uint64_t i(0); i < k; ++i) {
-		//~ auto nuc = num / anc;
-		//~ num             = num % anc;
-		//~ if (nuc == 3) {
-			//~ res += "G";
-		//~ }
-		//~ if (nuc == 2) {
-			//~ res += "T";
-		//~ }
-		//~ if (nuc == 1) {
-			//~ res += "C";
-		//~ }
-		//~ if (nuc == 0) {
-			//~ res += "A";
-		//~ }
-		//~ if (nuc >= 4) {
-			//~ cout << "WTF kmer2str" << endl;
-			//~ // cout<<(uint6)anc.value()<<endl;
-			//~ cout<<nuc<<endl;
-			//~ return "";
-		//~ }
-		//~ anc >>= 2;
-	//~ }
-	//~ return res;
-//~ }
-
-
-
 // SUFFIX IS AT RIGHT!!!!!!DO NOT CHANGE THIS
 kint kmer_full::get_compacted() const {
 	kint result;
@@ -143,8 +112,9 @@ bool kmer_full::contains_multi_minimizer() const {
 
 
 // ----- Useful binary kmer functions -----
-void print_kmer(__uint128_t num,uint64_t n){
-	__uint128_t anc((__uint128_t)1<<(2*(n-1)));
+template<typename T>
+void print_kmer(T num,uint64_t n){
+	T anc((T)1<<(2*(n-1)));
 	for(uint64_t i(0);i<n and anc!=0;++i){
 		uint64_t nuc=num/anc;
 		num=num%anc;
@@ -166,7 +136,6 @@ void print_kmer(__uint128_t num,uint64_t n){
 		}
 		anc>>=2;
 	}
-	// cout<<endl;
 }
 
 
@@ -296,38 +265,72 @@ Pow2<uint64_t> minimizer_number(2 * super_minimizer_size);
 
 
 
-/** Get the minimizer from a sequence and modify the position parameter.*/
+/** Get the minimizer from a sequence and modify the position parameter.
+  * WARNING: If the sequence contains a multiple time the minimizer, return the minimizer position generating a kmer with the longest prefix.
+  */
 int64_t get_minimizer(kint seq, int8_t& min_position) {
+	// cout << "Get minimizer" << endl;
+
 	// Init with the first possible minimizer
 	int64_t mini, mmer;
 	int64_t fwd_mini = seq % minimizer_number;
 	mini = mmer = canonize(fwd_mini, super_minimizer_size);
+	uint64_t hash_mini = hash64shift(mmer);
+
+	// Update values regarding the minimizer
 	bool multiple_mini = false;
 	bool reversed=(mini!=fwd_mini);
-	uint64_t hash_mini = hash64shift(mmer);
 	min_position = 0;
+	uint8_t max_prefix = reversed ? k - super_minimizer_size : 0;
+
+	// print_kmer(mmer, super_minimizer_size);
+	// cout << " " << hash_mini << endl;
+
 	// Search in all possible position (from 1) the minimizer
 	for (uint64_t i=1; i <= k - super_minimizer_size; i++) {
 		seq >>= 2;
 		fwd_mini = seq % minimizer_number;
 		mmer = canonize(fwd_mini, super_minimizer_size);
 		uint64_t hash = (hash64shift(mmer));
-		// cout<<hash<<" "<<hash_mini<<endl;
+		// print_kmer(mini, super_minimizer_size);
+		// cout << " ";
+		// print_kmer(mmer, super_minimizer_size);
+		// cout << " " << hash << endl;
+
 		if (hash_mini > hash) {
-			// cout<<"new pos mini	"<<i<<endl;
 			min_position = i;
-			mini = mmer;
+				mini = mmer;
 			reversed=(mini!=fwd_mini);
+			max_prefix = reversed ? k - super_minimizer_size - i : i;			
 			hash_mini = hash;
 			multiple_mini = false;
-		} else if ((hash_mini == hash) and (not multiple_mini)) {
+		} else if (hash_mini == hash) {
 			multiple_mini = true;
-			min_position = - min_position - 1;
+
+			// Compute the prefix length
+			bool is_reversed = (mmer != fwd_mini);
+			uint8_t prefix_size = reversed ? k - super_minimizer_size - i : i;
+
+			// If the prefix length is larger, save the new position
+			if (prefix_size > max_prefix) {
+				min_position = i;
+				reversed = is_reversed;
+				max_prefix = prefix_size;
+			}
+
+			// Complement A 1 the position to say that there are multiple minimizers
+			if (min_position >= 0)
+				min_position = - min_position - 1;
 		}
 	}
+	// cout << (int)min_position << " " << endl;
+	// print_kmer(mini, super_minimizer_size);
+	// cout << endl;
+
 	if(reversed){
 		mini*=-1;
 	}
+	// cout << endl;
 	return ((int64_t)mini);
 }
 
