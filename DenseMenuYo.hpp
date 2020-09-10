@@ -108,7 +108,6 @@ public:
 			//~ }
 			if(counting_errors!=0){
 				cout<< counting_errors<<"	errors"<<endl;
-				cin.get();
 			}else{
 				cout << "The results are OK" << endl;
 			}
