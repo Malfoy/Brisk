@@ -38,6 +38,7 @@ DenseMenuYo menu(minimizer_size);
 uint64_t line_count(0);
 Pow2<kint> offsetUpdateAnchor(2 * k);
 const Pow2<uint64_t> offsetUpdateAnchorMin(2 * super_minimizer_size);
+
 // uint16_t abundance_mini[1<<(2*minimizer_size)];
 // vector<Bucket> bucket_menus[1<<(2*subminimizer_size)];
 uint64_t nb_core(20);
@@ -390,6 +391,7 @@ int main(int argc, char** argv) {
 
 	cout << "\n\n\nI count " << argv[1] << endl;
 	cout << "Minimizer size:	" << minimizer_size << endl;
+	cout << "Kmer size:	" << k << endl;
 	// cout << "Number of bucket:	" << bucket_number.value() << endl;
 	auto start = std::chrono::system_clock::now();
 	// read_fasta_file_ab(argv[1]);
