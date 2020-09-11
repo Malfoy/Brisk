@@ -229,7 +229,7 @@ void count_line(string& line) {
 		//THE NEW mmer is a MINIMIZER
 		uint64_t new_hash = (hash64shift(min_canon));
 		if (new_hash < hash_mini) {
-			//~ cout << "New mini" << endl;
+			cout << "New mini" << endl;
 			// Clear the previous kmer list
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
@@ -243,17 +243,9 @@ void count_line(string& line) {
 			position_minimizer_in_kmer = relative_min_position = 0;
 			multiple_min                                       = false;
 		}
-		// duplicated MINIMIZER
-		else if (new_hash == hash_mini) {
-			//~ cout << "Duplicate mini" << endl;
-			multiple_min = true;
-			position_minimizer_in_kmer ++;
-			relative_min_position = -((int8_t)position_minimizer_in_kmer) - 1;
-			//~ cout<<relative_min_position<<endl;
-		}
 		//the previous MINIMIZER is outdated
-		else if (position_minimizer_in_kmer >= k - super_minimizer_size-1) {
-			//~ cout << "Outdated mini" << endl;
+		else if (position_minimizer_in_kmer > k - super_minimizer_size) {
+			cout << "Outdated mini" << endl;
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
@@ -268,9 +260,18 @@ void count_line(string& line) {
 				position_minimizer_in_kmer = relative_min_position;
 			}
 			hash_mini = hash64shift(abs(minimizer));
-		} else {
+		}
+		// duplicated MINIMIZER
+		else if (new_hash == hash_mini) {
+			cout << "Duplicate mini" << endl;
+			multiple_min = true;
+			position_minimizer_in_kmer ++;
+			relative_min_position = -((int8_t)position_minimizer_in_kmer) - 1;
+			//~ cout<<relative_min_position<<endl;
+		}
+		else {
 			//~ cout<<(int)position_minimizer_in_kmer<<" "<<(int)k - (int)super_minimizer_size-1<<endl;
-			// cout << "Nothing special" << endl;
+			cout << "Nothing special" << endl;
 			position_minimizer_in_kmer++;
 			if (multiple_min){
 				relative_min_position--;
