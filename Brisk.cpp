@@ -263,7 +263,7 @@ void count_line(string& line) {
 			minimizer    = get_minimizer(kmer_seq, relative_min_position);
 			multiple_min = (relative_min_position < 0);
 			if (multiple_min){
-				position_minimizer_in_kmer = (uint8_t)(-relative_min_position - 1);
+				position_minimizer_in_kmer = (uint8_t)(-relative_min_position );
 			}else{
 				position_minimizer_in_kmer = relative_min_position;
 			}
