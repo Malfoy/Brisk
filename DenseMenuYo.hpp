@@ -100,6 +100,21 @@ public:
 			}
 		}
 		if(check){
+			for (auto e:cursed_kmers) {
+				if(e.second!=0){
+					string canonstr(getCanonical(kmer2str(e.first,k)));
+					if(real_count.count(canonstr)==1){
+						cout<<"This is a kmer in cursed AND in the main index "<<canonstr<<endl;
+					}else if(real_count[canonstr]!=e.second){
+						cout<<"Error in cursed"<<endl;
+						cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+						counting_errors++;
+					}else{
+						cout<<"CURSED OK"<<endl;
+					}
+					real_count[canonstr]=0;
+				}
+			}
 			for (auto e:real_count) {
 				if(e.second!=0){
 					cout<<"I forgot	"<<e.first<<" "<<e.second<<endl;
