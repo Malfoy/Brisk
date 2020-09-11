@@ -271,7 +271,9 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 	if(check){
 		for (auto e:cursed_kmers) {
 			string canonstr(getCanonical(kmer2str(e.first,k)));
-			if(real_count[canonstr]!=e.second){
+			if(real_count.count(canonstr)==1){
+				cout<<"This is a kmer in cursed AND in the main index "<<canonstr<<endl;
+			}else if(real_count[canonstr]!=e.second){
 				cout<<"Error in cursed"<<endl;
 				cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
 				counting_errors++;
