@@ -14,7 +14,7 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
 	}
-	if(skml.size()-sorted_size>00000000000){
+	if(skml.size()-sorted_size>100000000000){
 		insert_buffer();
 	}
 	kmers.clear();
@@ -250,28 +250,37 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 	int count(0);
 	for(uint64_t isk(0);isk<skml.size();++isk){
 		string skm=skml[isk].get_string(mini);
-		//~ cout<<"superkmer:	"<<skm<<endl;
 		for (uint64_t i(0); i < skml[isk].size; ++i) {
 			result+=skm.substr(i,k)+'	'+to_string(values[skml[isk].indice_value+i])+'\n';
 			count+=values[skml[isk].indice_value+i];
 			if(check){
 				if(real_count[getCanonical(skm.substr(i,k))]!=(int)values[skml[isk].indice_value+i]){
-					if(real_count[getCanonical(skm.substr(i,k))]!=cursed_kmers[min(str2num(((skm.substr(i,k)))),str2num((revComp(skm.substr(i,k)))))]){
-						cout<<"skm:	"<<skm<<endl;
-						cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
-						cout << "minimizer " << mini << endl;
-						cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
-						cout<<"	instead of ";
-						cout<<(int)real_count[getCanonical(skm.substr(i,k))]<<endl;
-						cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]<<endl;
-						counting_errors++;
-					}
+					cout<<"skm:	"<<skm<<endl;
+					cout<<(int)values[skml[isk].indice_value+i]<<" "<<i+skml[isk].indice_value<<" "<<(int)skml[isk].size<<endl;
+					cout << "minimizer " << mini << endl;
+					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
+					cout<<"	instead of ";
+					cout<<(int)real_count[getCanonical(skm.substr(i,k))]<<endl;
+					cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]<<endl;
+					counting_errors++;
 				}
 				real_count[getCanonical(skm.substr(i,k))]=0;
 			}
 		}
 	}
-	//~ cout<<"COUNT PRINT KMERS:	"<<count<<endl;
+	if(check){
+		for (auto e:cursed_kmers) {
+			string canonstr(getCanonical(kmer2str(e.first,k)));
+			if(real_count[canonstr]!=e.second){
+				cout<<"Error in cursed"<<endl;
+				cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+				counting_errors++;
+			}else{
+				cout<<"CURSED OK"<<endl;
+			}
+			real_count[canonstr]=0;
+		}
+	}
 }
 
 
@@ -286,6 +295,16 @@ uint64_t Bucket::number_kmer()const{
 	uint64_t result(0);
 	for(uint64_t i(0);i<skml.size();++i){
 		result+=skml[i].size;
+	}
+	return result;
+}
+
+
+
+uint64_t Bucket::number_kmer_counted()const{
+	uint64_t result(0);
+	for(uint64_t i(0);i<values.size();++i){
+		result+=values[i];
 	}
 	return result;
 }

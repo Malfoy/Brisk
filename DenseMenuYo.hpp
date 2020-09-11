@@ -100,12 +100,12 @@ public:
 			}
 		}
 		if(check){
-			//~ for (auto e:real_count) {
-				//~ if(e.second!=0){
-					//~ cout<<"I forgot	"<<e.first<<" "<<e.second<<endl;
-					//~ counting_errors++;
-				//~ }
-			//~ }
+			for (auto e:real_count) {
+				if(e.second!=0){
+					cout<<"I forgot	"<<e.first<<" "<<e.second<<endl;
+					counting_errors++;
+				}
+			}
 			if(counting_errors!=0){
 				cout<< counting_errors<<"	errors"<<endl;
 			}else{
@@ -120,6 +120,7 @@ public:
 	void dump_stats(){
 		uint64_t total_super_kmers(0);
 		uint64_t total_kmers(0);
+		uint64_t total_kmers_counted(0);
 		uint64_t non_null_buckets(0);
 		uint64_t null_buckets(0);
 		uint64_t largest_bucket(0);
@@ -139,6 +140,7 @@ public:
 				// cout<<"lol2"<<endl;
 				// cout<<bucketList[i].size()<<endl;
 				total_kmers += bucketMatrix[mutex_idx][i].number_kmer();
+				total_kmers_counted += bucketMatrix[mutex_idx][i].number_kmer_counted();
 				// cout<<i<<"end"<<endl;
 			}else{
 				null_buckets++;
@@ -150,6 +152,7 @@ public:
 		cout << "#Superkmer:	" << intToString(total_super_kmers) << endl;
 		// cout << "#Superkmer2:	" << intToString(nb_superkmer) << endl;
 		cout << "#kmer:	" << intToString(total_kmers) << endl;
+		cout << "#kmer (Counted):	" << intToString(total_kmers_counted) << endl;
 		if(total_kmers!=0){
 			cout << "super_kmer per useful buckets*1000:	" << intToString(total_super_kmers * 1000 / non_null_buckets) << endl;
 			cout << "kmer per useful buckets*1000:	" << intToString(total_kmers * 1000 / non_null_buckets) << endl;
