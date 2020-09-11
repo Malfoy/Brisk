@@ -104,13 +104,17 @@ public:
 				if(e.second!=0){
 					string canonstr(getCanonical(kmer2str(e.first,k)));
 					if(real_count.count(canonstr)==1){
-						cout<<"This is a kmer in cursed AND in the main index "<<canonstr<<endl;
-					}else if(real_count[canonstr]!=e.second){
+						if(real_count[canonstr]==0){
+							cout<<"This is a kmer in cursed AND in the main index "<<endl;
+							cout<<canonstr<<" real "<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+						}
+					}
+					if(real_count[canonstr]!=e.second){
 						cout<<"Error in cursed"<<endl;
 						cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
 						counting_errors++;
 					}else{
-						cout<<"CURSED OK"<<endl;
+						//~ cout<<"CURSED OK"<<endl;
 					}
 					real_count[canonstr]=0;
 				}
