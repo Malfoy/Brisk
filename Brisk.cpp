@@ -199,7 +199,10 @@ void count_line(string& line) {
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
-		cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+		#pragma omp critical(cursed)
+		{
+			cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+		}
 		//~ cout<<"CURSED"<<endl;
 		//~ print_kmer(kmer_seq,31);cout<<endl;
 	} else {
@@ -229,7 +232,7 @@ void count_line(string& line) {
 		//THE NEW mmer is a MINIMIZER
 		uint64_t new_hash = (hash64shift(min_canon));
 		//the previous MINIMIZER is outdated
-		if (position_minimizer_in_kmer >= k - super_minimizer_size 	-1) {
+		if (position_minimizer_in_kmer >= (k - super_minimizer_size 	-1)) {
 			//~ cout << "Outdated mini" << endl;
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
@@ -282,7 +285,10 @@ void count_line(string& line) {
 
 		// TODO: Multi-minimizer process
 		if (multiple_min) {
-			cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+			#pragma omp critical(cursed)
+			{
+				cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
+			}
 			//~ cout<<"CURSED"<<endl;
 			//~ print_kmer((uint64_t)kmer_rc_seq,31);cout<<endl;
 		} else {
@@ -328,7 +334,7 @@ void read_fasta_file(const string& filename) {
 		nb_core = 1;
 	}
 	vector<string>  buffer;
-	//#pragma omp parallel num_threads(nb_core)
+	#pragma omp parallel num_threads(nb_core)
 	{
 		string line;
 		while (in.good() or  not buffer.empty()) {

@@ -182,7 +182,7 @@ public:
 			cout<<intToString(getMemorySelfMaxUsed()*1024*8/total_kmers)<<" Bits per kmer"<<endl;
 			cout<<intToString(getMemorySelfMaxUsed()*1024/total_super_kmers)<<" Bytes per superkmer"<<endl;
 			cout<<intToString(skm_total_size*1000/call_ad)<<" Real superkmer size"<<endl;
-			cout<<"Number of cursed kmer	"<<cursed_kmers.size()<<endl;
+			cout<<"Number of cursed kmer	"<<intToString(cursed_kmers.size())<<endl;
 			// for (auto& it: size_sk) {
 			// 	cout<<it.first<<" "<<intToString((uint64_t)it.second)<<endl;
 			// }
