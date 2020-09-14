@@ -192,7 +192,7 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	//~ cout<<" size: "<<(int)mockskm.size+(int)compacted_size<<" prefix size"<<prefix_size<<" suffix size"
 	//~ <<suffix_size<<endl;
 	//~ cout<<"size_interleave "<<size_interleave<<endl;
-	if(size_interleave>=2){
+	if(size_interleave>=4){
 		return find_kmer_from_interleave(kmer,mockskm);
 	}else{
 		//~ cout<<"noway"<<endl;

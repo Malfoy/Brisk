@@ -54,6 +54,8 @@ public:
 	#define matrix_position(row_idx, col_idx) (row_idx * matrix_column_number + col_idx)
 
 	void add_kmers(vector<kmer_full>& v,uint64_t minimizer){
+		// print_kmer(minimizer, minimizer_size);
+		// cout << " " << v.size() << endl;
 		#pragma omp critical
 		{
 			call_ad++;
