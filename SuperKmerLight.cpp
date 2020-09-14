@@ -250,6 +250,11 @@ int32_t SKCL::query_kmer_hash(const kmer_full& kmer)const {
 
 
 bool SKCL::compact_right(const kmer_full& kmf) {
+	size_t kmer_suffix_size = kmf.get_minimizer_idx();
+	size_t skm_suffix_size = this->suffix_size();
+	// Suffix sizes are not matching
+	if (kmer_suffix_size != skm_suffix_size+1)
+		return false;
 	
 	kint super_kmer_overlap(get_right_overlap());
 	kint kmer_overlap(kmf.get_compacted());

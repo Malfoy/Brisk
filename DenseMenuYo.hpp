@@ -60,27 +60,19 @@ public:
 			skm_total_size+=v.size();
 			size_sk[v.size()]++;
 		}
-		//~ cout << "add" << endl;
 		uint64_t mutex_idx = get_mutex(minimizer);
 		uint64_t column_idx = get_column(minimizer);
 		uint64_t matrix_idx = matrix_position(mutex_idx, column_idx);
 		omp_set_lock(&MutexWall[mutex_idx]);
-			uint32_t idx = indexes[matrix_idx];
-			//~ cout << idx << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
-			if (idx == 0) {
-				//~ cout << "new bucket" << endl;
-				bucketMatrix[mutex_idx].push_back(Bucket());
-				indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
-				idx = indexes[matrix_idx];
-				//~ cout << "/new bucket" << endl;
-			}
-			// else cout << "fill bucket" << endl;
-		//~ cout << "True add" << endl;
-		//~ cout << idx -1 << " " << (bucket_number/mutex_number) << " " << bucketMatrix[mutex_idx].size() << endl;
+		uint32_t idx = indexes[matrix_idx];
+		if (idx == 0) {
+			bucketMatrix[mutex_idx].push_back(Bucket());
+			indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
+			idx = indexes[matrix_idx];
+		}
 		bucketMatrix[mutex_idx][idx-1].add_kmers(v);
 		omp_unset_lock(&MutexWall[mutex_idx]);
 		v.clear();
-		//~ cout << "/add" << endl;
 	}
 
 

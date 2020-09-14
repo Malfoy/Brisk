@@ -9,7 +9,7 @@ using namespace std;
 
 
 const uint64_t k = 63;
-const uint64_t minimizer_size = 11;
+const uint64_t minimizer_size = 9;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+4);
 // 2*k - minimizer_size : Expected size of a superkmer
@@ -279,7 +279,7 @@ int64_t get_minimizer(kint seq, int8_t& min_position) {
 	uint64_t hash_mini = hash64shift(mmer);
 
 	// Update values regarding the minimizer
-	bool multiple_mini = false;
+	// bool multiple_mini = false;
 	bool reversed=(mini!=fwd_mini);
 	min_position = 0;
 	// uint8_t max_prefix = reversed ? k - super_minimizer_size : 0;
@@ -304,9 +304,9 @@ int64_t get_minimizer(kint seq, int8_t& min_position) {
 			reversed=(mini!=fwd_mini);
 			// max_prefix = reversed ? k - super_minimizer_size - i : i;			
 			hash_mini = hash;
-			multiple_mini = false;
+			// multiple_mini = false;
 		} else if (hash_mini == hash) {
-			multiple_mini = true;
+			// multiple_mini = true;
 
 			min_position = i;
 			reversed=(mini!=fwd_mini);

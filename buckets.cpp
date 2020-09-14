@@ -9,7 +9,7 @@ using namespace std;
 
 
 void  Bucket::add_kmers(vector<kmer_full>& kmers){
-	//~ cout<<"ADD KMERS:	"<<kmers.size()<<endl;
+	// cout<<"ADD KMERS:	"<<kmers.size()<<endl;
 	if(kmers.empty()){return;}
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
@@ -50,7 +50,6 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
-					//~ cout<<"inserted unsorted"<<endl;
 					kmers[ik].minimizer_idx=69;
 				}else{
 				}
@@ -59,7 +58,8 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 	}
 	//HERE WE CREATE NEW SUPERKMERS (OR ellongate THEM)
 	if(inserted!=kmers.size()){
-		//~ cout<<"NEW superkmers"<<endl;
+		// cout << endl;
+		// cout<<"NEW superkmers"<<endl;
 		//FOREACH KMER
 		for (uint64_t ik = 0; ik < kmers.size(); ++ik) {
 			kmer_full& kmer = kmers[ik];
@@ -82,7 +82,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
-						//~ cout<<"inserted unsorted2"<<endl;
+						// cout <<"inserted unsorted2"<<endl;
 						break;
 					}else{
 					}
@@ -91,7 +91,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if(skml.size()==skml.capacity()){
 						skml.reserve(skml.capacity()*1.5);
 					}
-					//~ cout<<"le push"<<endl;
+					// cout<<"le push"<<endl;
 					//~ print_kmer(kmer.get_compacted(),31);cout<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
 					//~ cout<<"print all after constructor"<<endl;

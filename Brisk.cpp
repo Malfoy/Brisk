@@ -190,6 +190,10 @@ void count_line(string& line) {
 	int64_t minimizer = get_minimizer(kmer_seq, relative_min_position);
 	bool multiple_min  = relative_min_position < 0;
 
+	// cout << "is multiple " << multiple_min << endl;
+	// print_kmer(minimizer, super_minimizer_size);
+	// cout << endl;
+
 	uint8_t position_minimizer_in_kmer;
 	
 	if (minimizer<0){
@@ -204,7 +208,7 @@ void count_line(string& line) {
 		{
 			cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
 		}
-		//~ cout<<"CURSED"<<endl;
+		// cout<<"CURSED"<<endl;
 		//~ print_kmer(kmer_seq,31);cout<<endl;
 	} else {
 		if(minimizer<0){
@@ -251,19 +255,27 @@ void count_line(string& line) {
 			hash_mini = hash64shift(abs(minimizer));
 		}
 		else if (new_hash < hash_mini) {
-			//~ cout << "New mini" << endl;
+			// cout << "New mini" << endl;
+			// print_kmer(min_canon, super_minimizer_size);
+			// cout << endl;
+			// print_kmer(min_seq, super_minimizer_size);
+			// cout << endl;
+
 			// Clear the previous kmer list
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
 			}
 			menu.add_kmers(kmers,minimizer/256);
+
 			// Create the new minimizer
 			minimizer                  = (min_canon);
-			if(min_canon!=min_seq){minimizer*=-1;}
 			hash_mini                  = new_hash;
-			position_minimizer_in_kmer = relative_min_position = 0;
 			multiple_min                                       = false;
+			position_minimizer_in_kmer = relative_min_position = 0;
+			if(min_canon!=min_seq){
+				minimizer*=-1;
+			}
 		}
 		// duplicated MINIMIZER
 		else if (new_hash == hash_mini) {
