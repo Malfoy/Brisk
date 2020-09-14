@@ -166,7 +166,7 @@ string SKCL::get_string(const string& mini)const {
 kint SKCL::get_ith_kmer(uint ind)const{
 	kint result(0);
 	
-	int skm_nuc(compacted_size+size-1);
+	//~ int skm_nuc(compacted_size+size-1);
 	//~ cout<<"ind:	"<<ind<<endl;
 	int start (which_byte(compacted_size+ind-1));
 	//~ cout<<"start:	"<<start<<endl;

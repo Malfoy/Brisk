@@ -200,7 +200,7 @@ uint64_t rcb(const uint64_t& in) {
 	res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
 	res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 	// Realign to the right
-	res >>= 64 - 2 * k;
+	res >>= (64 - 2 * k);
 	return res;
 }
 

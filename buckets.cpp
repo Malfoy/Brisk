@@ -96,7 +96,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
 					//~ cout<<"print all after constructor"<<endl;
 					//~ skml[skml.size()-1].print_all();
-					kint super_kmer_overlap(skml[skml.size()-1].get_right_overlap());
+					//~ kint super_kmer_overlap(skml[skml.size()-1].get_right_overlap());
 					//~ print_kmer(super_kmer_overlap,31);cout<<endl;
 					if(values.capacity()==values.size()){
 						values.reserve(values.size()*1.5);
@@ -123,7 +123,7 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 	}
 	//~ cout<<"add kmer sorted"<<endl;
 	//OPTIMIZATION POSSIBLE HERE?
-	int insert(0);
+	uint64_t insert(0);
 	for (uint64_t iikk = 0; iikk < kmers.size(); ++iikk) {
 		if(find_kmer(kmers[iikk])){
 			kmers[iikk].minimizer_idx=69;
@@ -200,16 +200,16 @@ bool Bucket::find_kmer(kmer_full& kmer){
 		if(suffix_size>prefix_size){
 			//SUFFIX IS LARGER PREFIX IS MISSING
 			if(size_interleave==2){
-				for(uint i(0);i<4;++i){
+				for(uint64_t i(0);i<4;++i){
 					mockskm.interleaved+=i<<56;
 					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
 					mockskm.interleaved-=i<<56;
 				}
 			}
 			if(size_interleave==0){
-				for(uint ii(0);ii<4;++ii){
+				for(uint64_t ii(0);ii<4;++ii){
 					mockskm.interleaved+=ii<<60;
-					for(uint i(0);i<4;++i){
+					for(uint64_t i(0);i<4;++i){
 						mockskm.interleaved+=i<<56;
 						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
 						mockskm.interleaved-=i<<56;
@@ -220,16 +220,16 @@ bool Bucket::find_kmer(kmer_full& kmer){
 		}else{
 			//PREFIX IS LARGER, SUFFIX IS MISSING
 			if(size_interleave==2){
-				for(uint i(0);i<4;++i){
+				for(uint64_t i(0);i<4;++i){
 					mockskm.interleaved+=i<<58;
 					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
 					mockskm.interleaved-=i<<58;
 				}
 			}
 			if(size_interleave==0){
-				for(uint ii(0);ii<4;++ii){
+				for(uint64_t ii(0);ii<4;++ii){
 					mockskm.interleaved+=ii<<62;
-					for(uint i(0);i<4;++i){
+					for(uint64_t i(0);i<4;++i){
 						mockskm.interleaved+=i<<58;
 						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
 						mockskm.interleaved-=i<<58;
