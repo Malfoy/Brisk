@@ -108,33 +108,27 @@ uint64_t SKCL::interleaved_value()const{
 
 
 uint64_t SKCL::interleaved_value_max()const {
-	uint64_t value = -1;
+	uint64_t value = interleaved;
+	//~ cout<<get_string("	")<<endl;
+	//~ cout<<suffix_size()<<" "<<prefix_size()<<endl;
+	//~ print_kmer(interleaved,32);cout<<endl;
+	
 	// Suffix interleaved
-	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
-	for (uint8_t i=0 ; i<max_suffix ; i++) {
-		uint8_t nucl_position = nb_nucl() - minimizer_idx + i;
-		// Get the value of the nucleotide at the position
-		int64_t nucl_value =3- get_nucleotide(nucl_position);
-		// shift the value to the right place
-		nucl_value <<= 62 - i*4;
-		// Add the nucleotide to the interleaved
-		value -= nucl_value;
+	for (uint64_t i=max(suffix_size(),(uint)3) ; i<8 ; i++) {
+		value += ((uint64_t)3<<(62-4*i));
 	}
+	//~ print_kmer(value,32);cout<<endl;
 
-
+	//~ cout<<"PREFIX"<<endl;
 	// prefix interleaved
-	uint8_t max_prefix = min((uint)8,prefix_size());
-	for (uint8_t i=0 ; i<max_prefix ; i++) {
-		// Get the nucleotide position
-		uint8_t nucl_position = nb_nucl() - minimizer_idx - i - 1;
-		// Get the value of the nucleotide at the position
-		int64_t nucl_value = 3-get_nucleotide(nucl_position);
-		// shift the value to the right place
-		nucl_value <<= 60 - i*4;
-		// Add the nucleotide to the interleaved
-		value -= nucl_value;
+	for (uint64_t i=max(prefix_size(),(uint)3) ; i<8 ; i++) {
+		//~ cout<<i<<" "<<(60-4*i)<<endl;
+		value += ((uint64_t)3<<(60-4*i));
+		//~ print_kmer(value,32);cout<<endl;
 	}
+	//~ print_kmer(value,32);cout<<endl;
 
+	//~ cin.get();
 	return value;
 }
 

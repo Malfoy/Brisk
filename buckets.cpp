@@ -9,7 +9,7 @@ using namespace std;
 
 
 void  Bucket::add_kmers(vector<kmer_full>& kmers){
-	// cout<<"ADD KMERS:	"<<kmers.size()<<endl;
+	//~ cout<<"ADD KMERS:	"<<kmers.size()<<endl;
 	if(kmers.empty()){return;}
 	if(not add_kmers_sorted(kmers)){
 		add_kmers_buffer(kmers);
@@ -24,7 +24,6 @@ void  Bucket::add_kmers(vector<kmer_full>& kmers){
 
 void Bucket::insert_buffer(){
 	for(auto it(skml.begin()+sorted_size);it<skml.end();++it){
-		// cout << "mini_idx " << (uint)it->minimizer_idx << endl;
 		it->interleaved=it->interleaved_value();
 	}
 	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;});
@@ -35,7 +34,6 @@ void Bucket::insert_buffer(){
 
 
 void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
-	//~ cout<<"add kmer buffer"<<endl;
 	uint64_t inserted(0);
 	uint64_t buffsize(skml.size());
 	//HERE IF CHECK IF THE KMER ARE IN THE UNSORTED BUFFER
@@ -50,6 +48,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 				if (indice_v!=-1) {
 					values[indice_v]++;
 					++inserted;
+					//~ cout<<"inserted unsorted"<<endl;
 					kmers[ik].minimizer_idx=69;
 				}else{
 				}
@@ -58,8 +57,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 	}
 	//HERE WE CREATE NEW SUPERKMERS (OR ellongate THEM)
 	if(inserted!=kmers.size()){
-		// cout << endl;
-		// cout<<"NEW superkmers"<<endl;
+		//~ cout<<"NEW superkmers"<<endl;
 		//FOREACH KMER
 		for (uint64_t ik = 0; ik < kmers.size(); ++ik) {
 			kmer_full& kmer = kmers[ik];
@@ -82,7 +80,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if (indice_v!=-1) {
 						values[indice_v]++;
 						isinserted=true;
-						// cout <<"inserted unsorted2"<<endl;
+						//~ cout<<"inserted unsorted2"<<endl;
 						break;
 					}else{
 					}
@@ -91,7 +89,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					if(skml.size()==skml.capacity()){
 						skml.reserve(skml.capacity()*1.5);
 					}
-					// cout<<"le push"<<endl;
+					//~ cout<<"le push"<<endl;
 					//~ print_kmer(kmer.get_compacted(),31);cout<<endl;
 					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
 					//~ cout<<"print all after constructor"<<endl;
@@ -140,11 +138,8 @@ bool  Bucket::add_kmers_sorted( vector<kmer_full>& kmers	){
 
 
 bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
-	//~ cout<<"find_kmer_from_interleave"<<endl;
-	//~ return false;
 	uint64_t low=lower_bound(skml.begin(), skml.begin()+sorted_size,mockskm,[ ]( const SKCL& lhs, const SKCL& rhs ){return lhs.interleaved < rhs.interleaved;}) - skml.begin();
-	// low=0;
-	//~ cout<<low<<endl;
+	uint64_t value_max(mockskm.interleaved_value_max());
 	while (low<(uint64_t)sorted_size) {
 		//~ cout<<(int)kmer.minimizer_idx<<endl;
 		//~ print_kmer(mockskm.interleaved,32);
@@ -153,7 +148,7 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 		//~ cout<<endl;
 		
 		//~ cin.get();
-		if(skml[low].interleaved>mockskm.interleaved_value_max()){
+		if(skml[low].interleaved>value_max){
 			return false;
 		}
 		int32_t indice_v(skml[low].query_kmer_hash(kmer));
@@ -169,14 +164,6 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 
 
 bool Bucket::find_kmer(kmer_full& kmer){
-	//~ cout<<"find_kmer"<<endl;
-	//~ cout<<"THIS IS MOCK SM"<<endl;
-	//~ cout<<"KMER"<<endl;
-	//~ print_kmer(kmer.kmer_s,31);
-	//~ cout<<endl;
-	//~ print_kmer(kmer.get_compacted(),31-8);
-	//~ cout<<endl;
-	//~ cout<<(int)kmer.minimizer_idx<<endl;
 
 	SKCL mockskm(kmer.get_compacted(), kmer.get_minimizer_idx(),0);
 	//~ cout<<mockskm.get_string("	mini	")<<endl;
@@ -186,55 +173,88 @@ bool Bucket::find_kmer(kmer_full& kmer){
 	//~ print_kmer(mockskm.interleaved,32);
 	//~ cout<<endl;
 	
-	uint prefix_size(mockskm.minimizer_idx);
-	uint suffix_size((int)mockskm.size+(int)compacted_size-(int)mockskm.minimizer_idx);
+	uint prefix_size(mockskm.prefix_size());
+	uint suffix_size(mockskm.suffix_size());
 	uint size_interleave(min(prefix_size,suffix_size)*2);
 	//~ cout<<" size: "<<(int)mockskm.size+(int)compacted_size<<" prefix size"<<prefix_size<<" suffix size"
 	//~ <<suffix_size<<endl;
 	//~ cout<<"size_interleave "<<size_interleave<<endl;
-	if(size_interleave>=2){
+	if(size_interleave>=6){
 		return find_kmer_from_interleave(kmer,mockskm);
 	}else{
 		//~ cout<<"noway"<<endl;
 		//~ cin.get();
 		if(suffix_size>prefix_size){
 			//SUFFIX IS LARGER PREFIX IS MISSING
-			if(size_interleave==2){
+			if(size_interleave==4){
+				//~ cout<<"2 prefix"<<endl;
 				for(uint64_t i(0);i<4;++i){
-					mockskm.interleaved+=i<<56;
+					mockskm.interleaved+=i<<52;
 					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
-					mockskm.interleaved-=i<<56;
+					mockskm.interleaved-=i<<52;
+				}
+			}
+			if(size_interleave==2){
+				//~ cout<<"1 prefix"<<endl;
+				for(uint64_t ii(0);ii<4;++ii){
+					mockskm.interleaved+=ii<<56;
+					for(uint64_t i(0);i<4;++i){
+						mockskm.interleaved+=i<<52;
+						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+						mockskm.interleaved-=i<<52;
+					}
+					mockskm.interleaved-=ii<<56;
 				}
 			}
 			if(size_interleave==0){
-				for(uint64_t ii(0);ii<4;++ii){
-					mockskm.interleaved+=ii<<60;
-					for(uint64_t i(0);i<4;++i){
-						mockskm.interleaved+=i<<56;
-						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
-						mockskm.interleaved-=i<<56;
+				//~ cout<<"0 prefix"<<endl;
+				for(uint64_t iii(0);iii<4;++iii){
+					mockskm.interleaved+=iii<<60;
+					for(uint64_t ii(0);ii<4;++ii){
+						mockskm.interleaved+=ii<<56;
+						for(uint64_t i(0);i<4;++i){
+							mockskm.interleaved+=i<<52;
+							if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+							mockskm.interleaved-=i<<52;
+						}
+						mockskm.interleaved-=ii<<56;
 					}
-					mockskm.interleaved-=ii<<60;
+					mockskm.interleaved-=iii<<60;
 				}
 			}
 		}else{
 			//PREFIX IS LARGER, SUFFIX IS MISSING
-			if(size_interleave==2){
+			if(size_interleave==4){
 				for(uint64_t i(0);i<4;++i){
-					mockskm.interleaved+=i<<58;
+					mockskm.interleaved+=i<<54;
 					if(find_kmer_from_interleave(kmer,mockskm)){return true;}
-					mockskm.interleaved-=i<<58;
+					mockskm.interleaved-=i<<54;
+				}
+			}
+			if(size_interleave==2){
+				for(uint64_t ii(0);ii<4;++ii){
+					mockskm.interleaved+=ii<<58;
+					for(uint64_t i(0);i<4;++i){
+						mockskm.interleaved+=i<<54;
+						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+						mockskm.interleaved-=i<<54;
+					}
+					mockskm.interleaved-=ii<<58;
 				}
 			}
 			if(size_interleave==0){
-				for(uint64_t ii(0);ii<4;++ii){
-					mockskm.interleaved+=ii<<62;
-					for(uint64_t i(0);i<4;++i){
-						mockskm.interleaved+=i<<58;
-						if(find_kmer_from_interleave(kmer,mockskm)){return true;}
-						mockskm.interleaved-=i<<58;
+				for(uint64_t iii(0);iii<4;++iii){
+					mockskm.interleaved+=iii<<62;
+					for(uint64_t ii(0);ii<4;++ii){
+						mockskm.interleaved+=ii<<58;
+						for(uint64_t i(0);i<4;++i){
+							mockskm.interleaved+=i<<54;
+							if(find_kmer_from_interleave(kmer,mockskm)){return true;}
+							mockskm.interleaved-=i<<54;
+						}
+						mockskm.interleaved-=ii<<58;
 					}
-					mockskm.interleaved-=ii<<62;
+					mockskm.interleaved-=iii<<62;
 				}
 			}
 		}
