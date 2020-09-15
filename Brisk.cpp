@@ -215,10 +215,10 @@ void count_line(string& line) {
 		//~ print_kmer(kmer_seq,31);cout<<endl;
 	} else {
 		if(minimizer<0){
-			kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
+			kmers.push_back({k-relative_min_position-super_minimizer_size+2, kmer_rc_seq});
 		}else{
 			if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
-				kmers.push_back({relative_min_position+4, kmer_seq});
+				kmers.push_back({relative_min_position+2, kmer_seq});
 			}
 		}
 	}
@@ -249,7 +249,7 @@ void count_line(string& line) {
 			}
 			// print_kmer(minimizer, super_minimizer_size);
 			// cout << " outdated minimizer" << endl;
-			menu.add_kmers(kmers,minimizer/256);
+			menu.add_kmers(kmers,minimizer/16);
 			// Search for the new MINIMIZER in the whole kmer
 			minimizer    = get_minimizer(kmer_seq, relative_min_position);
 			multiple_min = (relative_min_position < 0);
@@ -274,7 +274,7 @@ void count_line(string& line) {
 			}
 			// print_kmer(minimizer, super_minimizer_size);
 			// cout << " new hash" << endl;
-			menu.add_kmers(kmers,minimizer/256);
+			menu.add_kmers(kmers,minimizer/16);
 
 			// Create the new minimizer
 			minimizer                  = (min_canon);
@@ -315,12 +315,12 @@ void count_line(string& line) {
 		} else {
 			// Normal add of the kmer into kmer list
 			if(minimizer<0){
-				int8_t val = ((int8_t)k) - ((int8_t)relative_min_position) - ((int8_t)super_minimizer_size) + 4;
+				int8_t val = ((int8_t)k) - ((int8_t)relative_min_position) - ((int8_t)super_minimizer_size) + 2;
 				// kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
 				kmers.push_back({val, kmer_rc_seq});
 			}else{
 				if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
-					kmers.push_back({relative_min_position+4, kmer_seq});
+					kmers.push_back({relative_min_position+2, kmer_seq});
 				}
 			}
 		}
@@ -334,7 +334,7 @@ void count_line(string& line) {
 	}
 	// print_kmer(minimizer, super_minimizer_size);
 	// cout << " end read" << endl;
-	menu.add_kmers(kmers,minimizer/256);
+	menu.add_kmers(kmers,minimizer/16);
 	//~ menu.dump_counting();
 }
 
