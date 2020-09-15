@@ -194,13 +194,16 @@ void count_line(string& line) {
 	// print_kmer(minimizer, super_minimizer_size);
 	// cout << endl;
 
+	// cout << "relative " << (int)relative_min_position << endl;
 	uint8_t position_minimizer_in_kmer;
 	
-	if (minimizer<0){
+	if (multiple_min){
 		position_minimizer_in_kmer = (uint8_t)(-relative_min_position - 1);
 	}else{
 		position_minimizer_in_kmer = relative_min_position;
 	}
+
+	// cout << "absolute " << (uint)position_minimizer_in_kmer << endl;
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
@@ -237,18 +240,21 @@ void count_line(string& line) {
 		//THE NEW mmer is a MINIMIZER
 		uint64_t new_hash = (hash64shift(min_canon));
 		//the previous MINIMIZER is outdated
-		if (position_minimizer_in_kmer >= (k - super_minimizer_size 	-1)) {
+		// cout << (int)position_minimizer_in_kmer << " " << multiple_min << " " << k << " " << super_minimizer_size << endl;
+		if (position_minimizer_in_kmer >= (k - super_minimizer_size)) {
 			//~ cout << "Outdated mini" << endl;
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
 			}
+			// print_kmer(minimizer, super_minimizer_size);
+			// cout << " outdated minimizer" << endl;
 			menu.add_kmers(kmers,minimizer/256);
 			// Search for the new MINIMIZER in the whole kmer
 			minimizer    = get_minimizer(kmer_seq, relative_min_position);
 			multiple_min = (relative_min_position < 0);
 			if (multiple_min){
-				position_minimizer_in_kmer = (uint8_t)(-relative_min_position );
+				position_minimizer_in_kmer = (uint8_t)(-relative_min_position-1);
 			}else{
 				position_minimizer_in_kmer = relative_min_position;
 			}
@@ -266,6 +272,8 @@ void count_line(string& line) {
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
 			}
+			// print_kmer(minimizer, super_minimizer_size);
+			// cout << " new hash" << endl;
 			menu.add_kmers(kmers,minimizer/256);
 
 			// Create the new minimizer
@@ -324,6 +332,8 @@ void count_line(string& line) {
 		reverse(kmers.begin(),kmers.end());
 		minimizer*=-1;
 	}
+	// print_kmer(minimizer, super_minimizer_size);
+	// cout << " end read" << endl;
 	menu.add_kmers(kmers,minimizer/256);
 	//~ menu.dump_counting();
 }
