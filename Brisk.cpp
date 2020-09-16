@@ -34,13 +34,9 @@ using namespace std;
 
 
 DenseMenuYo menu(minimizer_size);
-// SparseMenu menu(minimizer_size);
 uint64_t line_count(0);
 Pow2<kint> offsetUpdateAnchor(2 * k);
 const Pow2<uint64_t> offsetUpdateAnchorMin(2 * super_minimizer_size);
-
-// uint16_t abundance_mini[1<<(2*minimizer_size)];
-// vector<Bucket> bucket_menus[1<<(2*subminimizer_size)];
 uint64_t nb_core(20);
 
 
@@ -175,13 +171,11 @@ void clean(string& str){
 
 
 void count_line(string& line) {
-	//~ cout<<"COUNT LINE"<<endl;
 	if (line.size() < k) {
 		return;
 	}
 	clean(line);
 	vector<kmer_full> kmers;
-	//~ cout<<"count line"<<endl;
 	// Init Sequences
 	kint kmer_seq = (str2num(line.substr(0, k))), kmer_rc_seq(rcb(kmer_seq));
 	uint64_t min_seq  = (uint64_t)(str2num(line.substr(k - super_minimizer_size, super_minimizer_size))), min_rcseq(rcbc(min_seq, super_minimizer_size)), min_canon(min(min_seq, min_rcseq));
@@ -189,12 +183,6 @@ void count_line(string& line) {
 	int8_t relative_min_position;
 	int64_t minimizer = get_minimizer(kmer_seq, relative_min_position);
 	bool multiple_min  = relative_min_position < 0;
-
-	// cout << "is multiple " << multiple_min << endl;
-	// print_kmer(minimizer, super_minimizer_size);
-	// cout << endl;
-
-	// cout << "relative " << (int)relative_min_position << endl;
 	uint8_t position_minimizer_in_kmer;
 	
 	if (multiple_min){
@@ -203,19 +191,17 @@ void count_line(string& line) {
 		position_minimizer_in_kmer = relative_min_position;
 	}
 
-	// cout << "absolute " << (uint)position_minimizer_in_kmer << endl;
-
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
 		kint canon(min(kmer_rc_seq,kmer_seq));
 		mutex_cursed[canon%1024].lock();
-		cursed_kmers[canon%1014][canon]++;
+		cursed_kmers[canon%1024][canon]++;
 		mutex_cursed[canon%1024].unlock();
 	} else {
 		if(minimizer<0){
 			kmers.push_back({k-relative_min_position-super_minimizer_size+2, kmer_rc_seq});
 		}else{
-			if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
+			if(kmer_seq!=0){
 				kmers.push_back({relative_min_position+2, kmer_seq});
 			}
 		}
@@ -238,15 +224,11 @@ void count_line(string& line) {
 		//THE NEW mmer is a MINIMIZER
 		uint64_t new_hash = (hash64shift(min_canon));
 		//the previous MINIMIZER is outdated
-		// cout << (int)position_minimizer_in_kmer << " " << multiple_min << " " << k << " " << super_minimizer_size << endl;
 		if (position_minimizer_in_kmer >= (k - super_minimizer_size)) {
-			//~ cout << "Outdated mini" << endl;
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
 			}
-			// print_kmer(minimizer, super_minimizer_size);
-			// cout << " outdated minimizer" << endl;
 			menu.add_kmers(kmers,minimizer/16);
 			// Search for the new MINIMIZER in the whole kmer
 			minimizer    = get_minimizer(kmer_seq, relative_min_position);
@@ -259,19 +241,11 @@ void count_line(string& line) {
 			hash_mini = hash64shift(abs(minimizer));
 		}
 		else if (new_hash < hash_mini) {
-			// cout << "New mini" << endl;
-			// print_kmer(min_canon, super_minimizer_size);
-			// cout << endl;
-			// print_kmer(min_seq, super_minimizer_size);
-			// cout << endl;
-
 			// Clear the previous kmer list
 			if(minimizer<0){
 				reverse(kmers.begin(),kmers.end());
 				minimizer*=-1;
 			}
-			// print_kmer(minimizer, super_minimizer_size);
-			// cout << " new hash" << endl;
 			menu.add_kmers(kmers,minimizer/16);
 
 			// Create the new minimizer
@@ -285,15 +259,11 @@ void count_line(string& line) {
 		}
 		// duplicated MINIMIZER
 		else if (new_hash == hash_mini) {
-			//~ cout << "Duplicate mini" << endl;
 			multiple_min = true;
 			position_minimizer_in_kmer ++;
 			relative_min_position = -((int8_t)position_minimizer_in_kmer) - 1;
-			//~ cout<<relative_min_position<<endl;
 		}
 		else {
-			//~ cout<<(int)position_minimizer_in_kmer<<" "<<(int)k - (int)super_minimizer_size-1<<endl;
-			//~ cout << "Nothing special" << endl;
 			position_minimizer_in_kmer++;
 			if (multiple_min){
 				relative_min_position--;
@@ -302,17 +272,15 @@ void count_line(string& line) {
 			}
 		}
 
-		// TODO: Multi-minimizer process
 		if (multiple_min) {
 			kint canon(min(kmer_rc_seq,kmer_seq));
 			mutex_cursed[canon%1024].lock();
-			cursed_kmers[canon%1014][canon]++;
+			cursed_kmers[canon%1024][canon]++;
 			mutex_cursed[canon%1024].unlock();
 		} else {
 			// Normal add of the kmer into kmer list
 			if(minimizer<0){
 				int8_t val = ((int8_t)k) - ((int8_t)relative_min_position) - ((int8_t)super_minimizer_size) + 2;
-				// kmers.push_back({k-relative_min_position-super_minimizer_size+4, kmer_rc_seq});
 				kmers.push_back({val, kmer_rc_seq});
 			}else{
 				if(kmer_seq!=0){//PUT COMPLEXITY THESHOLD
@@ -328,10 +296,7 @@ void count_line(string& line) {
 		reverse(kmers.begin(),kmers.end());
 		minimizer*=-1;
 	}
-	// print_kmer(minimizer, super_minimizer_size);
-	// cout << " end read" << endl;
 	menu.add_kmers(kmers,minimizer/16);
-	//~ menu.dump_counting();
 }
 
 
@@ -380,7 +345,6 @@ void read_fasta_file(const string& filename) {
 }
 
 
-	#include <bitset>
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
@@ -399,13 +363,6 @@ int main(int argc, char** argv) {
 		check = true;
 		cout << "LETS CHECK THE RESULTS" << endl;
 	}
-
-	// SKCL skcl(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFul, 0, 0);
-	// cout << skcl.interleaved_value() << endl;
-	// bitset<64> x(skcl.interleaved_value());
-	// cout << x << endl;
-	// return 0;
-
 
 	cout << "\n\n\nI count " << argv[1] << endl;
 	cout << "Minimizer size:	" << minimizer_size << endl;
@@ -426,7 +383,6 @@ int main(int argc, char** argv) {
 	if (mode % 2 == 0) {
 		cout<<menu.dump_counting()<<" errors"<<endl;;
 	}
-	// cout<<"DUMP COUNTING DONE"<<endl;
 	menu.dump_stats();
 	exit(0);
 }

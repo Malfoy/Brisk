@@ -8,7 +8,6 @@
 #define BUCKETS_H
 
 
-//TODO CHANGE VECTOR of STruct TO Struct of vector
 class Bucket{
 public:
 	vector<SKCL> skml;
@@ -22,8 +21,8 @@ public:
 	void print_kmers(string& result,const  string& mini)const ;
 	uint64_t size()const;
 	uint64_t number_kmer()const;
-	bool  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm);
-	bool find_kmer(kmer_full& kmer);
+	uint  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm,vector<kmer_full>& kmers);
+	uint find_kmer(kmer_full& kmer, vector<kmer_full>& v);
 	uint64_t number_kmer_counted()const;
 	Bucket(){sorted_size=0;}
 };
