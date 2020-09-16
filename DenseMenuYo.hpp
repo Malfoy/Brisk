@@ -3,7 +3,6 @@
 #include <cstring>
 #include <map>
 #include "Kmers.hpp"
-#include "SuperKmerCount.hpp"
 #include "buckets.hpp"
 #include <omp.h>
 #include <vector>

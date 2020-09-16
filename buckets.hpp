@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdint>
 #include "Kmers.hpp"
-#include "SuperKmerCount.hpp"
 
 
 
