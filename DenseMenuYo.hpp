@@ -94,23 +94,25 @@ public:
 			}
 		}
 		if(check){
-			for (auto e:cursed_kmers) {
-				if(e.second!=0){
-					string canonstr(getCanonical(kmer2str(e.first,k)));
-					if(real_count.count(canonstr)==1){
-						if(real_count[canonstr]==0){
-							cout<<"This is a kmer in cursed AND in the main index "<<endl;
-							cout<<canonstr<<" real "<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+			for(int i(0);i<1024;++i){
+				for (auto e:cursed_kmers[i]) {
+					if(e.second!=0){
+						string canonstr(getCanonical(kmer2str(e.first,k)));
+						if(real_count.count(canonstr)==1){
+							if(real_count[canonstr]==0){
+								cout<<"This is a kmer in cursed AND in the main index "<<endl;
+								cout<<canonstr<<" real "<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+							}
 						}
+						if(real_count[canonstr]!=e.second){
+							cout<<"Error in cursed"<<endl;
+							cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
+							counting_errors++;
+						}else{
+							//~ cout<<"CURSED OK"<<endl;
+						}
+						real_count[canonstr]=0;
 					}
-					if(real_count[canonstr]!=e.second){
-						cout<<"Error in cursed"<<endl;
-						cout<<canonstr<<" real"<<(int)real_count[canonstr]<<" estimated:	"<<(int)e.second<<endl;
-						counting_errors++;
-					}else{
-						//~ cout<<"CURSED OK"<<endl;
-					}
-					real_count[canonstr]=0;
 				}
 			}
 			for (auto e:real_count) {
@@ -176,7 +178,11 @@ public:
 			cout<<intToString(getMemorySelfMaxUsed()*1024*8/total_kmers)<<" Bits per kmer"<<endl;
 			cout<<intToString(getMemorySelfMaxUsed()*1024/total_super_kmers)<<" Bytes per superkmer"<<endl;
 			cout<<intToString(skm_total_size*1000/call_ad)<<" Real superkmer size"<<endl;
-			cout<<"Number of cursed kmer	"<<intToString(cursed_kmers.size())<<endl;
+			uint64_t cursed_kmers_toal(0);
+			for(int i(0);i<1024;++i){
+				cursed_kmers_toal+=cursed_kmers[i].size();
+			}
+			cout<<"Number of cursed kmer	"<<intToString(cursed_kmers_toal)<<endl;
 			// for (auto& it: size_sk) {
 			// 	cout<<it.first<<" "<<intToString((uint64_t)it.second)<<endl;
 			// }

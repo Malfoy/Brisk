@@ -281,7 +281,7 @@ void  Bucket::print_kmers(string& result,const  string& mini)const {
 					cout<<skm.substr(i,k)<<" "<<to_string(values[skml[isk].indice_value+i]);
 					cout<<"	instead of ";
 					cout<<(int)real_count[getCanonical(skm.substr(i,k))]<<endl;
-					cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))]<<endl;
+					cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))/1024][str2num(getCanonical((skm.substr(i,k))))]<<endl;
 					counting_errors++;
 				}
 				real_count[getCanonical(skm.substr(i,k))]=0;

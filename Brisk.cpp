@@ -207,12 +207,10 @@ void count_line(string& line) {
 
 	uint64_t hash_mini = hash64shift(abs(minimizer));
 	if (multiple_min) {
-		#pragma omp critical(cursed)
-		{
-			cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
-		}
-		// cout<<"CURSED"<<endl;
-		//~ print_kmer(kmer_seq,31);cout<<endl;
+		kint canon(min(kmer_rc_seq,kmer_seq));
+		mutex_cursed[canon%1024].lock();
+		cursed_kmers[canon%1014][canon]++;
+		mutex_cursed[canon%1024].unlock();
 	} else {
 		if(minimizer<0){
 			kmers.push_back({k-relative_min_position-super_minimizer_size+2, kmer_rc_seq});
@@ -306,12 +304,10 @@ void count_line(string& line) {
 
 		// TODO: Multi-minimizer process
 		if (multiple_min) {
-			#pragma omp critical(cursed)
-			{
-				cursed_kmers[min(kmer_rc_seq,kmer_seq)]++;
-			}
-			//~ cout<<"CURSED"<<endl;
-			//~ print_kmer((uint64_t)kmer_rc_seq,31);cout<<endl;
+			kint canon(min(kmer_rc_seq,kmer_seq));
+			mutex_cursed[canon%1024].lock();
+			cursed_kmers[canon%1014][canon]++;
+			mutex_cursed[canon%1024].unlock();
 		} else {
 			// Normal add of the kmer into kmer list
 			if(minimizer<0){
