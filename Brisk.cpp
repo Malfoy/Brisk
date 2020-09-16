@@ -380,8 +380,6 @@ void read_fasta_file(const string& filename) {
 }
 
 
-	#include <bitset>
-
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		cout << "[fasta file]" << endl;

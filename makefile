@@ -14,12 +14,20 @@ WARNS=-Wfatal-errors -Wall
 
 
         
-EXEC=Brisk
+EXEC=main
 
 
 
 all: $(EXEC) 
 
+
+main: main.o
+	@echo "[LD] $@"
+	+@$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
+main.o: main.cpp 
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) -MMD -o $@ -c $<
 
 
 Brisk: Brisk.o
