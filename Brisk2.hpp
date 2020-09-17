@@ -12,10 +12,11 @@ using namespace std;
 template <class DATA>
 class Brisk {
 private:
-	uint8_t k;
-	uint8_t m;
 	DenseMenuYo * menu;
 public:
+	uint8_t k;
+	uint8_t m;
+	
 	Brisk(uint8_t k, uint8_t m);
 
 	// DATA * insert(kint kmer);
