@@ -32,7 +32,7 @@ public:
 	void add_kmers(vector<kmer_full>& kmers);
 	void add_kmers_buffer( vector<kmer_full>& kmer);
 	bool add_kmers_sorted( vector<kmer_full>& kmer);
-	void print_kmers(string& result,const  string& mini, bool check)const ;
+	uint64_t print_kmers(string& result,const  string& mini, robin_hood::unordered_flat_map<string, uint8_t> & real_count, robin_hood::unordered_map<kint, uint8_t> * cursed_kmers, bool check)const;
 	uint64_t size()const;
 	uint64_t number_kmer()const;
 	bool  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm);

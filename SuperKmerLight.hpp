@@ -16,6 +16,8 @@ private:
 	static uint8_t k;
 	static uint8_t minimizer_size;
 	static uint64_t allocated_bytes;
+	static uint8_t compacted_size;
+	static kint compact_mask;
 	/**
   * Return the byte index corresponding to the nucletide position.
   * Position 0 is the first nucleotide of the prefix.
@@ -42,6 +44,8 @@ public:
 		SKCL::k = k;
 		SKCL::minimizer_size = m;
 		SKCL::allocated_bytes=ceil(((float)(2*k-m))/4.);
+		SKCL::compacted_size = k - m;
+		SKCL::compact_mask = (((kint)1) << (2*compacted_size)) - 1;
 	}
 	/**
 	  * Array of bytes storing the superkmer.

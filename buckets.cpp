@@ -266,7 +266,9 @@ bool Bucket::find_kmer(kmer_full& kmer){
 
 
 
-void  Bucket::print_kmers(string& result,const  string& mini, bool check=false)const {
+uint64_t Bucket::print_kmers(string& result,const  string& mini, robin_hood::unordered_flat_map<string, uint8_t> & real_count, robin_hood::unordered_map<kint, uint8_t> * cursed_kmers, bool check=true)const {
+	uint64_t num_errors = 0;
+
 	int count(0);
 	for(uint64_t isk(0);isk<skml.size();++isk){
 		string skm=skml[isk].get_string(mini);
@@ -282,12 +284,14 @@ void  Bucket::print_kmers(string& result,const  string& mini, bool check=false)c
 					cout<<"	instead of ";
 					cout<<(int)real_count[getCanonical(skm.substr(i,k))]<<endl;
 					cout<<"in cursed kmers:	"<<(int)cursed_kmers[str2num(getCanonical((skm.substr(i,k))))/1024][str2num(getCanonical((skm.substr(i,k))))]<<endl;
-					counting_errors++;
+					num_errors++;
 				}
 				real_count[getCanonical(skm.substr(i,k))]=0;
 			}
 		}
 	}
+
+	return num_errors;
 }
 
 

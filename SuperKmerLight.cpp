@@ -365,7 +365,7 @@ void print_bin(uint8_t n) {
 
 
 void SKCL::print_all()const{
-	for(uint i(0);i<(compacted_size+size)/4+1;++i){
+	for(uint i(0);i<(SKCL::compacted_size+this->size)/(uint)4+(uint)1;++i){
 		cout<<SKCL::allocated_bytes-1-i;
 		print_kmer(nucleotides[SKCL::allocated_bytes-1-i],4);cout<<" ";
 		

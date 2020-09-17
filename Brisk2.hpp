@@ -16,10 +16,10 @@ private:
 public:
 	uint8_t k;
 	uint8_t m;
-	
+
 	Brisk(uint8_t k, uint8_t m);
 
-	// DATA * insert(kint kmer);
+	DATA * insert(kint kmer);
 	// DATA * get_pointer(kint kmer);
 };
 
@@ -33,4 +33,10 @@ Brisk<DATA>::Brisk(uint8_t k, uint8_t m){
 
 	assert(m % 2 == 1);
 	assert(m < k);
+}
+
+
+template <class DATA>
+DATA * Brisk<DATA>::insert(kint kmer) {
+	return NULL;
 }
