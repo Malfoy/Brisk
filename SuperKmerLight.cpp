@@ -1,6 +1,6 @@
 #include "SuperKmerLight.hpp"
 #include "Kmers.hpp"
-
+#include "pow2.hpp"
 
 
 using namespace std;
@@ -11,8 +11,7 @@ using namespace std;
 	* @param mini_idx The minimizer position in the kmer (equivalent to suffix size).
 	*/
 SKCL::SKCL(kint kmer, const uint8_t mini_idx, const uint32_t indice_v) {
-	// cout << "New skmer " << *(((uint64_t *)(&kmer))+1) << " " << *((uint64_t *)(&kmer)) << endl;
-	// cout << "minimizer index " << (uint)mini_idx << endl;
+	nucleotides = new uint8_t[SKCL::allocated_bytes];
 	memset(nucleotides,0,SKCL::allocated_bytes);
 	Pow2<kint> anc(2*compacted_size-8);
 	for(uint i(0);i<(compacted_size/4);i++){

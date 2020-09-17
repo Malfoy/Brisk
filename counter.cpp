@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdint.h>
+#include <chrono>
 
 #include "CLI11.hpp"
 #include "Brisk2.hpp"
@@ -40,13 +41,14 @@ int main(int argc, char** argv) {
 	cout << "Kmer size:	" << (uint)k << endl;
 	cout << "Minimizer size:	" << (uint)m << endl;
   
-	// auto start = std::chrono::system_clock::now();
+	auto start = std::chrono::system_clock::now();
+	Brisk<uint8_t> counter(k, m);
 	// read_fasta_file(argv[1]);
 	
-	// auto end = std::chrono::system_clock::now();
-	// chrono::duration<double> elapsed_seconds = end - start;
-	// cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
-	// cout << endl;
+	auto end = std::chrono::system_clock::now();
+	chrono::duration<double> elapsed_seconds = end - start;
+	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
+	cout << endl;
 
 	// if (mode == 2) {
 	// 	cout<<menu.dump_counting()<<" errors"<<endl;;

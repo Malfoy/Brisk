@@ -23,13 +23,11 @@ typedef __uint128_t skint;
 
 extern robin_hood::unordered_flat_map<string, uint8_t> real_count;
 extern robin_hood::unordered_map<kint, uint8_t> cursed_kmers[];
-extern mutex mutex_cursed[];
+// extern mutex mutex_cursed[];
 extern uint64_t counting_errors;
-extern const uint64_t k;
 extern const kint k_mask;
 extern const kint compact_mask;
-extern const  uint64_t minimizer_size;
-extern const  uint64_t super_minimizer_size;
+extern const uint64_t super_minimizer_size;
 extern const uint64_t min_mask;
 extern const uint64_t compacted_size;
 extern const uint64_t byte_nuc;

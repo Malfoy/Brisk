@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdint>
+#include <math.h>
+
 #include "Kmers.hpp"
 
 
@@ -11,7 +13,9 @@
 
 class SKCL {
 private:
-	static const uint64_t allocated_bytes=ceil(((float)(2*k-minimizer_size))/4.);
+	static uint8_t k;
+	static uint8_t minimizer_size;
+	static uint64_t allocated_bytes;
 	/**
   * Return the byte index corresponding to the nucletide position.
   * Position 0 is the first nucleotide of the prefix.
@@ -34,13 +38,18 @@ private:
 	uint nb_nucl()const;
 
 public:
+	static void set_parameters(const uint8_t k, const uint8_t m) {
+		SKCL::k = k;
+		SKCL::minimizer_size = m;
+		SKCL::allocated_bytes=ceil(((float)(2*k-m))/4.);
+	}
 	/**
 	  * Array of bytes storing the superkmer.
 	  * The storage is done using little endian encoding.
 	  * The last byte store the first nucleotides of the superkmer.
 	  * The array is filled backward when new kmers are compacted.
 	  */
-	uint8_t nucleotides[SKCL::allocated_bytes];
+	uint8_t * nucleotides;
 
 	uint32_t indice_value;//4B
 	uint8_t size;//1B

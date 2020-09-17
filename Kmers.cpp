@@ -7,9 +7,6 @@
 using namespace std;
 
 
-
-const uint64_t k = 63;
-const uint64_t minimizer_size = 11;
 const uint64_t compacted_size = k-minimizer_size;
 const uint64_t super_minimizer_size(minimizer_size+2);
 // 2*k - minimizer_size : Expected size of a superkmer
@@ -17,7 +14,7 @@ uint64_t counting_errors=0;
 bool check=false;
 robin_hood::unordered_flat_map<string, uint8_t> real_count;
 robin_hood::unordered_map<kint, uint8_t> cursed_kmers[1024];
-mutex mutex_cursed[1024];
+// mutex mutex_cursed[1024];
 const kint k_mask = (((kint)1) << (2*k)) - 1;
 const kint compact_mask = (((kint)1) << (2*compacted_size)) - 1;
 

@@ -266,7 +266,7 @@ bool Bucket::find_kmer(kmer_full& kmer){
 
 
 
-void  Bucket::print_kmers(string& result,const  string& mini)const {
+void  Bucket::print_kmers(string& result,const  string& mini, bool check=false)const {
 	int count(0);
 	for(uint64_t isk(0);isk<skml.size();++isk){
 		string skm=skml[isk].get_string(mini);

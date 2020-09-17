@@ -1,10 +1,35 @@
 #include <stdint.h>
 #include <string>
+#include <assert.h>
 
+#include <iostream>
+
+#include "DenseMenuYo.hpp"
+
+using namespace std;
+
+
+template <class DATA>
 class Brisk {
+private:
+	uint8_t k;
+	uint8_t m;
+	DenseMenuYo * menu;
 public:
 	Brisk(uint8_t k, uint8_t m);
 
-	void insert_sequence(std::string seq);
-	void insert_fasta_file(std::string filename);
+	// DATA * insert(kint kmer);
+	// DATA * get_pointer(kint kmer);
 };
+
+
+template<class DATA>
+Brisk<DATA>::Brisk(uint8_t k, uint8_t m){
+	this->k = k;
+	this->m = m;
+
+	this->menu = new DenseMenuYo(k, m);
+
+	assert(m % 2 == 1);
+	assert(m < k);
+}
