@@ -153,26 +153,6 @@ inline void updateRCM(uint64_t& min, char nuc) {
 }
 
 
-void clean(string& str){
-	for(uint i(0); i< str.size(); ++i){
-		switch(str[i]){
-			case 'a':break;
-			case 'A':break;
-			case 'c':break;
-			case 'C':break;
-			case 'g':break;
-			case 'G':break;
-			case 't':break;
-			case 'T':break;
-			// case 'N':break;
-			// case 'n':break;
-			default:  str[i]='A';break;;
-		}
-	}
-	transform(str.begin(), str.end(), str.begin(), ::toupper);
-}
-
-
 
 void count_line(string& line) {
 	//~ cout<<"COUNT LINE"<<endl;

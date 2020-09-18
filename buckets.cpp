@@ -91,7 +91,7 @@ void  Bucket::add_kmers_buffer(vector<kmer_full>& kmers){
 					}
 					//~ cout<<"le push"<<endl;
 					//~ print_kmer(kmer.get_compacted(),31);cout<<endl;
-					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.get_minimizer_idx(),values.size()));
+					skml.push_back(SKCL(kmer.get_compacted(), (int)kmer.minimizer_idx,values.size()));
 					//~ cout<<"print all after constructor"<<endl;
 					//~ skml[skml.size()-1].print_all();
 					//~ kint super_kmer_overlap(skml[skml.size()-1].get_right_overlap());
@@ -165,7 +165,7 @@ bool  Bucket::find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm){
 
 bool Bucket::find_kmer(kmer_full& kmer){
 
-	SKCL mockskm(kmer.get_compacted(), kmer.get_minimizer_idx(),0);
+	SKCL mockskm(kmer.get_compacted(), kmer.minimizer_idx,0);
 	//~ cout<<mockskm.get_string("	mini	")<<endl;
 	
 	mockskm.interleaved=mockskm.interleaved_value();
