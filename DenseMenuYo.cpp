@@ -1,3 +1,4 @@
+#include "utils.hpp"
 #include "DenseMenuYo.hpp"
 
 DenseMenuYo::DenseMenuYo(uint8_t k, uint8_t m){

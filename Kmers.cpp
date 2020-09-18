@@ -7,53 +7,25 @@
 using namespace std;
 
 
-// const uint64_t super_minimizer_size(minimizer_size+2);
-// 2*k - minimizer_size : Expected size of a superkmer
-// uint64_t counting_errors=0;
-// mutex mutex_cursed[1024];
-// const kint k_mask = (((kint)1) << (2*k)) - 1;
-
-
-
-
-string intToString(uint64_t n) {
-	if (n < 1000) {
-		return to_string(n);
-	}
-	string end(to_string(n % 1000));
-	if (end.size() == 3) {
-		return intToString(n / 1000) + "," + end;
-	}
-	if (end.size() == 2) {
-		return intToString(n / 1000) + ",0" + end;
-	}
-	return intToString(n / 1000) + ",00" + end;
-}
+// RC functions
+uint64_t rcbc(uint64_t in, uint64_t n);
+// Hash functions (TODO: move them)
+uint64_t hash64shift(uint64_t key);
 
 
 
 // ----- Kmer class -----
-uint8_t kmer_full::get_minimizer_idx() const {
-	if (this->minimizer_idx < 0) {
-		return (uint8_t)(-this->minimizer_idx - 1);
-	} else {
-		return (uint8_t)this->minimizer_idx;
-	}
-}
-
-
-
-kmer_full::kmer_full(int8_t minimizer_idx, kint value) {
+kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple_mini) {
 	this->minimizer_idx = minimizer_idx;
 	this->kmer_s = value;
 	this->prefix=(value);
-	uint64_t shift((minimizer_idx+minimizer_size)*2);
+	uint64_t shift((minimizer_idx + m)*2);
 	this->prefix>>=shift;
 	this->suffix=(value);
 	shift=(minimizer_idx)*2;
 	this->suffix%=((kint)1<<shift);
+	this->multi_mini = multiple_mini;
 }
-
 
 
 string kmer2str(__uint128_t num, uint k) {
@@ -100,14 +72,15 @@ kint kmer_full::get_compacted() const {
 
 
 bool kmer_full::contains_multi_minimizer() const {
-	return this->minimizer_idx < 0;
+	return this->multi_mini;
 }
 
 
 
 // ----- Useful binary kmer functions -----
 template<typename T>
-void print_kmer(T num,uint64_t n){
+void print_kmer(T num, uint8_t n){
+	num &= ((T)1 << (2*n)) - 1;
 	T anc((T)1<<(2*(n-1)));
 	for(uint64_t i(0);i<n and anc!=0;++i){
 		uint64_t nuc=num/anc;
@@ -154,51 +127,6 @@ kint str2num2(const string& str) {
 }
 
 
-
-__uint128_t rcb(const __uint128_t& in) {
-	assume(k <= 64, "k=%u > 64", k);
-	union kmer_u {
-		__uint128_t k;
-		__m128i m128i;
-		uint64_t u64[2];
-		uint8_t u8[16];
-	};
-	kmer_u res = {.k = in};
-	// static_assert(sizeof(res) == sizeof(__uint128_t), "kmer sizeof mismatch");
-	// Swap byte order
-	kmer_u shuffidxs = {.u8 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0}};
-	res.m128i = _mm_shuffle_epi8(res.m128i, shuffidxs.m128i);
-	// Swap nuc order in bytes
-	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
-	const uint64_t c2 = 0x3333333333333333;
-	for (uint64_t& x : res.u64) {
-		x = ((x & c1) << 4) | ((x & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
-		x = ((x & c2) << 2) | ((x & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
-		x ^= 0xaaaaaaaaaaaaaaaa; // Complement;
-	}
-	// Realign to the right
-	res.m128i = mm_bitshift_right(res.m128i, 128 - 2 * k);
-	return res.k;
-}
-
-
-
-uint64_t rcb(const uint64_t& in) {
-	assume(k <= 32, "k=%u > 32", k);
-	// Complement, swap byte order
-	uint64_t res = __builtin_bswap64(in ^ 0xaaaaaaaaaaaaaaaa);
-	// Swap nuc order in bytes
-	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
-	const uint64_t c2 = 0x3333333333333333;
-	res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
-	res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
-	// Realign to the right
-	res >>= (64 - 2 * k);
-	return res;
-}
-
-
-
 uint64_t rcbc(uint64_t in, uint64_t n) {
 	assume(n <= 32, "n=%u > 32", n);
 	// Complement, swap byte order
@@ -221,119 +149,66 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 
 
 
-// It's quite complex to bitshift mmx register without an immediate (constant) count
-// See: https://stackoverflow.com/questions/34478328/the-best-way-to-shift-a-m128i
-__m128i mm_bitshift_left(__m128i x, unsigned count) {
-	assume(count < 128, "count=%u >= 128", count);
-	__m128i carry = _mm_slli_si128(x, 8);
-	if (count >= 64)                           //TODO: bench: Might be faster to skip this fast-path branch
-		return _mm_slli_epi64(carry, count - 64); // the non-carry part is all zero, so return early
-	// else
-	carry = _mm_srli_epi64(carry, 64 - count);
-	x = _mm_slli_epi64(x, count);
-	return _mm_or_si128(x, carry);
+uint64_t hash64shift(uint64_t key) {
+	// uint64_t ab=abundance_mini[key];
+	// uint64_t ab=0;
+	// ab<<=32;
+	key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+	key = key ^ (key >> 24);
+	key = (key + (key << 3)) + (key << 8); // key * 265
+	key = key ^ (key >> 14);
+	key = (key + (key << 2)) + (key << 4); // key * 21
+	key = key ^ (key >> 28);
+	key = key + (key << 31);
+	return (uint64_t)key;
 }
-
-
-
-__m128i mm_bitshift_right(__m128i x, unsigned count) {
-	assume(count < 128, "count=%u >= 128", count);
-	__m128i carry = _mm_srli_si128(x, 8);
-	if (count >= 64)
-		return _mm_srli_epi64(carry, count - 64); // the non-carry part is all zero, so return early
-	// else
-	carry = _mm_slli_epi64(carry, 64 - count);
-	x = _mm_srli_epi64(x, count);
-	return _mm_or_si128(x, carry);
-}
-
-
-
-uint64_t reversebits(uint64_t b){
-	return (((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
-}
-
-
-
-Pow2<uint64_t> minimizer_number(2 * super_minimizer_size);
-
 
 
 /** Get the minimizer from a sequence and modify the position parameter.
   * WARNING: If the sequence contains a multiple time the minimizer, return the minimizer position generating a kmer with the longest prefix.
+	*
+	* @param seq Binariesed sequence
+	* @param k size of the kmer
+	* @param min_position Position of the minimizer in the kmer (from the end of the suffix). Negative with complement A 1 if the sequence contains multiple values of the minimizer.
+	* @param m Minimizer size
+	*
+	* @return The minimizer value. Negative number if the minimizer is on the reverse complement.
   */
-int64_t get_minimizer(kint seq, int8_t& min_position) {
-	// cout << "Get minimizer" << endl;
-
+uint64_t get_minimizer(kint seq, uint8_t k, uint8_t& min_position, uint8_t m, bool & reversed, bool & multiple) {
 	// Init with the first possible minimizer
-	int64_t mini, mmer;
-	int64_t fwd_mini = seq % minimizer_number;
-	mini = mmer = canonize(fwd_mini, super_minimizer_size);
+	uint64_t mini, mmer;
+	uint64_t fwd_mini = seq % (1 << (m*2));
+	mini = mmer = canonize(fwd_mini, m);
 	uint64_t hash_mini = hash64shift(mmer);
 
 	// Update values regarding the minimizer
-	// bool multiple_mini = false;
-	bool reversed=(mini!=fwd_mini);
+	reversed=(mini!=fwd_mini);
 	min_position = 0;
-	// uint8_t max_prefix = reversed ? k - super_minimizer_size : 0;
-
-	// print_kmer(mmer, super_minimizer_size);
-	// cout << " " << hash_mini << endl;
+	multiple = false;
 
 	// Search in all possible position (from 1) the minimizer
-	for (uint64_t i=1; i <= k - super_minimizer_size; i++) {
+	for (uint8_t i=1; i <= k - m; i++) {
 		seq >>= 2;
-		fwd_mini = seq % minimizer_number;
-		mmer = canonize(fwd_mini, super_minimizer_size);
+		fwd_mini = seq % (1 << (m*2));
+		mmer = canonize(fwd_mini, m);
 		uint64_t hash = (hash64shift(mmer));
-		// print_kmer(mini, super_minimizer_size);
-		// cout << " ";
-		// print_kmer(mmer, super_minimizer_size);
-		// cout << " " << hash << endl;
 
 		if (hash_mini > hash) {
 			min_position = i;
 			mini = mmer;
-			reversed=(mini!=fwd_mini);
-			// max_prefix = reversed ? k - super_minimizer_size - i : i;			
+			reversed=(mini!=fwd_mini);		
 			hash_mini = hash;
-			// multiple_mini = false;
+			multiple = false;
 		} else if (hash_mini == hash) {
-			// multiple_mini = true;
-
 			min_position = i;
 			reversed=(mini!=fwd_mini);
 
-			// Compute the prefix length
-			// bool is_reversed = (mmer != fwd_mini);
-			// uint8_t prefix_size = reversed ? k - super_minimizer_size - i : i;
-
-			// If the prefix length is larger, save the new position
-			// if (prefix_size > max_prefix) {
-			// 	min_position = i;
-			// 	reversed = is_reversed;
-			// 	max_prefix = prefix_size;
-			// }
-
-			// Complement A 1 the position to say that there are multiple minimizers
-			if (min_position >= 0)
-				min_position = - min_position - 1;
+			multiple = true;
 		}
 	}
-	// cout << (int)min_position << " " << endl;
-	// print_kmer(mini, super_minimizer_size);
-	// cout << endl;
-	// if (multiple_mini)
-	// 	cout << "CURSED" << endl;
-	// else
-	// 	cout << "BLESSED BY ALL GODS" << endl;
-	// cout << "min pos " << (int)min_position << endl;
 
-	if(reversed){
-		mini*=-1;
-	}
 	// cout << endl;
-	return ((int64_t)mini);
+	return mini;
 }
 
 
@@ -364,4 +239,144 @@ string revComp(const string& s) {
 
 string getCanonical(const string& str) {
 	return (min(str, revComp(str)));
+}
+
+
+uint64_t nuc2int(char c) {
+	return (c >> 1) & 0b11;
+}
+uint64_t nuc2intrc(char c) {
+	return ((c >> 1) & 0b11) ^ 2;
+}
+inline void updateK(kint& min, uint8_t nuc, kint mask) {
+	min <<= 2;
+	min += nuc;
+	min &= mask;
+}
+inline void updateM(uint64_t& min, uint8_t nuc, uint64_t mask) {
+	min <<= 2;
+	min += nuc;
+	min &= mask;
+}
+inline void updateRCK(kint& min, char nuc, uint8_t k) {
+	min >>= 2;
+	min += ((kint)nuc << (2 * k - 2));
+}
+inline void updateRCM(uint64_t& min, char nuc, uint8_t m) {
+	min >>= 2;
+	min += (nuc << (2 * m - 2));
+}
+/**
+  * Read a string for the first k-1 nucleotides and init the kmer and rc_kmer values
+  */
+void init_kmer(const string & seq, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const kint k_mask) {
+	kmer_seq = 0;
+	rc_kmer_seq = 0;
+
+	for (uint8_t i=0 ; i<k ; i++) {
+		auto nuc = nuc2int(seq[i]);
+		updateK(kmer_seq, nuc, k_mask);
+		nuc = nuc ^ 2;
+		updateRCK(rc_kmer_seq, nuc, k);
+	}
+}
+void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const 								kint k_mask) {
+	auto nuc = nuc2int(nucl);
+	updateK(kmer_seq, nuc, k_mask);
+	nuc = nuc ^ 2;
+	updateRCK(rc_kmer_seq, nuc, k);
+}
+
+
+void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m) {
+	// Useful precomputed values
+	kint k_mask = ((kint)1 << (2*k + 1)) - 1;
+	kint m_mask = ((kint)1 << (2*m + 1)) - 1;
+
+	// Init kmer
+	kint current_kmer = 0;
+	kint current_rc_kmer = 0;
+	init_kmer(seq, current_kmer, current_rc_kmer, k-1, k_mask>>2);
+	current_rc_kmer <<= 2;
+	// Init minimizer candidates
+	kint mini_candidate = 0;
+	kint rc_mini_candidate = 0;
+	init_kmer(seq.substr(k-m-1, m), mini_candidate, rc_mini_candidate, m, m_mask);
+
+	// Init real minimizer
+	bool reversed, multiple;
+	uint8_t mini_pos;
+	uint64_t mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple);
+	uint64_t min_hash = hash64shift(mini);
+
+	vector<kmer_full> current_minimizer_kmers = vector<kmer_full>();
+
+	// Loop over all kmers
+	uint64_t line_size = seq.size();
+	for (uint64_t i = 0; k-1+i < line_size; ++i) {
+		// Update the current kmer and the minimizer candidate
+		update_kmer(seq[k-1+i], current_kmer, current_rc_kmer, k, k_mask);
+		update_kmer(seq[k-1+i], mini_candidate, rc_mini_candidate, m, m_mask);
+		print_kmer(current_kmer, k);
+		cout << endl;
+
+		// Get canonical minimizer
+		kint candidate_canon = min(mini_candidate, rc_mini_candidate);
+		uint64_t current_hash = hash64shift((uint64_t)candidate_canon);
+		
+
+		//the previous MINIMIZER is outdated
+		if (mini_pos >= k-m) {
+			// Save previous kmers from superkmer
+			if (reversed)
+				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
+			kmers.push_back(current_minimizer_kmers);
+			current_minimizer_kmers = vector<kmer_full>();
+
+			// Prepare new minimizer
+			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
+			min_hash = hash64shift(mini);
+		}
+		// New minimizer
+		else if (current_hash < min_hash) {
+			// Save previous kmers from superkmer
+			if (reversed)
+				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
+			kmers.push_back(current_minimizer_kmers);
+			current_minimizer_kmers = vector<kmer_full>();
+
+			// Update for the new minimizer value
+			mini = candidate_canon;
+			mini_pos = 0;
+			reversed = mini == rc_mini_candidate;
+			multiple = false;
+		}
+		// Equal minimizer
+		else if (current_hash == min_hash) {
+			// Save previous kmers from superkmer
+			if (reversed)
+				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
+			kmers.push_back(current_minimizer_kmers);
+			current_minimizer_kmers = vector<kmer_full>();
+
+			multiple = true;
+		}
+
+		mini_pos += 1;
+		if (not reversed) {
+			current_minimizer_kmers.push_back(kmer_full(current_kmer, mini_pos, m, multiple));
+		} else {
+			current_minimizer_kmers.push_back(kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple));
+		}
+		
+		print_kmer(mini, m);
+		cout << endl;
+	}
+
+	// Process last kmers
+	if (current_minimizer_kmers.size() > 0) {
+		if (reversed)
+			reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
+		kmers.push_back(current_minimizer_kmers);
+	}
 }

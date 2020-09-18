@@ -1,9 +1,11 @@
 #include <stdint.h>
 #include <string>
 #include <assert.h>
+#include <vector>
 
 #include <iostream>
 
+#include "Kmers.hpp"
 #include "DenseMenuYo.hpp"
 
 using namespace std;
@@ -19,7 +21,7 @@ public:
 
 	Brisk(uint8_t k, uint8_t m);
 
-	DATA * insert(kint kmer);
+	DATA * insert(vector<kmer_full> & kmer);
 	// DATA * get_pointer(kint kmer);
 };
 
@@ -37,6 +39,7 @@ Brisk<DATA>::Brisk(uint8_t k, uint8_t m){
 
 
 template <class DATA>
-DATA * Brisk<DATA>::insert(kint kmer) {
+DATA * Brisk<DATA>::insert(vector<kmer_full> & kmer) {
+	cout << "TODO: insert" << endl;
 	return NULL;
 }

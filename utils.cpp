@@ -1,4 +1,8 @@
+#include <string>
 
+#include "zstr.hpp"
+
+using namespace std;
 
 //START LOW LEVEL FUNCTIONS
 
@@ -55,52 +59,52 @@ uint64_t unrevhash(uint64_t x) {
 
 
 uint64_t nuc2int(char c) {
-	return (c / 2) % 4;
+	return (c >> 1) & 0b11;
 }
 
 
 
 uint64_t nuc2intrc(char c) {
-	return ((c / 2) % 4) ^ 2;
+	return ((c >> 1) & 0b11) ^ 2;
 }
 
 
 
-void updateK(uint64_t& min, char nuc) {
-	min <<= 2;
-	min += nuc2int(nuc);
-	min %= offsetUpdateAnchor;
-}
+// void updateK(uint64_t& min, char nuc) {
+// 	min <<= 2;
+// 	min += nuc2int(nuc);
+// 	min %= offsetUpdateAnchor;
+// }
 
 
 
- void add_nuc_superkmer(SKC& min, char nuc) {
-	min.sk <<= 2;
-	min.sk += nuc2int(nuc);
-	min.counts[min.size++] = 0;
-}
+//  void add_nuc_superkmer(SKC& min, char nuc) {
+// 	min.sk <<= 2;
+// 	min.sk += nuc2int(nuc);
+// 	min.counts[min.size++] = 0;
+// }
 
 
 
- void updateM(uint64_t& min, char nuc) {
-	min <<= 2;
-	min += nuc2int(nuc);
-	min %= offsetUpdateAnchorMin;
-}
+//  void updateM(uint64_t& min, char nuc) {
+// 	min <<= 2;
+// 	min += nuc2int(nuc);
+// 	min %= offsetUpdateAnchorMin;
+// }
 
 
 
-void updateRCK(uint64_t& min, char nuc) {
-	min >>= 2;
-	min += (nuc2intrc(nuc) << (2 * k - 2));
-}
+// void updateRCK(uint64_t& min, char nuc) {
+// 	min >>= 2;
+// 	min += (nuc2intrc(nuc) << (2 * k - 2));
+// }
 
 
 
-void updateRCM(uint64_t& min, char nuc) {
-	min >>= 2;
-	min += (nuc2intrc(nuc) << (2 * minimizer_size - 2));
-}
+// void updateRCM(uint64_t& min, char nuc) {
+// 	min >>= 2;
+// 	min += (nuc2intrc(nuc) << (2 * minimizer_size - 2));
+// }
 
 
 
