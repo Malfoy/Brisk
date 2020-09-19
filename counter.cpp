@@ -31,7 +31,7 @@ int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
 
 int main(int argc, char** argv) {
 	string fasta = "";
-	uint8_t k=31, m=11;
+	uint8_t k=63, m=9;
 	uint mode = 0;
 
 	parse_args(argc, argv, fasta, k, m, mode);
@@ -150,8 +150,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<vector<kmer_full> > kmers_by_minimizer;
 	string_to_kmers_by_minimizer(sequence, kmers_by_minimizer, counter.k, counter.m);
 
-	cout << kmers_by_minimizer.size() << '/' << sequence.length() << endl;
-	exit(0);
+	cout << (((float)(sequence.length() - counter.k + 1))/((float)kmers_by_minimizer.size())) << " " << kmers_by_minimizer.size() << '/' << (sequence.length() - counter.k + 1) << endl;
+	return;
 
 	for (auto kmers: kmers_by_minimizer) {
 		uint8_t * data_array = counter.insert(kmers);

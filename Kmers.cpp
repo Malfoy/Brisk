@@ -317,8 +317,8 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 		// Update the current kmer and the minimizer candidate
 		update_kmer(seq[k-1+i], current_kmer, current_rc_kmer, k, k_mask);
 		update_kmer(seq[k-1+i], mini_candidate, rc_mini_candidate, m, m_mask);
-		print_kmer(current_kmer, k);
-		cout << endl;
+		// print_kmer(current_kmer, k);
+		// cout << endl;
 
 		// Get canonical minimizer
 		kint candidate_canon = min(mini_candidate, rc_mini_candidate);
@@ -327,6 +327,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 
 		//the previous MINIMIZER is outdated
 		if (mini_pos >= k-m) {
+			// cout << "Outdated" << endl;
 			// Save previous kmers from superkmer
 			if (reversed)
 				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
@@ -339,6 +340,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 		}
 		// New minimizer
 		else if (current_hash < min_hash) {
+
 			// Save previous kmers from superkmer
 			if (reversed)
 				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
@@ -348,6 +350,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 			// Update for the new minimizer value
 			mini = candidate_canon;
 			mini_pos = 0;
+			min_hash = hash64shift(mini);
 			reversed = mini == rc_mini_candidate;
 			multiple = false;
 		}
@@ -369,8 +372,8 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 			current_minimizer_kmers.push_back(kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple));
 		}
 		
-		print_kmer(mini, m);
-		cout << endl;
+		// print_kmer(mini, m);
+		// cout << endl;
 	}
 
 	// Process last kmers
