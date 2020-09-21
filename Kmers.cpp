@@ -13,6 +13,34 @@ uint64_t rcbc(uint64_t in, uint64_t n);
 uint64_t hash64shift(uint64_t key);
 
 
+template<typename T>
+void print_kmer(T num, uint8_t n){
+	num &= ((T)1 << (2*n)) - 1;
+	T anc((T)1<<(2*(n-1)));
+	for(uint64_t i(0);i<n and anc!=0;++i){
+		uint64_t nuc=num/anc;
+		num=num%anc;
+		if(nuc==2){
+			cout<<"T";
+		}
+		if(nuc==3){
+			cout<<"G";
+		}
+		if(nuc==1){
+			cout<<"C";
+		}
+		if(nuc==0){
+			cout<<"A";
+		}
+		if (nuc>=4){
+			cout<<nuc<<endl;
+			cout<<"WTF"<<endl;
+		}
+		anc>>=2;
+	}
+}
+
+
 
 // ----- Kmer class -----
 kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple_mini) {
@@ -25,6 +53,14 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple
 	shift=(minimizer_idx)*2;
 	this->suffix%=((kint)1<<shift);
 	this->multi_mini = multiple_mini;
+}
+
+void kmer_full::print(uint8_t k, uint8_t m) const {
+	print_kmer(this->kmer_s, k); cout << endl;
+	for (uint i=0 ; i<k - m - this->minimizer_idx ; i++)
+		cout << " ";
+	kint mini = this->kmer_s >> (2 * this->minimizer_idx);
+	print_kmer(mini, m); cout << endl;
 }
 
 
@@ -78,33 +114,6 @@ bool kmer_full::contains_multi_minimizer() const {
 
 
 // ----- Useful binary kmer functions -----
-template<typename T>
-void print_kmer(T num, uint8_t n){
-	num &= ((T)1 << (2*n)) - 1;
-	T anc((T)1<<(2*(n-1)));
-	for(uint64_t i(0);i<n and anc!=0;++i){
-		uint64_t nuc=num/anc;
-		num=num%anc;
-		if(nuc==2){
-			cout<<"T";
-		}
-		if(nuc==3){
-			cout<<"G";
-		}
-		if(nuc==1){
-			cout<<"C";
-		}
-		if(nuc==0){
-			cout<<"A";
-		}
-		if (nuc>=4){
-			cout<<nuc<<endl;
-			cout<<"WTF"<<endl;
-		}
-		anc>>=2;
-	}
-}
-
 
 
 kint str2num(const string& str) {
@@ -180,6 +189,8 @@ uint64_t get_minimizer(kint seq, uint8_t k, uint8_t& min_position, uint8_t m, bo
 	uint64_t fwd_mini = seq % (1 << (m*2));
 	mini = mmer = canonize(fwd_mini, m);
 	uint64_t hash_mini = hash64shift(mmer);
+	// print_kmer(mini, m); 	cout << endl;
+	// cout << hash_mini << endl;
 
 	// Update values regarding the minimizer
 	reversed=(mini!=fwd_mini);
@@ -192,6 +203,8 @@ uint64_t get_minimizer(kint seq, uint8_t k, uint8_t& min_position, uint8_t m, bo
 		fwd_mini = seq % (1 << (m*2));
 		mmer = canonize(fwd_mini, m);
 		uint64_t hash = (hash64shift(mmer));
+		// print_kmer(mmer, m); 	cout << endl;
+		// cout << (uint)i << " " << hash << endl;
 
 		if (hash_mini > hash) {
 			min_position = i;
@@ -208,6 +221,8 @@ uint64_t get_minimizer(kint seq, uint8_t k, uint8_t& min_position, uint8_t m, bo
 	}
 
 	// cout << endl;
+	// print_kmer(mini, m); 	cout << endl;
+	// exit(0);
 	return mini;
 }
 
@@ -269,12 +284,12 @@ inline void updateRCM(uint64_t& min, char nuc, uint8_t m) {
 /**
   * Read a string for the first k-1 nucleotides and init the kmer and rc_kmer values
   */
-void init_kmer(const string & seq, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const kint k_mask) {
+void init_kmer(const string & seq, uint64_t & seq_idx, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const kint k_mask) {
 	kmer_seq = 0;
 	rc_kmer_seq = 0;
 
-	for (uint8_t i=0 ; i<k ; i++) {
-		auto nuc = nuc2int(seq[i]);
+	for (uint8_t seq_idx ; seq_idx<k ; seq_idx++) {
+		auto nuc = nuc2int(seq[seq_idx]);
 		updateK(kmer_seq, nuc, k_mask);
 		nuc = nuc ^ 2;
 		updateRCK(rc_kmer_seq, nuc, k);
@@ -288,35 +303,53 @@ void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uin
 }
 
 
-void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m) {
+void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m) {
+	// Position in the sequence
+	static uint64_t seq_idx = 0;
+	static bool saved = false;
+	static kmer_full saved_kmer((kint)0,(uint8_t)0,(uint8_t)0,false);
+
 	// Useful precomputed values
-	kint k_mask = ((kint)1 << (2*k + 1)) - 1;
-	kint m_mask = ((kint)1 << (2*m + 1)) - 1;
+	static kint k_mask = ((kint)1 << (2*k + 1)) - 1;
+	static kint m_mask = ((kint)1 << (2*m + 1)) - 1;
 
-	// Init kmer
-	kint current_kmer = 0;
-	kint current_rc_kmer = 0;
-	init_kmer(seq, current_kmer, current_rc_kmer, k-1, k_mask>>2);
-	current_rc_kmer <<= 2;
-	// Init minimizer candidates
-	kint mini_candidate = 0;
-	kint rc_mini_candidate = 0;
-	init_kmer(seq.substr(k-m-1, m), mini_candidate, rc_mini_candidate, m, m_mask);
+	// kmer variables
+	static kint current_kmer = 0;
+	static kint current_rc_kmer = 0;
 
-	// Init real minimizer
-	bool reversed, multiple;
-	uint8_t mini_pos;
-	uint64_t mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple);
-	uint64_t min_hash = hash64shift(mini);
+	// Needed variables
+	static kint mini_candidate = 0, rc_mini_candidate = 0;
+	static bool reversed, multiple;
+	static uint8_t mini_pos = 1;
+	static uint64_t mini, min_hash;
+	bool to_return = false;
 
-	vector<kmer_full> current_minimizer_kmers = vector<kmer_full>();
+	// If start of the sequence, init the kmer and the minimizer
+	if (seq_idx == 0) {
+		// cout << seq << endl;
+		// Init kmer
+		init_kmer(seq, seq_idx, current_kmer, current_rc_kmer, k-1, k_mask>>2);
+		current_rc_kmer <<= 2;
+		auto start = seq_idx - m;
+		init_kmer(seq.substr(k-m-1, m), start, mini_candidate, rc_mini_candidate, m, m_mask);
+
+		// Init real minimizer
+		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple);
+		min_hash = hash64shift(mini);
+		// print_kmer(mini, m); cout << endl;
+	} 
+
+	if (saved) {
+		saved = false;
+		kmers.push_back(saved_kmer);
+	}
 
 	// Loop over all kmers
 	uint64_t line_size = seq.size();
-	for (uint64_t i = 0; k-1+i < line_size; ++i) {
+	for (; k-1+seq_idx < line_size; ++seq_idx) {
 		// Update the current kmer and the minimizer candidate
-		update_kmer(seq[k-1+i], current_kmer, current_rc_kmer, k, k_mask);
-		update_kmer(seq[k-1+i], mini_candidate, rc_mini_candidate, m, m_mask);
+		update_kmer(seq[k-1+seq_idx], current_kmer, current_rc_kmer, k, k_mask);
+		update_kmer(seq[k-1+seq_idx], mini_candidate, rc_mini_candidate, m, m_mask);
 		// print_kmer(current_kmer, k);
 		// cout << endl;
 
@@ -326,26 +359,27 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 		
 
 		//the previous MINIMIZER is outdated
-		if (mini_pos >= k-m) {
+		if (mini_pos > k-m) {
 			// cout << "Outdated" << endl;
 			// Save previous kmers from superkmer
+			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
-				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
-			kmers.push_back(current_minimizer_kmers);
-			current_minimizer_kmers = vector<kmer_full>();
+				reverse(kmers.begin(), kmers.end());
+			to_return = true;
 
 			// Prepare new minimizer
 			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
 			min_hash = hash64shift(mini);
+			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 		// New minimizer
 		else if (current_hash < min_hash) {
-
+			// cout << "NEW" << endl;
 			// Save previous kmers from superkmer
+			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
-				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
-			kmers.push_back(current_minimizer_kmers);
-			current_minimizer_kmers = vector<kmer_full>();
+				reverse(kmers.begin(), kmers.end());
+			to_return = true;
 
 			// Update for the new minimizer value
 			mini = candidate_canon;
@@ -353,33 +387,44 @@ void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kme
 			min_hash = hash64shift(mini);
 			reversed = mini == rc_mini_candidate;
 			multiple = false;
+			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 		// Equal minimizer
 		else if (current_hash == min_hash) {
+			// cout << "SAME" << endl;
 			// Save previous kmers from superkmer
+			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
-				reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
-			kmers.push_back(current_minimizer_kmers);
-			current_minimizer_kmers = vector<kmer_full>();
+				reverse(kmers.begin(), kmers.end());
+			to_return = true;
 
 			multiple = true;
+			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 
-		mini_pos += 1;
 		if (not reversed) {
-			current_minimizer_kmers.push_back(kmer_full(current_kmer, mini_pos, m, multiple));
+			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple);
 		} else {
-			current_minimizer_kmers.push_back(kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple));
+			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple);
 		}
-		
-		// print_kmer(mini, m);
-		// cout << endl;
+		mini_pos += 1;
+
+		if (to_return) {
+			seq_idx += 1;
+			saved = true;
+			return;
+		} else {
+			kmers.push_back(saved_kmer);
+		}
 	}
 
-	// Process last kmers
-	if (current_minimizer_kmers.size() > 0) {
+	if (kmers.size() > 0) {
 		if (reversed)
-			reverse(current_minimizer_kmers.begin(), current_minimizer_kmers.end());
-		kmers.push_back(current_minimizer_kmers);
+			reverse(kmers.begin(), kmers.end());
+		return;
 	}
+
+	// Prepare the static variables for the next sequences
+	seq_idx = 0;
 }
+

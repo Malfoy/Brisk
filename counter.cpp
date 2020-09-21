@@ -148,9 +148,20 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 		return;
 
 	vector<vector<kmer_full> > kmers_by_minimizer;
-	string_to_kmers_by_minimizer(sequence, kmers_by_minimizer, counter.k, counter.m);
+	vector<kmer_full> superkmer;
 
-	cout << (((float)(sequence.length() - counter.k + 1))/((float)kmers_by_minimizer.size())) << " " << kmers_by_minimizer.size() << '/' << (sequence.length() - counter.k + 1) << endl;
+	string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+	while (superkmer.size() > 0) {
+		// TODO: DO something here
+		// cout << superkmer.size() << endl;
+		// for (kmer_full & kmer : superkmer) {
+		// 	kmer.print(counter.k, counter.m);
+		// }
+
+		superkmer.clear();
+		string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+	}
+
 	return;
 
 	for (auto kmers: kmers_by_minimizer) {
