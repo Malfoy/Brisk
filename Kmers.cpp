@@ -303,7 +303,7 @@ void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uin
 }
 
 
-void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m) {
+kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m) {
 	// Position in the sequence
 	static uint64_t seq_idx = 0;
 	static bool saved = false;
@@ -323,6 +323,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 	static uint8_t mini_pos = 1;
 	static uint64_t mini, min_hash;
 	bool to_return = false;
+	kint return_val;
 
 	// If start of the sequence, init the kmer and the minimizer
 	if (seq_idx == 0) {
@@ -366,6 +367,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
+			return_val = mini;
 
 			// Prepare new minimizer
 			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
@@ -380,6 +382,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
+			return_val = mini;
 
 			// Update for the new minimizer value
 			mini = candidate_canon;
@@ -397,6 +400,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
+			return_val = mini;
 
 			multiple = true;
 			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
@@ -412,7 +416,7 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		if (to_return) {
 			seq_idx += 1;
 			saved = true;
-			return;
+			return return_val;
 		} else {
 			kmers.push_back(saved_kmer);
 		}
@@ -421,10 +425,11 @@ void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 	if (kmers.size() > 0) {
 		if (reversed)
 			reverse(kmers.begin(), kmers.end());
-		return;
+		return mini;
 	}
 
 	// Prepare the static variables for the next sequences
 	seq_idx = 0;
+	return (kint)0;
 }
 

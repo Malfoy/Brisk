@@ -28,16 +28,16 @@ private:
   * @return The Byte index in the datastructure.
   * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
   */
-	uint8_t get_nucleotide(uint8_t position)const;
+	// uint8_t get_nucleotide(uint8_t position)const;
 	/**
   * Get the nucleotide value at the position in parameter.
   * Position 0 is the first nucleotide of the prefix.
   * The minimizer nucleotides doesn't count.
   */
-	uint byte_index(uint position)const;
+	// uint byte_index(uint position)const;
 
-	static uint which_byte(uint i);
-	uint nb_nucl()const;
+	// static uint which_byte(uint i);
+	// uint nb_nucl()const;
 
 public:
 	static void set_parameters(const uint8_t k, const uint8_t m) {
@@ -66,26 +66,32 @@ public:
 
 
 
-	SKCL(kint kmer, const uint8_t mini_idx,uint32_t indice_v);
-	uint64_t interleaved_value()const ;
-	uint64_t interleaved_value_max()const;
-	bool  suffix_is_prefix(const SKCL& kmf)const;
-	string get_string(const string& mini) const ;
-	kint get_ith_kmer(uint ind)const;
-	kint get_suffix()const;
-	kint get_right_overlap()const;
-	bool operator < (const  SKCL& str) const;
-	bool query_kmer_bool(const kmer_full& kmer)const ;
-	int32_t query_kmer_hash(const kmer_full& kmer)const;
-	bool compact_right(const kmer_full& kmf);
-	bool suffix_is_prefix(const kmer_full& kmf)const;
-	void print_all()const;
-	bool  is_lex_inferior(const SKCL& kmf)const;	
-	uint suffix_size()const;
-	uint prefix_size()const;
-	uint interleaved_size()const;
+	// SKCL(kint kmer, const uint8_t mini_idx,uint32_t indice_v);
+	// uint64_t interleaved_value()const ;
+	// uint64_t interleaved_value_max()const;
+	// bool  suffix_is_prefix(const SKCL& kmf)const;
+	// string get_string(const string& mini) const ;
+	// kint get_ith_kmer(uint ind)const;
+	// kint get_suffix()const;
+	// kint get_right_overlap()const;
+	// bool operator < (const  SKCL& str) const;
+	// bool query_kmer_bool(const kmer_full& kmer)const ;
+	// int32_t query_kmer_hash(const kmer_full& kmer)const;
+	// bool compact_right(const kmer_full& kmf);
+	// bool suffix_is_prefix(const kmer_full& kmf)const;
+	// void print_all()const;
+	// bool  is_lex_inferior(const SKCL& kmf)const;	
+	// uint suffix_size()const;
+	// uint prefix_size()const;
+	// uint interleaved_size()const;
 } __attribute__((packed));
 
+
+uint8_t SKCL::k = 0;
+uint8_t SKCL::minimizer_size = 0;
+uint64_t SKCL::allocated_bytes= 0;
+uint8_t SKCL::compacted_size = 0;
+kint SKCL::compact_mask = 0;
 
 
 #endif

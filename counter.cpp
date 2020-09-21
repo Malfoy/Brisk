@@ -150,21 +150,24 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<vector<kmer_full> > kmers_by_minimizer;
 	vector<kmer_full> superkmer;
 
-	string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+	kint minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
 	while (superkmer.size() > 0) {
-		// TODO: DO something here
-		// cout << superkmer.size() << endl;
-		// for (kmer_full & kmer : superkmer) {
-		// 	kmer.print(counter.k, counter.m);
-		// }
+		// Add the values
+		for (kmer_full & kmer : superkmer) {
+			uint8_t * data_pointer = counter.get(kmer, minimizer);
+			if (data_pointer == NULL) {
+				data_pointer = counter.insert(kmer, minimizer);
+				// Init counter
+				*data_pointer = (uint8_t)0;
+			}
+			// Increment counter
+			*data_pointer += 1;
+		}
 
+		// Next superkmer
 		superkmer.clear();
-		string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+		minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
 	}
 
 	return;
-
-	for (auto kmers: kmers_by_minimizer) {
-		uint8_t * data_array = counter.insert(kmers);
-	}
 }

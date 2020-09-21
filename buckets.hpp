@@ -28,17 +28,26 @@ public:
 	vector<uint8_t> values;
 	uint32_t sorted_size;
 
-	void insert_buffer();
-	void add_kmers(vector<kmer_full>& kmers);
-	void add_kmers_buffer( vector<kmer_full>& kmer);
-	bool add_kmers_sorted( vector<kmer_full>& kmer);
-	uint64_t print_kmers(string& result,const  string& mini, robin_hood::unordered_flat_map<string, uint8_t> & real_count, robin_hood::unordered_map<kint, uint8_t> * cursed_kmers, bool check)const;
-	uint64_t size()const;
-	uint64_t number_kmer()const;
-	bool  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm);
-	bool find_kmer(kmer_full& kmer);
-	uint64_t number_kmer_counted()const;
 	Bucket(){sorted_size=0;}
+	// void insert_buffer();
+	// // void add_kmer(kmer_full & kmer);
+	void add_kmers(vector<kmer_full>& kmers);
+	// void add_kmers_buffer( vector<kmer_full>& kmer);
+	// bool add_kmers_sorted( vector<kmer_full>& kmer);
+	// uint64_t print_kmers(string& result,const  string& mini, robin_hood::unordered_flat_map<string, uint8_t> & real_count, robin_hood::unordered_map<kint, uint8_t> * cursed_kmers, bool check)const;
+	// uint64_t size()const;
+	// uint64_t number_kmer()const;
+	// bool  find_kmer_from_interleave(kmer_full& kmer, SKCL& mockskm);
+	// bool find_kmer(kmer_full& kmer);
+	// uint64_t number_kmer_counted()const;
 };
+
+
+uint8_t Bucket::k;
+uint8_t Bucket::minimizer_size = 0;
+
+void Bucket::add_kmers(vector<kmer_full> & kmers) {
+
+}
 
 #endif

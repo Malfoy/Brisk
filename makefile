@@ -15,7 +15,7 @@ EXEC=counter
 all: $(EXEC) 
 
 
-counter: counter.o buckets.o SuperKmerLight.o DenseMenuYo.o Kmers.o
+counter: counter.o Kmers.o
 	@echo "[LD] $@"
 	+@$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 

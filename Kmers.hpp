@@ -63,7 +63,7 @@ int64_t get_minimizer(kint seq, uint8_t k, int8_t& position, uint8_t m);
 string getCanonical(const string& str);
 
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
-void string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
+kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
 
 
 
