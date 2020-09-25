@@ -7,11 +7,13 @@
 #include "Brisk2.hpp"
 #include "Kmers.hpp"
 
+
 using namespace std;
 
 // --- Useful functions to count kmers ---
 void count_fasta(Brisk<uint8_t> & counter, string & filename);
 void count_sequence(Brisk<uint8_t> & counter, string & sequence);
+void verif_counts(Brisk<uint8_t> & counter);
 
 
 int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
@@ -28,6 +30,8 @@ int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
   return 0;
 }
 
+static robin_hood::unordered_map<kint, int16_t> verif;
+static bool check;
 
 int main(int argc, char** argv) {
 	string fasta = "";
@@ -37,10 +41,10 @@ int main(int argc, char** argv) {
 	parse_args(argc, argv, fasta, k, m, mode);
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
-	// if (mode > 1) {
-	// 	check = true;
-	// 	cout << "LETS CHECK THE RESULTS" << endl;
-	// }
+	if (mode > 1) {
+		check = true;
+		cout << "LETS CHECK THE RESULTS" << endl;
+	}
 
 
 	cout << "\n\n\nI count " << fasta << endl;
@@ -56,12 +60,16 @@ int main(int argc, char** argv) {
 	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
 	cout << endl;
 
-	// if (mode == 2) {
-	// 	cout<<menu.dump_counting()<<" errors"<<endl;;
-	// }
-	// menu.dump_stats();
+
+	if (check)
+		verif_counts(counter);
 
 	return 0;
+}
+
+
+void verif_counts(Brisk<uint8_t> & counter) {
+
 }
 
 
@@ -115,7 +123,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 	vector<string>  buffer;
 	uint line_count = 0;
 
-	#pragma omp parallel num_threads(nb_core)
+	// #pragma omp parallel num_threads(nb_core)
 	{
 		string line;
 		while (in.good() or not buffer.empty()) {
@@ -152,18 +160,29 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 
 	kint minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
 	while (superkmer.size() > 0) {
+		// cout << "Super kmer" << endl;
 		// Add the values
 		for (kmer_full & kmer : superkmer) {
+			if (check) {
+				if (verif.count(kmer.kmer_s) == 0)
+					verif[kmer.kmer_s] = 0;
+				verif[kmer.kmer_s] += 1;
+			}
+			// cout << "Kmer" << endl;
 			uint8_t * data_pointer = counter.get(kmer, minimizer);
+			// cout << (uint *)data_pointer << endl;
 			if (data_pointer == NULL) {
 				data_pointer = counter.insert(kmer, minimizer);
+				// cout << (uint *)data_pointer << endl;
 				// Init counter
 				*data_pointer = (uint8_t)0;
 			}
 			// Increment counter
 			*data_pointer += 1;
+			// cout << "/Kmer" << endl;
 		}
 
+		// cout << "/Super kmer" << endl;
 		// Next superkmer
 		superkmer.clear();
 		minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);

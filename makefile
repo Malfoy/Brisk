@@ -1,7 +1,7 @@
 CC=g++
 
 CFLAGS+=-std=c++14 -pipe -fopenmp -mavx2 ${WARNS}
-CFLAGS+=-Os -fno-fat-lto-objects -flto=jobserver -march=native -mtune=native -mcmodel=large -msse3 -mavx
+CFLAGS+=-Os -g -fno-fat-lto-objects -flto=jobserver -march=native -mtune=native -mcmodel=large -msse3 -mavx
 
 LDFLAGS+=-fuse-linker-plugin
 LDFLAGS+=-lpthread -fopenmp -lz 

@@ -5,6 +5,7 @@
 #ifndef POW2_H
 #define POW2_H
 
+
 // Represents the cardinality of a pow2 sized set. Allows div/mod arithmetic operations on indexes.
 template <typename T>
 struct Pow2 {

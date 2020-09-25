@@ -43,13 +43,13 @@
 #    define nodiscard_attr __attribute__((warn_unused_result))
 #endif
 
-#ifdef assert
-#    undef assert
-#endif
+// #ifdef assert
+// #    undef assert
+// #endif
 
 #ifdef NDEBUG
 #    define DEBUG 0
-#    define assert(...) (static_cast<void>(0))
+// #    define assert(...) (static_cast<void>(0))
 #    define assume(expr, ...) (likely((expr)) ? static_cast<void>(0) : __builtin_unreachable())
 #else
 #    define DEBUG 1
@@ -73,7 +73,7 @@ abort_message(const char* msg...)
 }
 
 #    define __gatbl_sourceloc_fail(what, msg, ...) gatbl::abort_message("%s:%u %s\n\t" what " failed: " msg "\n", __FILE__, __LINE__, static_cast<const char*>(__PRETTY_FUNCTION__), ##__VA_ARGS__))
-#    define assert(expr, ...) (likely((expr)) ? static_cast<void>(0) : __gatbl_sourceloc_fail("Assertion '" #expr "'", ##__VA_ARGS__)
+// #    define assert(expr, ...) (likely((expr)) ? static_cast<void>(0) : __gatbl_sourceloc_fail("Assertion '" #expr "'", ##__VA_ARGS__)
 #    define assume(expr, ...) (likely((expr)) ? static_cast<void>(0) : __gatbl_sourceloc_fail("Assumption '" #expr "'", ##__VA_ARGS__)
 
 #endif

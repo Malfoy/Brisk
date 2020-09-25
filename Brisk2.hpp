@@ -40,8 +40,7 @@ Brisk<DATA>::Brisk(uint8_t k, uint8_t m){
 
 template<class DATA>
 DATA * Brisk<DATA>::get(kmer_full & kmer, const kint minimizer) {
-	cout << "TODO: Brisk2 - get" << endl;
-	return NULL;
+	return this->menu->get_kmer(kmer, minimizer);
 }
 
 template <class DATA>
