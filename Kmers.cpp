@@ -413,11 +413,13 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		}
 		mini_pos += 1;
 
-		if (to_return) {
+		if (to_return and seq_idx > 0) {
 			seq_idx += 1;
 			saved = true;
 			return return_val;
 		} else {
+			if (seq_idx == 0)
+				to_return = false;
 			kmers.push_back(saved_kmer);
 		}
 	}

@@ -100,8 +100,9 @@ template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 	// if (buffered_kmer->kmer_s != kmer.kmer_s or minimizer != buffered_minimizer) {
 		DATA * prev_val = this->get_kmer(kmer, minimizer);
-		if (prev_val != NULL)
+		if (prev_val != NULL) {
 			return prev_val;
+		}
 	// }
 
 	// Cursed kmers

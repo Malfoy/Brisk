@@ -141,7 +141,6 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 						line=line.substr(3*line.size()/4-counter.k+1);
 					}
 				}
-
 			}
 			count_sequence(counter, line);
 			line_count++;
@@ -160,7 +159,6 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 
 	kint minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
 	while (superkmer.size() > 0) {
-		// cout << "Super kmer" << endl;
 		// Add the values
 		for (kmer_full & kmer : superkmer) {
 			if (check) {

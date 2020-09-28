@@ -25,6 +25,7 @@ public:
 	static uint64_t allocated_bytes;
 	// uint8_t * nucleotides; // TODO: GO EXTERN !
 	uint32_t idx;
+	uint32_t data_idx;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
 	/**
@@ -33,10 +34,10 @@ public:
 	uint8_t bytes_used;
 	uint64_t interleaved;
 
-	vector<DATA> kmer_data;
+	// vector<DATA> kmer_data;
 
 
-	SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides);
+	SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx);
 	SKCL(const SKCL<DATA> & otto);
 	SKCL& operator=(const SKCL& rhs) {return * this;};
 	// ~SKCL();
@@ -48,12 +49,12 @@ public:
 	// kint get_suffix()const;
 	// bool operator < (const  SKCL& str) const;
 	// int32_t query_kmer_hash(const kmer_full& kmer)const;
-	DATA * compact_right(const kmer_full & kmer, uint8_t * nucleotides);
+	DATA * compact_right(const kmer_full & kmer, uint8_t * nucleotides, DATA * data);
 	// bool suffix_is_prefix(const kmer_full& kmf)const;
 	// void print_all()const;
 	// bool  is_lex_inferior(const SKCL& kmf)const;	
 	// uint interleaved_size()const;
-	DATA * query_kmer(const kmer_full& kmer, uint8_t * nucleotides);
+	DATA * query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA * data);
 	uint suffix_size()const;
 	uint prefix_size()const;
 
@@ -118,8 +119,9 @@ void SKCL<DATA>::set_parameters(const uint8_t k, const uint8_t m) {
 	* @param mini_idx The minimizer position in the kmer (equivalent to suffix size).
 	*/
 template <class DATA>
-SKCL<DATA>::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides) {
+SKCL<DATA>::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx) {
 	this->idx = idx;
+	this->data_idx = data_idx;
 	memset(nucleotides, 0, SKCL<DATA>::allocated_bytes);
 	Pow2<kint> anc(2 * SKCL<DATA>::compacted_size - 8);
 
@@ -136,7 +138,7 @@ SKCL<DATA>::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucl
 	this->interleaved = 0;
 	this->size = 1;
 	this->minimizer_idx = mini_idx;
-	this->kmer_data = vector<DATA>(1);
+	// this->kmer_data = vector<DATA>(1);
 	this->bytes_used=ceil(static_cast<float>(k - minimizer_size)/4.);
 };
 
@@ -149,12 +151,13 @@ SKCL<DATA>::SKCL(const SKCL<DATA> & otto) {
 	this->interleaved = otto.interleaved;
 	this->size = otto.size;
 	this->minimizer_idx = otto.minimizer_idx;
-	this->kmer_data = otto.kmer_data;
+	// this->kmer_data = otto.kmer_data;
+	this->data_idx = otto.data_idx;
 	this->bytes_used = otto.bytes_used;
 }
 
 template <class DATA>
-DATA * SKCL<DATA>::compact_right(const kmer_full & kmer, uint8_t * nucleotides) {
+DATA * SKCL<DATA>::compact_right(const kmer_full & kmer, uint8_t * nucleotides, DATA * data) {
 	size_t kmer_suffix_size = kmer.minimizer_idx;
 	size_t skm_suffix_size = this->suffix_size();
 	// Suffix sizes are not matching
@@ -179,8 +182,7 @@ DATA * SKCL<DATA>::compact_right(const kmer_full & kmer, uint8_t * nucleotides) 
 		bytes_used = ceil(static_cast<float>(k - minimizer_size + size - 1)/4.);
 		minimizer_idx++;
 
-		this->kmer_data.push_back(DATA());
-		return &(this->kmer_data[this->size - 1]);
+		return data + this->size - 1;
 	}
 
 	return NULL;
@@ -320,7 +322,7 @@ uint64_t SKCL<DATA>::interleaved_value_max()const {
 
 
 template <class DATA>
-DATA * SKCL<DATA>::query_kmer(const kmer_full& kmer, uint8_t * nucleotides) {
+DATA * SKCL<DATA>::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA * data) {
 	// cout << "SKL - query_kmer" << endl;
 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
 	
@@ -329,7 +331,7 @@ DATA * SKCL<DATA>::query_kmer(const kmer_full& kmer, uint8_t * nucleotides) {
 	}
 
 	if (get_ith_kmer(size-start_idx, nucleotides) == kmer.get_compacted())//THE GET COMPACTED SHOULD BE MADE ABOVE
-		return &(this->kmer_data[size-start_idx-1]);
+		return data + size - start_idx - 1;
 	else
 		return NULL;
 }
