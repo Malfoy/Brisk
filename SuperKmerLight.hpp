@@ -88,7 +88,7 @@ private:
 	static uint which_byte(uint i);
 	uint nb_nucl()const;
 
-}; //__attribute__((packed));
+} __attribute__((packed));
 
 
 template <class DATA>

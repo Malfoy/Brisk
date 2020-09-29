@@ -118,16 +118,16 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 	}
 
 	// Read file line by line
-	uint nb_core = 1;
+	uint nb_core = 8;
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 	uint line_count = 0;
 
-	// #pragma omp parallel num_threads(nb_core)
+	#pragma omp parallel num_threads(nb_core)
 	{
 		string line;
 		while (in.good() or not buffer.empty()) {
-			#pragma omp critical(input)
+			#pragma omp critical
 			{
 				if(not buffer.empty()){
 					line=buffer[buffer.size()-1];

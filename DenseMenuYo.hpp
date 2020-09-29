@@ -53,6 +53,7 @@ private:
 
 	// Number of mutex used
 	vector<omp_lock_t> MutexWall;
+	omp_lock_t multi_lock;
 
 	// Buffers
 	kint buffered_minimizer;
@@ -77,6 +78,7 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 	for (uint64_t i(0); i < mutex_number; ++i) {
 		omp_init_lock(&MutexWall[i]);
 	}
+	omp_init_lock(&multi_lock);
 
 	minimizer_size=m;
 	this->k = k;
@@ -107,7 +109,9 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 
 	// Cursed kmers
 	if (kmer.multi_mini) {
+		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
+		omp_unset_lock(&multi_lock);
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 
@@ -139,10 +143,14 @@ template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 	// Cursed kmers
 	if (kmer.multi_mini) {
-		if (cursed_kmers.count(kmer.kmer_s) != 0)
+		omp_set_lock(&multi_lock);
+		if (cursed_kmers.count(kmer.kmer_s) != 0) {
+			omp_unset_lock(&multi_lock);
 			return &(cursed_kmers[kmer.kmer_s]);
-		else
+		} else {
+			omp_unset_lock(&multi_lock);
 			return (DATA *)NULL;
+		}
 	}
 
 	// Normal kmer

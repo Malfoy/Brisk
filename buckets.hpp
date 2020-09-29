@@ -185,7 +185,7 @@ template <class DATA>
 DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 	static uint8_t * nucleotides_area = new uint8_t[SKCL<DATA>::allocated_bytes];
 	// cout << "Bucket - find_kmer" << endl;
-	SKCL<DATA> mockskm = SKCL<DATA>(kmer.get_compacted(), kmer.minimizer_idx, 0, nucleotides_area, NULL);
+	SKCL<DATA> mockskm = SKCL<DATA>(kmer.get_compacted(), kmer.minimizer_idx, 0, nucleotides_area, 0);
 	mockskm.interleaved = mockskm.interleaved_value(nucleotides_area);
 	
 	uint prefix_size = mockskm.prefix_size();
