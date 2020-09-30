@@ -35,6 +35,10 @@ public:
 	DATA * find_kmer(kmer_full& kmer);
 	// uint64_t number_kmer_counted()const;
 
+
+	void next_kmer(kint & kmer, kint & minimizer);
+	bool has_next_kmer();
+
 private:
 	static uint8_t k;
 	static uint8_t minimizer_size;
@@ -50,6 +54,9 @@ private:
 	DATA * find_kmer_from_interleave(kmer_full& kmer, SKCL<DATA> & mockskm);
 	void insert_buffer();
 	void data_space_update();
+
+	uint32_t enumeration_skmer_idx;
+	uint8_t enumeration_kmer_idx;
 };
 
 // Static variable definition
@@ -69,6 +76,9 @@ Bucket<DATA>::Bucket() {
 	this->next_data = 0;
 	this->data_reserved_number = 10;
 	this->data_reserved_memory = (DATA *)malloc(sizeof(DATA) * this->data_reserved_number);
+
+	enumeration_skmer_idx = 0;
+	enumeration_kmer_idx = 0;
 }
 
 
@@ -280,6 +290,45 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 	}
 
 	return NULL;
+}
+
+
+template <class DATA>
+bool Bucket<DATA>::has_next_kmer() {
+	if (enumeration_skmer_idx >= skml.size())
+		return false;
+
+	SKCL<DATA> & skmer = skml[enumeration_skmer_idx];
+	if (enumeration_kmer_idx >= skmer.size) {	
+		enumeration_skmer_idx += 1;
+		enumeration_kmer_idx = 0;
+		return has_next_kmer();
+	}	
+
+	return true;
+}
+
+
+// template <class DATA>
+// void Bucket<DATA>::reinit_kmer_enumeration() {
+
+// }
+
+
+template <class DATA>
+void Bucket<DATA>::next_kmer(kint & kmer, kint & minimizer) {
+	// Nothing to do here
+	if (not has_next_kmer())
+		return;
+
+	SKCL<DATA> & skmer = skml[enumeration_skmer_idx];
+	kmer = skmer.get_kmer(
+			enumeration_kmer_idx,
+			this->nucleotides_reserved_memory + (skmer.idx * SKCL<DATA>::allocated_bytes),
+			minimizer
+	);
+	
+	enumeration_kmer_idx += 1;
 }
 
 

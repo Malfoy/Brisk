@@ -41,6 +41,9 @@ public:
 	// uint64_t dump_counting(bool check);
 	// void dump_stats();
 
+	bool next(kint & kmer);
+	void restart_kmer_enumeration();
+
 private:
 	// Mutexes
 	uint64_t mutex_order;
@@ -60,6 +63,8 @@ private:
 	kmer_full * buffered_kmer;
 	
 	// uint64_t getMemorySelfMaxUsed();
+	uint64_t next_enumerated_mutex;
+	uint32_t next_enumerated_bucket;
 };
 
 
@@ -90,6 +95,9 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 
 	buffered_minimizer = 0;
 	buffered_kmer = NULL;
+
+	next_enumerated_mutex = 0;
+	next_enumerated_bucket = 0;
 }
 
 
@@ -176,6 +184,54 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 
 	return value;
 }
+
+
+	// bucket_number=1<<(2*(minimizer_size-m_reduc));
+	// matrix_column_number = bucket_number / mutex_number;
+	// bucket_indexes = new uint32_t[bucket_number];
+	// memset(bucket_indexes, 0, sizeof(uint32_t)*bucket_number);
+	// bucketMatrix = new vector<Bucket<DATA> >[mutex_number];
+
+
+template<class DATA>
+bool DenseMenuYo<DATA>::next(kint & kmer) {
+	// Enumeration is over
+	if (next_enumerated_mutex >= mutex_number)
+		return false;
+
+	// Get the current bucket list
+	vector<Bucket<DATA> > & bucket_list = bucketMatrix[next_enumerated_mutex];
+
+	// Look for bucket idx incrementation
+	if (next_enumerated_bucket >= bucket_list.size()) {
+		next_enumerated_mutex += 1;
+		next_enumerated_bucket = 0;
+		return this->next(kmer);
+	}
+
+	// Get the right bucket
+	Bucket<DATA> & bucket = bucket_list[next_enumerated_bucket];
+	if (not bucket.has_next_kmer()) {
+		next_enumerated_bucket += 1;
+		return this->next(kmer);
+	}
+	
+	cout << "mutex " << next_enumerated_mutex << " " << bucket_list.size() << " buckets" << endl;
+	cout << "bucket " << next_enumerated_bucket << endl;
+	
+	kint mini = 0;
+	bucket.next_kmer(kmer, mini);
+
+	return true;
+}
+
+
+template<class DATA>
+void DenseMenuYo<DATA>::restart_kmer_enumeration() {
+	next_enumerated_mutex = 0;
+	next_enumerated_bucket = 0;
+}
+
 
 
 #endif

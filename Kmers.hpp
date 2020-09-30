@@ -55,7 +55,32 @@ public:
 
 // ----- Usefull binary kmer functions -----
 
-void print_kmer(kint num,uint64_t n);
+template<typename T>
+void print_kmer(T num, uint8_t n){
+	num &= ((T)1 << (2*n)) - 1;
+	T anc((T)1<<(2*(n-1)));
+	for(uint64_t i(0);i<n and anc!=0;++i){
+		uint64_t nuc=num/anc;
+		num=num%anc;
+		if(nuc==2){
+			cout<<"T";
+		}
+		if(nuc==3){
+			cout<<"G";
+		}
+		if(nuc==1){
+			cout<<"C";
+		}
+		if(nuc==0){
+			cout<<"A";
+		}
+		if (nuc>=4){
+			cout<<nuc<<endl;
+			cout<<"WTF"<<endl;
+		}
+		anc>>=2;
+	}
+}
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 // Return the canonical minimizer for a uint64 sequence.

@@ -57,6 +57,7 @@ public:
 	DATA * query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA * data);
 	uint suffix_size()const;
 	uint prefix_size()const;
+	kint get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini)const;
 
 private:
 	static uint8_t k;
@@ -64,7 +65,7 @@ private:
 	static uint8_t compacted_size;
 	static kint compact_mask;
 	
-	kint get_ith_kmer(uint idx, uint8_t * nucleotides)const;
+	kint get_ith_kmer(const uint idx, const uint8_t * nucleotides)const;
 	kint get_right_overlap(uint8_t * nucleotides)const;
 
 	/**
@@ -212,7 +213,7 @@ uint SKCL<DATA>::which_byte(uint i){
 
 
 template <class DATA>
-kint SKCL<DATA>::get_ith_kmer(uint kmer_idx, uint8_t * nucleotides)const{
+kint SKCL<DATA>::get_ith_kmer(const uint kmer_idx, const uint8_t * nucleotides)const{
 	kint result(0);
 	
 	int start = SKCL<DATA>::which_byte(SKCL::compacted_size + kmer_idx - 1);
@@ -347,6 +348,32 @@ DATA * SKCL<DATA>::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA
 // 	//~ cout<<"query kmer bool FAIL"<<endl;
 // 	return -1;
 // }
+
+
+template <class DATA>
+kint SKCL<DATA>::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini)const {
+	kint compacted = get_ith_kmer(kmer_idx, nucleotides);
+	print_kmer(compacted, SKCL<DATA>::k); cout << endl;
+	
+	// Suffix preparation
+	uint8_t suffix_size = this->minimizer_idx - this->size + 1 + kmer_idx;
+	cout << "suffix size " << (uint)suffix_size << endl;
+	kint mask = (1 << (2 * suffix_size)) - 1;
+	kint suffix = compacted & mask;
+
+	// Prefix preparation
+	mask = ~mask;
+	kint prefix = (compacted & mask) << (2 * SKCL<DATA>::minimizer_size);
+	print_kmer(prefix, SKCL<DATA>::k); cout << endl;
+
+	// Minimizer
+	mask = (1 << (2 * SKCL<DATA>::minimizer_size)) - 1;
+	kint result = (mini & mask) << (2 * suffix_size);
+
+	// Assemble everything
+	result += prefix + suffix;
+	return result;
+}
 
 
 #endif

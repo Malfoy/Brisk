@@ -69,7 +69,14 @@ int main(int argc, char** argv) {
 
 
 void verif_counts(Brisk<uint8_t> & counter) {
+	cout << "--- Start counting verification ---" << endl;
 
+	kint kmer = 0;
+	while (counter.next(kmer)) {
+		print_kmer(kmer, counter.k);
+		cout << endl;
+		kmer = 0;
+	}
 }
 
 
@@ -123,7 +130,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 	vector<string>  buffer;
 	uint line_count = 0;
 
-	#pragma omp parallel num_threads(nb_core)
+	// #pragma omp parallel num_threads(nb_core)
 	{
 		string line;
 		while (in.good() or not buffer.empty()) {

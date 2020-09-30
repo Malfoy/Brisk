@@ -13,34 +13,6 @@ uint64_t rcbc(uint64_t in, uint64_t n);
 uint64_t hash64shift(uint64_t key);
 
 
-template<typename T>
-void print_kmer(T num, uint8_t n){
-	num &= ((T)1 << (2*n)) - 1;
-	T anc((T)1<<(2*(n-1)));
-	for(uint64_t i(0);i<n and anc!=0;++i){
-		uint64_t nuc=num/anc;
-		num=num%anc;
-		if(nuc==2){
-			cout<<"T";
-		}
-		if(nuc==3){
-			cout<<"G";
-		}
-		if(nuc==1){
-			cout<<"C";
-		}
-		if(nuc==0){
-			cout<<"A";
-		}
-		if (nuc>=4){
-			cout<<nuc<<endl;
-			cout<<"WTF"<<endl;
-		}
-		anc>>=2;
-	}
-}
-
-
 
 // ----- Kmer class -----
 kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple_mini) {
@@ -57,7 +29,7 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple
 
 void kmer_full::print(uint8_t k, uint8_t m) const {
 	print_kmer(this->kmer_s, k); cout << endl;
-	for (uint i=0 ; i<k - m - this->minimizer_idx ; i++)
+	for (uint8_t i=0 ; i<k - m - this->minimizer_idx ; i++)
 		cout << " ";
 	kint mini = this->kmer_s >> (2 * this->minimizer_idx);
 	print_kmer(mini, m); cout << endl;
