@@ -146,7 +146,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
-	cout << "GET" << endl;
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
@@ -161,7 +160,6 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 
 	auto m_reduc = minimizer_size - mini_m;
 	uint32_t small_minimizer = (uint32_t)(minimizer >> (2 * m_reduc));
-	print_kmer(small_minimizer, mini_m); cout << " minimizer" << endl;
 	kmer.minimizer_idx += m_reduc;
 	// Normal kmer
 	uint32_t mutex_idx = get_mutex(small_minimizer);
@@ -186,7 +184,6 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 	// buffered_kmer = &kmer;
 
 	kmer.minimizer_idx -= m_reduc;
-	cout << "/GET" << endl;
 	return value;
 }
 

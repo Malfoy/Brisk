@@ -285,8 +285,8 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 	static kmer_full saved_kmer((kint)0,(uint8_t)0,false);
 
 	// Useful precomputed values
-	static kint k_mask = ((kint)1 << (2*k + 1)) - 1;
-	static kint m_mask = ((kint)1 << (2*m + 1)) - 1;
+	static kint k_mask = ((kint)1 << (2*k)) - 1;
+	static kint m_mask = ((kint)1 << (2*m)) - 1;
 
 	// kmer variables
 	static kint current_kmer = 0;

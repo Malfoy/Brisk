@@ -370,7 +370,6 @@ kint SKCL<DATA>::get_skmer(const uint8_t * nucleotides, const kint & mini)const 
 	kint result = 0;
 	
 	for (int i=allocated_bytes-1 ; i>=0 ; i--) {
-		cout << i << ": "; print_kmer(nucleotides[i], 4); cout << " ";
 	}
 	cout << endl;
 
