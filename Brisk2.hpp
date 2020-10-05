@@ -23,7 +23,7 @@ public:
 
 	DATA * insert(kmer_full & kmer, const kint minimizer);
 	DATA * get(kmer_full & kmer, const kint minimizer);
-	bool next(kint & kmer);
+	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
 };
 
@@ -52,7 +52,7 @@ DATA * Brisk<DATA>::insert(kmer_full & kmer, const kint minimizer) {
 
 
 template<class DATA>
-bool Brisk<DATA>::next(kint & kmer) {
+bool Brisk<DATA>::next(kmer_full & kmer) {
 	return this->menu->next(kmer);
 }
 

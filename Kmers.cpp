@@ -15,15 +15,15 @@ uint64_t hash64shift(uint64_t key);
 
 
 // ----- Kmer class -----
-kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple_mini) {
+kmer_full::kmer_full(kint value, uint8_t minimizer_idx, bool multiple_mini) {
 	this->minimizer_idx = minimizer_idx;
 	this->kmer_s = value;
-	this->prefix=(value);
-	uint64_t shift((minimizer_idx + m)*2);
-	this->prefix>>=shift;
-	this->suffix=(value);
-	shift=(minimizer_idx)*2;
-	this->suffix%=((kint)1<<shift);
+	// this->prefix=(value);
+	// uint64_t shift((minimizer_idx + m)*2);
+	// this->prefix>>=shift;
+	// this->suffix=(value);
+	// shift=(minimizer_idx)*2;
+	// this->suffix%=((kint)1<<shift);
 	this->multi_mini = multiple_mini;
 }
 
@@ -69,12 +69,15 @@ string kmer2str(__uint128_t num, uint k) {
 
 
 // SUFFIX IS AT RIGHT!!!!!!DO NOT CHANGE THIS
-kint kmer_full::get_compacted() const {
-	kint result;
-	result=prefix;
-	result<<=(minimizer_idx*2);
-	result+=suffix;
-	return result;
+kint kmer_full::get_compacted(uint8_t m) const {
+	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
+	kint suffix = kmer_s & mask;
+
+	mask = ~mask;
+	kint prefix = (kmer_s >> (2 * m));
+	prefix = prefix & mask;
+	
+	return prefix + suffix;
 }
 
 
@@ -279,7 +282,7 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 	// Position in the sequence
 	static uint64_t seq_idx = 0;
 	static bool saved = false;
-	static kmer_full saved_kmer((kint)0,(uint8_t)0,(uint8_t)0,false);
+	static kmer_full saved_kmer((kint)0,(uint8_t)0,false);
 
 	// Useful precomputed values
 	static kint k_mask = ((kint)1 << (2*k + 1)) - 1;
@@ -323,9 +326,8 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		// Update the current kmer and the minimizer candidate
 		update_kmer(seq[k-1+seq_idx], current_kmer, current_rc_kmer, k, k_mask);
 		update_kmer(seq[k-1+seq_idx], mini_candidate, rc_mini_candidate, m, m_mask);
-		// print_kmer(current_kmer, k);
-		// cout << endl;
-
+		mini_pos += 1;
+		
 		// Get canonical minimizer
 		kint candidate_canon = min(mini_candidate, rc_mini_candidate);
 		uint64_t current_hash = hash64shift((uint64_t)candidate_canon);
@@ -379,11 +381,10 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		}
 
 		if (not reversed) {
-			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple);
+			saved_kmer = kmer_full(current_kmer, mini_pos, multiple);
 		} else {
-			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple);
+			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, multiple);
 		}
-		mini_pos += 1;
 
 		if (to_return and seq_idx > 0) {
 			seq_idx += 1;

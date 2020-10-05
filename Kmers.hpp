@@ -40,13 +40,13 @@ class kmer_full {
 public:
 	int8_t minimizer_idx;
 	kint kmer_s;
-	kint prefix;
-	kint suffix;
+	// kint prefix;
+	// kint suffix;
 	bool multi_mini;
 
-	kmer_full(kint value, uint8_t minimizer_idx, uint8_t m, bool multiple_mini);
+	kmer_full(kint value, uint8_t minimizer_idx, bool multiple_mini);
 	void print(uint8_t k, uint8_t m) const;
-	kint get_compacted()const ;
+	kint get_compacted(uint8_t m)const ;
 	// uint64_t get_minimizer() const;
 	bool contains_multi_minimizer() const;
 };
@@ -58,10 +58,10 @@ public:
 template<typename T>
 void print_kmer(T num, uint8_t n){
 	num &= ((T)1 << (2*n)) - 1;
-	T anc((T)1<<(2*(n-1)));
+	T anc = (T)1<<(2 * (n - 1));
 	for(uint64_t i(0);i<n and anc!=0;++i){
-		uint64_t nuc=num/anc;
-		num=num%anc;
+		uint64_t nuc = num/anc;
+		num = num % anc;
 		if(nuc==2){
 			cout<<"T";
 		}

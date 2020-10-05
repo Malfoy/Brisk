@@ -71,11 +71,24 @@ int main(int argc, char** argv) {
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
 
-	kint kmer = 0;
+	kint mini_mask = (1 << (2 * counter.m)) - 1;
+	kmer_full kmer(0,0,false);
+	// Count 
 	while (counter.next(kmer)) {
-		print_kmer(kmer, counter.k);
-		cout << endl;
-		kmer = 0;
+		if (verif.count(kmer.kmer_s) == 0)
+			verif[kmer.kmer_s] = 0;
+
+		print_kmer(kmer.kmer_s, counter.k); cout << endl;
+
+		kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
+		print_kmer(minimizer, counter.m); cout << endl;
+		cout << "mini idx " << (uint)kmer.minimizer_idx << endl;
+
+		uint8_t * count = counter.get(kmer, minimizer);
+		cout << (uint *)count << endl;
+		verif[kmer.kmer_s] -= *count;
+
+		kmer.kmer_s = 0;
 	}
 }
 
