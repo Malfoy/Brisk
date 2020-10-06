@@ -64,6 +64,14 @@ int main(int argc, char** argv) {
 	if (check)
 		verif_counts(counter);
 
+	cout << "Global statistics:" << endl;
+	uint64_t nb_buckets, nb_skmers, nb_kmers;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers);
+	cout << nb_buckets << " bucket used" << endl;
+	cout << "nb superkmers: " << nb_skmers << endl;
+	cout << "nb kmers: " << nb_kmers << endl;
+	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+
 	return 0;
 }
 
@@ -79,6 +87,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			verif[kmer.kmer_s] = 0;
 
 		kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
+
+		print_kmer(minimizer, counter.m); cout << endl;
+		print_kmer(kmer.kmer_s, counter.k); cout << endl;
 
 		uint8_t * count = counter.get(kmer, minimizer);
 		verif[kmer.kmer_s] -= *count;
@@ -101,6 +112,8 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 	if (errors == 0)
 		cout << "All counts are correct !" << endl;
+
+	cout << endl;
 }
 
 
@@ -173,8 +186,9 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 					}
 				}
 			}
-			count_sequence(counter, line);
 			line_count++;
+			cout << "Line " << line_count << endl;
+			count_sequence(counter, line);
 		}
 	}
 }

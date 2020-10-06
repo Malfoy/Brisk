@@ -25,6 +25,7 @@ public:
 	DATA * get(kmer_full & kmer, const kint minimizer);
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const;
 };
 
 
@@ -62,4 +63,7 @@ void Brisk<DATA>::restart_kmer_enumeration() {
 	this->menu->restart_kmer_enumeration();
 }
 
-
+template<class DATA>
+void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const {
+	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers);
+}

@@ -38,6 +38,7 @@ public:
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const;
 
 private:
 	// Mutexes
@@ -86,8 +87,6 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 	memset(bucket_indexes, 0, sizeof(uint32_t)*bucket_number);
 	bucketMatrix = new vector<Bucket<DATA> >[mutex_number];
 
-	next_enumerated_mutex = 0;
-	next_enumerated_bucket = 0;
 	current_minimizer = 0;
 }
 
@@ -111,7 +110,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		omp_unset_lock(&multi_lock);
-		cout << "CURSED" << endl;
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 	
@@ -137,8 +135,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
 	omp_unset_lock(&MutexWall[mutex_idx]);
 
-	// buffered_minimizer = minimizer;
-	// buffered_kmer = &kmer;
 	kmer.minimizer_idx -= m_reduc;
 	return value;
 }
@@ -176,23 +172,12 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 	}
 
 	// Looks into the bucket for the right kmer
-	// cout << mutex_idx << ' ' << idx << endl;
 	DATA * value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
 	omp_unset_lock(&MutexWall[mutex_idx]);
 	
-	// buffered_minimizer = minimizer;
-	// buffered_kmer = &kmer;
-
 	kmer.minimizer_idx -= m_reduc;
 	return value;
 }
-
-
-	// bucket_number=1<<(2*(minimizer_size-m_reduc));
-	// matrix_column_number = bucket_number / mutex_number;
-	// bucket_indexes = new uint32_t[bucket_number];
-	// memset(bucket_indexes, 0, sizeof(uint32_t)*bucket_number);
-	// bucketMatrix = new vector<Bucket<DATA> >[mutex_number];
 
 
 template<class DATA>
@@ -212,30 +197,11 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	Bucket<DATA> & bucket = bucketMatrix[mutex_idx][idx-1];
 
-	// // Enumeration is over
-	// if (next_enumerated_mutex >= mutex_number)
-	// 	return false;
-
-	// // Get the current bucket list
-	// vector<Bucket<DATA> > & bucket_list = bucketMatrix[next_enumerated_mutex];
-
-	// // Look for bucket idx incrementation
-	// if (next_enumerated_bucket >= bucket_list.size()) {
-	// 	next_enumerated_mutex += 1;
-	// 	next_enumerated_bucket = 0;
-	// 	return this->next(kmer);
-	// }
-
 	// // Get the right bucket
-	// Bucket<DATA> & bucket = bucket_list[next_enumerated_bucket];
 	if (not bucket.has_next_kmer()) {
-		// next_enumerated_bucket += 1;
 		current_minimizer += 1;
 		return this->next(kmer);
 	}
-	
-	// cout << "mutex " << next_enumerated_mutex << " " << bucket_list.size() << " buckets" << endl;
-	// cout << "bucket " << next_enumerated_bucket << endl;
 	
 	bucket.next_kmer(kmer, current_minimizer);
 	kmer.minimizer_idx -= (minimizer_size - mini_m);
@@ -247,6 +213,27 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 template<class DATA>
 void DenseMenuYo<DATA>::restart_kmer_enumeration() {
 	current_minimizer = 0;
+}
+
+template<class DATA>
+void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const {
+	nb_buckets = 0;
+	nb_kmers = 0;
+	nb_skmers = 0;
+
+	for (uint32_t mini=0 ; mini<bucket_number ; mini++) {
+		uint32_t mutex_idx = get_mutex(mini);
+		uint32_t column_idx = get_column(mini);
+		uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
+		uint32_t idx = bucket_indexes[matrix_idx];
+
+		if (idx != 0) {
+			Bucket<DATA> & bucket = bucketMatrix[mutex_idx][idx-1];
+			nb_buckets += 1;
+			nb_skmers += bucket.skml.size();
+			nb_kmers += bucket.nb_kmers;
+		}
+	}
 }
 
 
