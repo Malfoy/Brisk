@@ -39,7 +39,7 @@ public:
 
 	SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx);
 	SKCL(const SKCL<DATA> & otto);
-	SKCL& operator=(const SKCL& rhs) {return * this;};
+	SKCL& operator=(const SKCL& rhs);
 	// ~SKCL();
 
 	uint64_t interleaved_value(uint8_t * nucleotides)const ;
@@ -149,16 +149,24 @@ SKCL<DATA>::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucl
 
 template <class DATA>
 SKCL<DATA>::SKCL(const SKCL<DATA> & otto) {
-	// this->nucleotides = otto.nucleotides;
-	// memcpy(this->nucleotides, otto.nucleotides, SKCL<DATA>::allocated_bytes);
-
 	this->idx = otto.idx;
 	this->interleaved = otto.interleaved;
 	this->size = otto.size;
 	this->minimizer_idx = otto.minimizer_idx;
-	// this->kmer_data = otto.kmer_data;
 	this->data_idx = otto.data_idx;
 	this->bytes_used = otto.bytes_used;
+}
+
+template <class DATA>
+SKCL<DATA>& SKCL<DATA>::operator=(const SKCL& rhs) {
+	this->idx = rhs.idx;
+	this->interleaved = rhs.interleaved;
+	this->size = rhs.size;
+	this->minimizer_idx = rhs.minimizer_idx;
+	this->data_idx = rhs.data_idx;
+	this->bytes_used = rhs.bytes_used;
+
+	return *this;
 }
 
 template <class DATA>

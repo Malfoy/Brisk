@@ -162,7 +162,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 	}
 
 	// Read file line by line
-	uint nb_core = 8;
+	// uint nb_core = 8;
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 	uint line_count = 0;

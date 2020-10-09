@@ -263,7 +263,7 @@ void init_kmer(const string & seq, uint64_t & seq_idx, kint & kmer_seq, kint & r
 	kmer_seq = 0;
 	rc_kmer_seq = 0;
 
-	for (uint8_t seq_idx ; seq_idx<k ; seq_idx++) {
+	for (uint8_t seq_idx=0 ; seq_idx<k ; seq_idx++) {
 		auto nuc = nuc2int(seq[seq_idx]);
 		updateK(kmer_seq, nuc, k_mask);
 		nuc = nuc ^ 2;
