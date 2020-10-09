@@ -23,16 +23,15 @@ public:
 	  * The array is filled backward when new kmers are compacted.
 	  */
 	static uint64_t allocated_bytes;
-	// uint8_t * nucleotides; // TODO: GO EXTERN !
 	uint32_t idx;
 	uint32_t data_idx;
+	uint64_t interleaved;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
 	/**
 	 * The number of bytes that are really occupied by the nucleotides
 	 */
 	uint8_t bytes_used;
-	uint64_t interleaved;
 
 	// vector<DATA> kmer_data;
 
