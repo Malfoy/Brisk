@@ -25,7 +25,7 @@ public:
 	static uint64_t allocated_bytes;
 	uint32_t idx;
 	uint32_t data_idx;
-	uint64_t interleaved;
+	uint32_t interleaved;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
 	/**
@@ -33,33 +33,27 @@ public:
 	 */
 	uint8_t bytes_used;
 
-	// vector<DATA> kmer_data;
-
 
 	SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx);
 	SKCL(const SKCL<DATA> & otto);
 	SKCL& operator=(const SKCL& rhs);
-	// ~SKCL();
 
-	uint64_t interleaved_value(uint8_t * nucleotides)const ;
-	uint64_t interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx=7)const;
-	// bool  suffix_is_prefix(const SKCL& kmf)const;
-	// string get_string(const string& mini) const ;
-	// kint get_suffix()const;
-	// bool operator < (const  SKCL& str) const;
-	// int32_t query_kmer_hash(const kmer_full& kmer)const;
 	DATA * compact_right(const kmer_full & kmer, uint8_t * nucleotides, DATA * data);
-	// bool suffix_is_prefix(const kmer_full& kmf)const;
-	// void print_all()const;
-	// bool  is_lex_inferior(const SKCL& kmf)const;	
-	// uint interleaved_size()const;
 	DATA * query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA * data);
+
+	uint32_t interleaved_value(uint8_t * nucleotides)const ;
+	uint32_t interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx=7)const;
+
 	uint suffix_size()const;
 	uint prefix_size()const;
+	kint get_prefix(const uint8_t * nucleotides)const;
+	kint get_suffix(const uint8_t * nucleotides)const;
+
 	void get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer)const;
-	kint get_skmer(const uint8_t * nucleotides, const kint & mini)const;
-	kint get_ith_kmer(const uint idx, const uint8_t * nucleotides)const;
-	kint get_compacted(const uint8_t * nucleotides)const;
+	// kint get_skmer(const uint8_t * nucleotides, const kint & mini)const;
+	// kint get_compacted(const uint8_t * nucleotides)const;
+
+	void print(const uint8_t * nucleotides, const kint & mini) const;
 
 	static uint8_t minimizer_size;
 private:
@@ -68,30 +62,16 @@ private:
 	static kint compact_mask;
 	
 	kint get_right_overlap(uint8_t * nucleotides)const;
-	uint64_t param_interleaved_value(uint8_t * nucleotides, uint8_t baseval)const;
+	uint32_t param_interleaved_value(uint8_t * nucleotides, uint8_t baseval)const;
 
-	/**
-  * Return the byte index corresponding to the nucletide position.
-  * Position 0 is the first nucleotide of the prefix.
-  * The minimizer nucleotides doesn't count.
-  * 
-  * @param position Nucleotide position in the sequence
-  *
-  * @return The Byte index in the datastructure.
-  * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
-  */
-	uint8_t get_nucleotide(uint8_t position, uint8_t * nucleotides)const;
+	kint get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides)const;
 	/**
   * Get the nucleotide value at the position in parameter.
   * Position 0 is the first nucleotide of the prefix.
   * The minimizer nucleotides doesn't count.
   */
 	uint byte_index(uint position)const;
-
-	static uint which_byte(uint i);
-	uint nb_nucl()const;
-
-} __attribute__((packed));
+};
 
 
 template <class DATA>
@@ -170,6 +150,9 @@ SKCL<DATA>& SKCL<DATA>::operator=(const SKCL& rhs) {
 
 template <class DATA>
 DATA * SKCL<DATA>::compact_right(const kmer_full & kmer, uint8_t * nucleotides, DATA * data) {
+	if ((compacted_size + size) / 8 > allocated_bytes)
+		return NULL;
+	
 	size_t kmer_suffix_size = kmer.minimizer_idx;
 	size_t skm_suffix_size = this->suffix_size();
 	// Suffix sizes are not matching
@@ -186,7 +169,7 @@ DATA * SKCL<DATA>::compact_right(const kmer_full & kmer, uint8_t * nucleotides, 
 	kmer_overlap %= ((kint)1 << (2 * (k - 1 - minimizer_size)));
 	
 	if(super_kmer_overlap == kmer_overlap){
-		int byte_to_update = SKCL::allocated_bytes - 1 - (SKCL::compacted_size+size - 1) / 4;
+		int byte_to_update = SKCL<DATA>::byte_index(SKCL::compacted_size + size - 1);
 		int padding = (4 - ((SKCL::compacted_size + size) % 4)) % 4;
 		nucleotides[byte_to_update] += (nuc << (2 * padding));
 		size++;
@@ -212,50 +195,50 @@ uint SKCL<DATA>::prefix_size()const{
 	return (this->size + SKCL::compacted_size - 1 - this->minimizer_idx);
 }
 
-
-// uint SKCL::interleaved_size()const{
-// 	return min(prefix_size(),suffix_size())*2;
-// }
-
 template <class DATA>
-uint SKCL<DATA>::which_byte(uint i){
-	return SKCL<DATA>::allocated_bytes - ceil((float)i / 4.);
-}
+kint SKCL<DATA>::get_prefix(const uint8_t * nucleotides)const {
+	kint result = 0;
+	if (prefix_size() == 0)
+		return result;
 
-
-/**
- * WARNING: This is an Antoine function, so it does not respect standards !
- * The indexes 
- */
-template <class DATA>
-kint SKCL<DATA>::get_ith_kmer(const uint kmer_idx, const uint8_t * nucleotides)const{
-	kint result(0);
-	
-	int start = SKCL<DATA>::which_byte(SKCL::compacted_size + kmer_idx - 1);
-	int length_to_read = SKCL<DATA>::which_byte(kmer_idx) - start + 1;
-	
+	// Copy the compacted value
+	int start = SKCL<DATA>::byte_index(prefix_size() - 1);
+	int length_to_read = SKCL<DATA>::byte_index(0) - start + 1;
 	memcpy(&result, &nucleotides[start], length_to_read);
-	
-	int offset = (4 - (compacted_size + kmer_idx - 1) % 4) % 4;
+	// Align the compacted value
+	int offset = (4 - (prefix_size() % 4)) % 4;
 	result >>= 2 * offset;
-	result &= compact_mask;
+
 	return result;
 }
+
+
+template <class DATA>
+kint SKCL<DATA>::get_suffix(const uint8_t * nucleotides)const {
+	kint result = 0;
+	if (suffix_size() == 0)
+		return result;
+
+	// Copy the compacted value
+	int start = SKCL<DATA>::byte_index(prefix_size() + suffix_size() - 1);
+	int length_to_read = SKCL<DATA>::byte_index(prefix_size()) - start + 1;
+	memcpy(&result, &nucleotides[start], length_to_read);
+	// Align the compacted value
+	int offset = (4 - ((prefix_size() + suffix_size()) % 4)) % 4;
+	result >>= 2 * offset;
+
+	return result;
+}
+
+
 
 template <class DATA>
 kint SKCL<DATA>::get_right_overlap(uint8_t * nucleotides)const {
-	//~ cout<<"right overlap"<<endl;
-	kint result(this->get_ith_kmer(size, nucleotides));
-	//~ print_kmer(result,31);cout<<endl;
+	kint result(this->get_compacted_kmer(size-1, nucleotides));
+
 	result %= (kint)1 << (2 * (k - 1 - minimizer_size));
+
 	return result;
-}
-
-
-
-template <class DATA>
-uint SKCL<DATA>::nb_nucl()const{
-	return SKCL::compacted_size + this->size - 1;
 }
 
 
@@ -278,58 +261,44 @@ uint SKCL<DATA>::byte_index(uint nucl_position)const{
 }
 
 
-/**
-  * Get the nucleotide value at the position in parameter.
-  * Position 0 is the first nucleotide of the prefix.
-  * The minimizer nucleotides doesn't count.
-  */
 template <class DATA>
-uint8_t SKCL<DATA>::get_nucleotide(uint8_t nucl_position, uint8_t * nucleotides)const {
-	uint byte_pos = this->byte_index(nucl_position);
-	//~ cout << " alloc " << SKCL::allocated_bytes << " B " << byte_pos<<" nucl position:	"<<(int)nucl_position<<endl;;
-	//~ cout << "Byte: " << byte_pos << endl;
-	uint8_t nucl = nucleotides[byte_pos];
-	nucl >>= 2 * (3 - (nucl_position%4));
-	nucl &= 0b11;
-	return nucl;
-}
-
-
-template <class DATA>
-uint64_t SKCL<DATA>::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval)const{
+uint32_t SKCL<DATA>::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval)const{
 	baseval &= 0b11;
-	kint compacted_skmer = get_compacted(nucleotides);
+	kint prefix = get_prefix(nucleotides);
+	kint suffix = get_suffix(nucleotides);
+	uint8_t suf_size = suffix_size();
+	uint8_t pref_size = prefix_size();
 
-	uint64_t value = 0;
+	uint32_t value = 0;
 	// Suffix interleaved
-	uint8_t max_suffix = min((uint)8, (uint)minimizer_idx);
+	uint8_t max_suffix = min((uint)8, (uint)suf_size);
 	uint8_t i;
 	for (i=0 ; i<max_suffix ; i++) {
 		// Get the value of the nucleotide at the position
-		uint64_t nucl_value = (compacted_skmer >> (2 * (minimizer_idx - 1 - i))) & 0b11;
+		uint64_t nucl_value = (suffix >> (2 * (suf_size - i - 1))) & 0b11;
 		// shift the value to the right place
-		nucl_value <<= 62 - i*4;
+		nucl_value <<= 30 - i*4;
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
 	// Fill missing suffix nucleotides
 	for (; i<8 ; i++) {
-		value |= ((uint64_t)baseval << (62 - i*4));
+		value |= ((uint64_t)baseval << (30 - i*4));
 	}
 
  	// prefix interleaved
-	uint8_t max_prefix = min((uint)8,prefix_size());
+	uint8_t max_prefix = min((uint)8, (uint)pref_size);
 	for (i=0 ; i<max_prefix ; i++) {
 		// Get the value of the nucleotide at the position
-		uint64_t nucl_value = (compacted_skmer >> (2 * (minimizer_idx + i))) & 0b11;
+		uint64_t nucl_value = (prefix >> (2 * i)) & 0b11;
 		// shift the value to the right place
-		nucl_value <<= 60 - i*4;
+		nucl_value <<= 28 - i*4;
 		// Add the nucleotide to the interleaved
 		value |= nucl_value;
 	}
 	// Fill missing prefix nucleotides
 	for (; i<8 ; i++) {
-		value |= ((uint64_t)baseval << (60 - i*4));
+		value |= ((uint64_t)baseval << (28 - i*4));
 	}
 
 	return value;
@@ -337,13 +306,13 @@ uint64_t SKCL<DATA>::param_interleaved_value(uint8_t * nucleotides, uint8_t base
 
 
 template <class DATA>
-uint64_t SKCL<DATA>::interleaved_value(uint8_t * nucleotides)const{
+uint32_t SKCL<DATA>::interleaved_value(uint8_t * nucleotides)const{
 	return this->param_interleaved_value(nucleotides, 0);
 }
 
 template <class DATA>
-uint64_t SKCL<DATA>::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx)const {
-	uint64_t min_val = this->interleaved;
+uint32_t SKCL<DATA>::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx)const {
+	uint32_t min_val = this->interleaved;
 	
 	uint prefix_size = min((uint)max_fix_idx, (uint)this->prefix_size());
 	uint suffix_size = min((uint)max_fix_idx, (uint)this->suffix_size());
@@ -354,7 +323,7 @@ uint64_t SKCL<DATA>::interleaved_value_max(uint8_t * nucleotides, uint max_fix_i
 		fix_point = min(max_fix_idx, 2 * (prefix_size - 1) + 1);
 	}
 
-	uint64_t increment_value = (uint64_t)1 << (62 - fix_point * 2);
+	uint32_t increment_value = (uint32_t)1 << (30 - fix_point * 2);
 
 	return min_val + increment_value;
 }
@@ -362,30 +331,30 @@ uint64_t SKCL<DATA>::interleaved_value_max(uint8_t * nucleotides, uint max_fix_i
 
 template <class DATA>
 DATA * SKCL<DATA>::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, DATA * data) {
-	// cout << "SKL - query_kmer" << endl;
 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
-	
 	if(start_idx<0 or (start_idx>=this->size)){
 		return NULL;
 	}
 
-	if (get_ith_kmer(size-start_idx, nucleotides) == kmer.get_compacted(SKCL<DATA>::minimizer_size))//THE GET COMPACTED SHOULD BE MADE ABOVE
-		return data + size - start_idx - 1;
-	else
+	uint64_t kmer_idx = size - start_idx - 1;
+	if (get_compacted_kmer(kmer_idx, nucleotides) == kmer.get_compacted(minimizer_size)) {
+		return data + kmer_idx;
+	} else {
 		return NULL;
+	}
 }
 
 
 template <class DATA>
-kint SKCL<DATA>::get_compacted(const uint8_t * nucleotides)const {
+kint SKCL<DATA>::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides)const {
 	kint result = 0;
 
 	// Copy the compacted value
-	int start = SKCL<DATA>::byte_index(SKCL::compacted_size + size - 1);
-	int length_to_read = SKCL<DATA>::byte_index(0) - start + 1;
+	int start = SKCL<DATA>::byte_index(kmer_idx + compacted_size - 1);
+	int length_to_read = SKCL<DATA>::byte_index(kmer_idx) - start + 1;
 	memcpy(&result, &nucleotides[start], length_to_read);
 	// Align the compacted value
-	int offset = (4 - (compacted_size + size - 1) % 4) % 4;
+	int offset = (4 - ((compacted_size + kmer_idx) % 4)) % 4;
 	result >>= 2 * offset;
 
 	return result;
@@ -393,30 +362,8 @@ kint SKCL<DATA>::get_compacted(const uint8_t * nucleotides)const {
 
 
 template <class DATA>
-kint SKCL<DATA>::get_skmer(const uint8_t * nucleotides, const kint & mini)const {
-	kint result = get_compacted(nucleotides);
-
-	// prepare prefix/suffix
-	kint prefix = result;
-	kint mask = ((kint)1 << (2 * minimizer_idx)) - 1;
-	result &= mask;
-
-	mask = ~mask;
-	prefix &= mask;
-	prefix <<= 2 * minimizer_size;
-	result += prefix;
-
-	// Merge the minimizer
-	mask = ((kint)1 << (2 * minimizer_size)) - 1;
-	result += (mini & mask) << (2 * minimizer_idx);
-
-	return result;
-}
-
-
-template <class DATA>
 void SKCL<DATA>::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer)const {
-	kint compacted = get_ith_kmer(kmer_idx+1, nucleotides);
+	kint compacted = get_compacted_kmer(kmer_idx, nucleotides);
 	
 	// Suffix preparation
 	uint8_t suffix_size = this->minimizer_idx - this->size + 1 + kmer_idx;
@@ -431,12 +378,21 @@ void SKCL<DATA>::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, c
 	mask = ((kint)1 << (2 * SKCL<DATA>::minimizer_size)) - 1;
 	kmer.kmer_s = (mini & mask) << (2 * suffix_size);
 
-	// print_kmer(kmer.)
-
 	// Assemble everything
 	kmer.kmer_s += prefix + suffix;
 	kmer.multi_mini = false;
 	kmer.minimizer_idx = suffix_size;
+}
+
+
+template <class DATA>
+void SKCL<DATA>::print(const uint8_t * nucleotides, const kint & mini) const {
+	kint prefix = get_prefix(nucleotides);
+	kint suffix = get_suffix(nucleotides);
+
+	print_kmer(prefix, prefix_size());
+	print_kmer(mini, minimizer_size);
+	print_kmer(suffix, suffix_size());
 }
 
 

@@ -88,10 +88,11 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 		kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
 
-		print_kmer(minimizer, counter.m); cout << endl;
+		cout << "mini "; print_kmer(minimizer, counter.m); cout << endl;
 		print_kmer(kmer.kmer_s, counter.k); cout << endl;
 
 		uint8_t * count = counter.get(kmer, minimizer);
+		cout << (uint *)count << endl;
 		verif[kmer.kmer_s] -= *count;
 
 		kmer.kmer_s = 0;
@@ -187,7 +188,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 				}
 			}
 			line_count++;
-			cout << "Line " << line_count << endl;
+			// cout << "Line " << line_count << endl;
 			count_sequence(counter, line);
 		}
 	}
