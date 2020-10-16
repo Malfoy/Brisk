@@ -356,6 +356,7 @@ kint SKCL<DATA>::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucl
 	// Align the compacted value
 	int offset = (4 - ((compacted_size + kmer_idx) % 4)) % 4;
 	result >>= 2 * offset;
+	result = result & (((kint)1 << (2 * compacted_size)) - 1);
 
 	return result;
 }
@@ -366,7 +367,7 @@ void SKCL<DATA>::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, c
 	kint compacted = get_compacted_kmer(kmer_idx, nucleotides);
 	
 	// Suffix preparation
-	uint8_t suffix_size = this->minimizer_idx - this->size + 1 + kmer_idx;
+	uint8_t suffix_size = this->minimizer_idx - (this->size - kmer_idx - 1);
 	kint mask = ((kint)1 << (2 * suffix_size)) - 1;
 	kint suffix = compacted & mask;
 

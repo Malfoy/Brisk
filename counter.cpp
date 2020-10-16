@@ -65,12 +65,13 @@ int main(int argc, char** argv) {
 		verif_counts(counter);
 
 	cout << "Global statistics:" << endl;
-	uint64_t nb_buckets, nb_skmers, nb_kmers;
-	counter.stats(nb_buckets, nb_skmers, nb_kmers);
+	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed);
 	cout << nb_buckets << " bucket used" << endl;
 	cout << "nb superkmers: " << nb_skmers << endl;
 	cout << "nb kmers: " << nb_kmers << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+	cout << "nb cursed kmers: " << nb_cursed << endl;
 
 	return 0;
 }
@@ -105,8 +106,10 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			errors += 1;
 			if (it.second > 0) {
 				cout << "missing "; print_kmer(it.first, counter.k); cout << " " << (uint)it.second << endl;
+				// cout << (uint)it.first << endl;
 			} else {
 				cout << "too many "; print_kmer(it.first, counter.k); cout << " " << (uint)(-it.second) << endl;
+				// cout << (uint)it.first << endl;
 			}
 		}
 	}
@@ -216,6 +219,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			uint8_t * data_pointer = counter.get(kmer, minimizer);
 			// cout << (uint *)data_pointer << endl;
 			if (data_pointer == NULL) {
+				// print_kmer(minimizer, 9);
 				data_pointer = counter.insert(kmer, minimizer);
 				// cout << (uint *)data_pointer << endl;
 				// Init counter

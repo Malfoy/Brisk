@@ -38,7 +38,7 @@ public:
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
 
 private:
 	// Mutexes
@@ -56,8 +56,8 @@ private:
 	kmer_full * buffered_kmer;
 	
 	// uint64_t getMemorySelfMaxUsed();
-	uint64_t next_enumerated_mutex;
-	uint32_t next_enumerated_bucket;
+	bool enumeration_started;
+	typename robin_hood::unordered_map<kint, DATA>::iterator cursed_iter;
 	uint32_t current_minimizer;
 };
 
@@ -71,7 +71,7 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 
 	// Create the mutexes
 	mutex_order = min((uint8_t)6,mini_m);
-	mutex_number = 1<<(2*mutex_order); /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
+	mutex_number = ((uint64_t)1)<<(2*mutex_order); /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
 	// Init the mutexes
 	MutexWall.resize(mutex_number);
 	for (uint64_t i(0); i < mutex_number; ++i) {
@@ -87,6 +87,8 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 	memset(bucket_indexes, 0, sizeof(uint32_t)*bucket_number);
 	bucketMatrix = new vector<Bucket<DATA> >[mutex_number];
 
+	enumeration_started = false;
+	cursed_iter = cursed_kmers.begin();
 	current_minimizer = 0;
 }
 
@@ -182,28 +184,42 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 
 template<class DATA>
 bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
-	
-	// Select minimizer
-	while (current_minimizer<bucket_number and bucket_indexes[current_minimizer] == 0) {
-		current_minimizer += 1;
+	if (not enumeration_started) {
+		cursed_iter = cursed_kmers.begin();
+		enumeration_started = true;
 	}
-	// Enumeration is over
-	if (current_minimizer >= bucket_number)
-		return false;
+	// Cursed kmers
+	if (cursed_iter != cursed_kmers.end()) {
+		kmer.kmer_s = cursed_iter->first;
+		kmer.multi_mini = true;
 
+		cursed_iter = std::next(cursed_iter);
+		return true;
+	}
+	
 	uint32_t mutex_idx = get_mutex(current_minimizer);
 	uint32_t column_idx = get_column(current_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
-	Bucket<DATA> & bucket = bucketMatrix[mutex_idx][idx-1];
+	// Select minimizer
+	while (current_minimizer<bucket_number and idx == 0) {
+		current_minimizer += 1;
+		mutex_idx = get_mutex(current_minimizer);
+		column_idx = get_column(current_minimizer);
+		matrix_idx = get_matrix_position(mutex_idx, column_idx);
+		idx = bucket_indexes[matrix_idx];
+	}
 
-	// // Get the right bucket
-	if (not bucket.has_next_kmer()) {
+	// Enumeration is over
+	if (current_minimizer >= bucket_number)
+		return false;
+
+	if (not bucketMatrix[mutex_idx][idx-1].has_next_kmer()) {
 		current_minimizer += 1;
 		return this->next(kmer);
 	}
 	
-	bucket.next_kmer(kmer, current_minimizer);
+	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
 	kmer.minimizer_idx -= (minimizer_size - mini_m);
 
 	return true;
@@ -216,7 +232,7 @@ void DenseMenuYo<DATA>::restart_kmer_enumeration() {
 }
 
 template<class DATA>
-void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers) const {
+void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const {
 	nb_buckets = 0;
 	nb_kmers = 0;
 	nb_skmers = 0;
@@ -228,12 +244,13 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 		uint32_t idx = bucket_indexes[matrix_idx];
 
 		if (idx != 0) {
-			Bucket<DATA> & bucket = bucketMatrix[mutex_idx][idx-1];
 			nb_buckets += 1;
-			nb_skmers += bucket.skml.size();
-			nb_kmers += bucket.nb_kmers;
+			nb_skmers += bucketMatrix[mutex_idx][idx-1].skml.size();
+			nb_kmers += bucketMatrix[mutex_idx][idx-1].nb_kmers;
 		}
 	}
+
+	nb_cursed = cursed_kmers.size();
 }
 
 
