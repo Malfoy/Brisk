@@ -35,7 +35,7 @@ static bool check;
 
 int main(int argc, char** argv) {
 	string fasta = "";
-	uint8_t k=63, m=9;
+	uint8_t k=63, m=11;
 	uint mode = 0;
 
 	parse_args(argc, argv, fasta, k, m, mode);

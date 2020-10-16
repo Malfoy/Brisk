@@ -88,18 +88,23 @@ Bucket<DATA>::Bucket() {
 
 template <class DATA>
 Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
-: skml( std::move( bucket.skml ) )
+: skml()
 , sorted_size( bucket.sorted_size )
 , nb_kmers( bucket.nb_kmers )
-, buffered_skmer( std::move(bucket.buffered_skmer)) 
-, nucleotides_reserved_memory( std::move(bucket.nucleotides_reserved_memory)) 
+, buffered_skmer( bucket.buffered_skmer ) 
+, nucleotides_reserved_memory( bucket.nucleotides_reserved_memory )
 , skmer_reserved( bucket.skmer_reserved )
 , next_data( bucket.next_data )
 , data_reserved_number( bucket.data_reserved_number )
-, data_reserved_memory( std::move(data_reserved_memory) )
+, data_reserved_memory( bucket.data_reserved_memory )
 , enumeration_skmer_idx( bucket.enumeration_skmer_idx )
 , enumeration_kmer_idx( bucket.enumeration_kmer_idx )
-{cout << "Move constructor" << endl;}
+{
+	// cout << "Move constructor" << endl;
+	bucket.skml = vector<SKCL<DATA> >();
+	bucket.nucleotides_reserved_memory = NULL;
+	bucket.data_reserved_memory = NULL;
+}
 
 template <class DATA>
 Bucket<DATA> & Bucket<DATA>::operator=(Bucket<DATA>&& bucket) {
@@ -109,7 +114,7 @@ Bucket<DATA> & Bucket<DATA>::operator=(Bucket<DATA>&& bucket) {
 
 template <class DATA>
 Bucket<DATA>::~Bucket() {
-	cout << "Destruction bucket" << endl;
+	// cout << "Destruction bucket" << endl;
 	if (this->nucleotides_reserved_memory != NULL)
 		free(this->nucleotides_reserved_memory);
 	if (this->data_reserved_memory != NULL)
@@ -233,7 +238,7 @@ template <class DATA>
 DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKCL<DATA> & mockskm, uint8_t * mock_nucleotides){
 	DATA * data_pointer = NULL;
 
-	// cout << "INTERLEAVED" << endl;
+	cout << "INTERLEAVED" << endl;
 
 	uint64_t low = lower_bound(
 		skml.begin(),
