@@ -28,6 +28,7 @@ public:
 	uint32_t interleaved;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
+	bool debug_flag;
 	/**
 	 * The number of bytes that are really occupied by the nucleotides
 	 */

@@ -142,6 +142,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 }
 
 
+
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 	// Cursed kmers

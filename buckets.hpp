@@ -91,7 +91,7 @@ Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 : skml( std::move(bucket.skml) )
 , sorted_size( bucket.sorted_size )
 , nb_kmers( bucket.nb_kmers )
-, buffered_skmer( bucket.buffered_skmer ) 
+, buffered_skmer( NULL ) 
 , nucleotides_reserved_memory( bucket.nucleotides_reserved_memory )
 , skmer_reserved( bucket.skmer_reserved )
 , next_data( bucket.next_data )
@@ -112,10 +112,7 @@ Bucket<DATA> & Bucket<DATA>::operator=(Bucket<DATA>&& bucket) {
 
 template <class DATA>
 Bucket<DATA>::~Bucket() {
-	// cout << "Destruction bucket" << endl;
-	// if (this->nucleotides_reserved_memory != NULL)
 	free(this->nucleotides_reserved_memory);
-	// if (this->data_reserved_memory != NULL)
 	free(this->data_reserved_memory);
 }
 
@@ -132,14 +129,32 @@ void Bucket<DATA>::data_space_update() {
 
 template <class DATA>
 DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
-	// cout << "Kmer "; print_kmer(kmer.kmer_s, 15); cout << endl;
+	// 0 - Update space for DATA if needed
 	this->data_space_update();
-	DATA * value = this->insert_kmer_buffer(kmer);
-	this->next_data += 1;
+	// 1 - Try to compact with the last kmer
+	if (buffered_skmer != NULL) {
+		DATA * value_pointer = buffered_skmer->compact_right(
+				kmer,
+				this->nucleotides_reserved_memory +
+						SKCL<DATA>::allocated_bytes * buffered_skmer->idx,
+				data_reserved_memory + buffered_skmer->data_idx
+		);
 
+		if (value_pointer != NULL) {
+			this->nb_kmers += 1;
+			this->next_data += 1;
+			return value_pointer;
+		}
+	}
+	
+	// 2 - Sort if needed
 	if(skml.size()-sorted_size>00){
 		this->insert_buffer();
 	}
+
+	// 3 - Create a new skmer
+	DATA * value = this->insert_kmer_buffer(kmer);
+	this->next_data += 1;
 
 	return value;
 }
@@ -152,29 +167,14 @@ void Bucket<DATA>::insert_buffer(){
 		it->interleaved=it->interleaved_value(
 				this->nucleotides_reserved_memory + it->idx * SKCL<DATA>::allocated_bytes);
 	}
-	// cout << "before" << endl;
-	// for (uint i=0 ; i<skml.size() ; i++) {
-	// 	cout << i << " "; print_kmer(skml[i].interleaved >> 56, 4); cout << " " << skml[i].interleaved << endl;	
-	// }
 
-	// cout << "sorted size: " << sorted_size << " " << skml.size() << endl;
 	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKCL<DATA>& lhs, const SKCL<DATA>& rhs ){
-		// cout << "SORT" << endl;
 		return lhs.interleaved < rhs.interleaved;});
-	// cout << (skml.end() - skml.begin() - sorted_size) << endl;
 	inplace_merge(skml.begin(), skml.begin()+sorted_size ,skml.end() ,[ ]( const SKCL<DATA>& lhs, const SKCL<DATA>& rhs ){
-		// cout << "MERGE" << endl;
-		// print_kmer(lhs.interleaved >> 56, 4); cout << " " << lhs.interleaved << " ";print_kmer(rhs.interleaved >> 56, 4); cout << " " << rhs.interleaved << " " << (lhs.interleaved < rhs.interleaved) << endl;
 		return lhs.interleaved < rhs.interleaved;});
 
+	buffered_skmer = NULL;
 	sorted_size=skml.size();
-
-	// cout << "after" << endl;
-	// for (uint i=0 ; i<skml.size() ; i++) {
-	// 	cout << i << " "; print_kmer(skml[i].interleaved >> 56, 4); cout << " " << skml[i].interleaved << endl;	
-	// }
-	// cout << "sorted size: " << sorted_size << " " << skml.size() << endl;
-	// cout << "/INSERT" << endl;
 }
 
 
@@ -191,13 +191,6 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 						SKCL<DATA>::allocated_bytes * buffered_skmer->idx,
 				data_reserved_memory + buffered_skmer->data_idx
 		);
-		// if (value_pointer != NULL) {
-		// 	cout << "COMPACTED " << (uint)buffered_skmer->idx << endl;
-		// }
-		// Uncomment if sort is performed each time a skmer is added
-		buffered_skmer->interleaved = buffered_skmer->interleaved_value(
-			this->nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * buffered_skmer->idx
-		);
 	}
 
 	// Create a new superkmer
@@ -208,7 +201,6 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 											this->nucleotides_reserved_memory,
 											skml.capacity() * SKCL<DATA>::allocated_bytes
 			);
-			// print_kmer(skml[0].get_ith_kmer(0, nucleotides_reserved_memory), 31); cout << endl;
 		}
 
 		skml.emplace_back(
@@ -222,11 +214,6 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 		value_pointer = data_reserved_memory + this->next_data;
 	}
 
-	// buffered_skmer->print(
-	// 		nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * buffered_skmer->idx,
-	// 		0
-	// ); cout << endl;
-
 	this->nb_kmers += 1;
 	return value_pointer;
 }
@@ -236,40 +223,25 @@ template <class DATA>
 DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKCL<DATA> & mockskm, uint8_t * mock_nucleotides){
 	DATA * data_pointer = NULL;
 
-	// cout << "INTERLEAVED" << endl;
-
 	uint64_t low = lower_bound(
 		skml.begin(),
 		skml.begin() + sorted_size,
 		mockskm,
 		[ ]( const SKCL<DATA>& lhs, const SKCL<DATA>& rhs ){
-			// cout << "LOW" << endl;
-			// print_kmer(lhs.interleaved >> 56, 4); cout << " " << lhs.interleaved << " ";print_kmer(rhs.interleaved >> 56, 4); cout << " " << rhs.interleaved << " " << (lhs.interleaved < rhs.interleaved) << endl;
 			return lhs.interleaved < rhs.interleaved;
 		}
 	) - skml.begin();
 	uint32_t value_max = mockskm.interleaved_value_max(mock_nucleotides, 5);
 	if (value_max < mockskm.interleaved)
 		value_max = std::numeric_limits<uint32_t>::max();
-
-	// cout << "lower bound " << low << endl;
-	// print_kmer(kmer.kmer_s, 15); cout << " " << (uint)kmer.minimizer_idx << endl;
-	// print_kmer(mockskm.interleaved >> 20, 6); cout << " min interleaved " << mockskm.interleaved << endl;
-	// print_kmer(value_max >> 20, 6); cout << " max interleaved " << value_max << endl;
 	
 	while (data_pointer == NULL and low < (uint64_t)sorted_size and skml[low].interleaved < value_max) {
-		// cout << "*** QUERY INTERLEAVED ***" << endl;
-		// print_kmer(skml[low].get_skmer(
-		// 		nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * skml[low].idx,
-		// 		0
-		// ), skml[low].size + k - 1); cout << endl;
 		data_pointer = skml[low].query_kmer(kmer,
 					this->nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * skml[low].idx,
 					this->data_reserved_memory + skml[low].data_idx
 		);
+
 		low++;
-		// cout << (uint64_t *) data_pointer << endl;
-		// cout << "°°° QUERY INTERLEAVED °°°" << endl;
 	}
 
 	return data_pointer;
@@ -279,22 +251,8 @@ DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKCL<DATA> & moc
 template <class DATA>
 DATA * Bucket<DATA>::find_kmer_unsorted(kmer_full& kmer) {
 	DATA * value_pointer = NULL;
-	// cout << "UNSORTED" << endl;
-	// print_kmer(, minimizer_size);
-	// cout << "sorted size " << sorted_size << " list size " << skml.size() << endl;
-	// cout << "sorted skmers" << endl;
-	// for (uint i=0 ; i<sorted_size ; i++) {
-	// 	skml[i].print(
-	// 			nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * skml[i].idx,
-	// 			0
-	// 	); cout << " " << skml[i].interleaved << endl;
-	// }
-	// cout << "end sorted skmers" << endl;
+
 	for (uint i=sorted_size ; value_pointer == NULL and i<skml.size() ; i++) {
-		// print_kmer(skml[i].get_skmer(
-		// 		nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * skml[i].idx,
-		// 		0
-		// ), skml[i].size + k - 1); cout << endl;
 		value_pointer = skml[i].query_kmer(
 				kmer,
 				this->nucleotides_reserved_memory + SKCL<DATA>::allocated_bytes * skml[i].idx,
@@ -439,8 +397,6 @@ void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 			minimizer,
 			kmer
 	);
-
-	// kint skmer_s = skmer.get_skmer(this->nucleotides_reserved_memory + (skmer.idx * SKCL<DATA>::allocated_bytes), minimizer);
 	
 	enumeration_kmer_idx += 1;
 }

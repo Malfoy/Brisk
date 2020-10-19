@@ -106,7 +106,6 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			errors += 1;
 			if (it.second > 0) {
 				cout << "missing "; print_kmer(it.first, counter.k); cout << " " << (uint)it.second << endl;
-				// cout << (uint)it.first << endl;
 			} else {
 				cout << "too many "; print_kmer(it.first, counter.k); cout << " " << (uint)(-it.second) << endl;
 				// cout << (uint)it.first << endl;
@@ -198,6 +197,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 }
 
 
+
 void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	// Line too short
 	if (sequence.size() < counter.k)
@@ -215,22 +215,17 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					verif[kmer.kmer_s] = 0;
 				verif[kmer.kmer_s] += 1;
 			}
-			// cout << "Kmer" << endl;
+
 			uint8_t * data_pointer = counter.get(kmer, minimizer);
-			// cout << (uint *)data_pointer << endl;
 			if (data_pointer == NULL) {
-				// print_kmer(minimizer, 9);
 				data_pointer = counter.insert(kmer, minimizer);
-				// cout << (uint *)data_pointer << endl;
 				// Init counter
 				*data_pointer = (uint8_t)0;
 			}
 			// Increment counter
 			*data_pointer += 1;
-			// cout << "/Kmer" << endl;
 		}
 
-		// cout << "/Super kmer" << endl;
 		// Next superkmer
 		superkmer.clear();
 		minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
