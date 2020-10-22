@@ -38,13 +38,13 @@ namespace std {
 // ----- Kmer class -----
 class kmer_full {
 public:
-	int8_t minimizer_idx;
 	kint kmer_s;
-	// kint prefix;
-	// kint suffix;
+	kint minimizer;
+	int8_t minimizer_idx;
 	bool multi_mini;
 
-	kmer_full(kint value, uint8_t minimizer_idx, bool multiple_mini);
+	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
+	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;
 	kint get_compacted(uint8_t m)const ;
 	// uint64_t get_minimizer() const;

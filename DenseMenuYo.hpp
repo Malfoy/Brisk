@@ -33,8 +33,8 @@ public:
 
 
 	DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction=4);
-	DATA * insert_kmer(kmer_full & kmer, const kint minimizer);
-	DATA * get_kmer(kmer_full & kmer, const kint minimizer);
+	DATA * insert_kmer(kmer_full & kmer);
+	DATA * get_kmer(kmer_full & kmer);
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
@@ -99,9 +99,9 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 
 
 template <class DATA>
-DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
+DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	// if (buffered_kmer->kmer_s != kmer.kmer_s or minimizer != buffered_minimizer) {
-		DATA * prev_val = this->get_kmer(kmer, minimizer);
+		DATA * prev_val = this->get_kmer(kmer);
 		if (prev_val != NULL) {
 			return prev_val;
 		}
@@ -117,7 +117,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 	
 	// Transform the super minimizer to the used minimizer
 	auto m_reduc = minimizer_size - mini_m;
-	uint32_t small_minimizer = (uint32_t)(minimizer >> (2 * m_reduc));
+	uint32_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * m_reduc));
 	kmer.minimizer_idx += m_reduc;
 
 	// Works because m - reduc <= 16
@@ -144,7 +144,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer, const kint minimizer) {
 
 
 template <class DATA>
-DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
+DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
@@ -158,7 +158,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer, const kint minimizer) {
 	}
 
 	auto m_reduc = minimizer_size - mini_m;
-	uint32_t small_minimizer = (uint32_t)(minimizer >> (2 * m_reduc));
+	uint32_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * m_reduc));
 	kmer.minimizer_idx += m_reduc;
 	// Normal kmer
 	uint32_t mutex_idx = get_mutex(small_minimizer);
@@ -222,6 +222,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
 	kmer.minimizer_idx -= (minimizer_size - mini_m);
+	kmer.compute_mini(minimizer_size);
 
 	return true;
 }

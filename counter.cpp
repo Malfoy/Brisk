@@ -80,19 +80,19 @@ int main(int argc, char** argv) {
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
 
-	kint mini_mask = (1 << (2 * counter.m)) - 1;
-	kmer_full kmer(0,0,false);
+	// kint mini_mask = (1 << (2 * counter.m)) - 1;
+	kmer_full kmer(0,0, counter.m, false);
 	// Count 
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0)
 			verif[kmer.kmer_s] = 0;
 
-		kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
+		// kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
 
-		// cout << "mini "; print_kmer(minimizer, counter.m); cout << endl;
-		// print_kmer(kmer.kmer_s, counter.k); cout << endl;
+		// cout << "mini "; print_kmer(kmer.minimizer, counter.m); cout << endl;
+		// print_kmer(kmer.kmer_s, counter.k); cout << " " << kmer.multi_mini << endl;
 
-		uint8_t * count = counter.get(kmer, minimizer);
+		uint8_t * count = counter.get(kmer);
 		// cout << (uint *)count << endl;
 		verif[kmer.kmer_s] -= *count;
 
@@ -214,11 +214,14 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				if (verif.count(kmer.kmer_s) == 0)
 					verif[kmer.kmer_s] = 0;
 				verif[kmer.kmer_s] += 1;
+				verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 			}
+			
+			// cout << "counted kmer "; print_kmer(kmer.kmer_s, counter.k); cout << endl;
 
-			uint8_t * data_pointer = counter.get(kmer, minimizer);
+			uint8_t * data_pointer = counter.get(kmer);
 			if (data_pointer == NULL) {
-				data_pointer = counter.insert(kmer, minimizer);
+				data_pointer = counter.insert(kmer);
 				// Init counter
 				*data_pointer = (uint8_t)0;
 			}

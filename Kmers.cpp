@@ -15,16 +15,19 @@ uint64_t hash64shift(uint64_t key);
 
 
 // ----- Kmer class -----
-kmer_full::kmer_full(kint value, uint8_t minimizer_idx, bool multiple_mini) {
+kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini) {
 	this->minimizer_idx = minimizer_idx;
 	this->kmer_s = value;
-	// this->prefix=(value);
-	// uint64_t shift((minimizer_idx + m)*2);
-	// this->prefix>>=shift;
-	// this->suffix=(value);
-	// shift=(minimizer_idx)*2;
-	// this->suffix%=((kint)1<<shift);
+	// Shift the kmer to align minizer on the right
+	this->minimizer = value >> (2 * minimizer_idx);
+	// Mask bits that are not part of the minimizer
+	this->minimizer &= ((kint)1 << (2 * minimizer_size))- 1;
 	this->multi_mini = multiple_mini;
+}
+
+void kmer_full::compute_mini(uint8_t mini_size) {
+	this->minimizer = this->kmer_s >> (2 * this->minimizer_idx);
+	this->minimizer &= ((kint)1 << (2 * mini_size))- 1;
 }
 
 void kmer_full::print(uint8_t k, uint8_t m) const {
@@ -282,7 +285,7 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 	// Position in the sequence
 	static uint64_t seq_idx = 0;
 	static bool saved = false;
-	static kmer_full saved_kmer((kint)0,(uint8_t)0,false);
+	static kmer_full saved_kmer((kint)0,(uint8_t)0, (uint8_t)0, false);
 
 	// Useful precomputed values
 	static kint k_mask = ((kint)1 << (2*k)) - 1;
@@ -381,9 +384,9 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		}
 
 		if (not reversed) {
-			saved_kmer = kmer_full(current_kmer, mini_pos, multiple);
+			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple);
 		} else {
-			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, multiple);
+			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple);
 		}
 
 		if (to_return and seq_idx > 0) {

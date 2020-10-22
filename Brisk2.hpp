@@ -21,8 +21,8 @@ public:
 
 	Brisk(uint8_t k, uint8_t m);
 
-	DATA * insert(kmer_full & kmer, const kint minimizer);
-	DATA * get(kmer_full & kmer, const kint minimizer);
+	DATA * insert(kmer_full & kmer);
+	DATA * get(kmer_full & kmer) const;
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
@@ -42,13 +42,13 @@ Brisk<DATA>::Brisk(uint8_t k, uint8_t m) {
 
 
 template<class DATA>
-DATA * Brisk<DATA>::get(kmer_full & kmer, const kint minimizer) {
-	return this->menu->get_kmer(kmer, minimizer);
+DATA * Brisk<DATA>::get(kmer_full & kmer) const {
+	return this->menu->get_kmer(kmer);
 }
 
 template <class DATA>
-DATA * Brisk<DATA>::insert(kmer_full & kmer, const kint minimizer) {
-	return this->menu->insert_kmer(kmer, minimizer);
+DATA * Brisk<DATA>::insert(kmer_full & kmer) {
+	return this->menu->insert_kmer(kmer);
 }
 
 
