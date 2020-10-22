@@ -87,13 +87,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		if (verif.count(kmer.kmer_s) == 0)
 			verif[kmer.kmer_s] = 0;
 
-		// kint minimizer = (kmer.kmer_s >> (kmer.minimizer_idx * 2)) & mini_mask;
-
-		// cout << "mini "; print_kmer(kmer.minimizer, counter.m); cout << endl;
-		// print_kmer(kmer.kmer_s, counter.k); cout << " " << kmer.multi_mini << endl;
-
 		uint8_t * count = counter.get(kmer);
-		// cout << (uint *)count << endl;
 		verif[kmer.kmer_s] -= *count;
 
 		kmer.kmer_s = 0;
