@@ -9,6 +9,7 @@
 
 #include "Kmers.hpp"
 #include "buckets.hpp"
+#include "SuperKmerLight.hpp"
 
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
@@ -46,6 +47,7 @@ private:
 	uint64_t mutex_number;
 	// uint8_t m_reduc;
 	uint8_t mini_m;
+	Params params;
 
 	// Number of mutex used
 	vector<omp_lock_t> MutexWall;
@@ -63,11 +65,12 @@ private:
 
 
 template <class DATA>
-DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction){
+DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction)
+: params( Params(k, m - minimizer_reduction) )
+{
 	mini_m = m - minimizer_reduction;
 	// If m - reduc > 16, not enougth space for bucket idxs ! (because of uint32_t)
 	assert(mini_m <= 16);
-	Bucket<DATA>::set_parameters(k, mini_m);
 
 	// Create the mutexes
 	mutex_order = min((uint8_t)6,mini_m);
@@ -130,7 +133,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// Create the bucket if not already existing
 	if (idx == 0) {
-		bucketMatrix[mutex_idx].emplace_back();
+		bucketMatrix[mutex_idx].emplace_back(&params);
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
 	}
