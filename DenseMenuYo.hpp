@@ -97,7 +97,7 @@ DenseMenuYo<DATA>::DenseMenuYo(uint8_t k, uint8_t m, uint8_t minimizer_reduction
 
 
 #define get_mutex(mini) (mini%mutex_number)
-#define get_column(mini) (mini/mutex_number)
+#define get_column(mini) (mini>>(2*mutex_order))
 #define get_matrix_position(row_idx, col_idx) (row_idx * matrix_column_number + col_idx)
 
 

@@ -102,7 +102,7 @@ private:
 SKCL::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Params & params) {
 	this->idx = idx;
 	this->data_idx = data_idx;
-	memset(nucleotides, 0, params.allocated_bytes);
+	// memset(nucleotides, 0, params.allocated_bytes);
 	Pow2<kint> anc(2 * params.compacted_size - 8);
 
 	for(uint i(0) ; i<(params.compacted_size/4) ; i++){

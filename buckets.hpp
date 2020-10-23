@@ -74,6 +74,7 @@ Bucket<DATA>::Bucket(Params * params) {
 
 	this->skml.reserve(10);
 	this->nucleotides_reserved_memory = (uint8_t *)malloc(params->allocated_bytes * skml.capacity());
+	memset(this->nucleotides_reserved_memory, 0, params->allocated_bytes * skml.capacity());
 	this->next_data = 0;
 	this->data_reserved_number = 10;
 	this->data_reserved_memory = (DATA *)malloc(sizeof(DATA) * this->data_reserved_number);
@@ -203,10 +204,17 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
+		auto old_capacity = skml.capacity();
 		skml.reserve(skml.capacity()*1.5);
 		this->nucleotides_reserved_memory = (uint8_t *)realloc(
-										this->nucleotides_reserved_memory,
-										skml.capacity() * params->allocated_bytes
+				this->nucleotides_reserved_memory,
+				skml.capacity() * params->allocated_bytes
+		);
+		auto diff_capacity = skml.capacity() - old_capacity;
+		memset(
+				this->nucleotides_reserved_memory + params->allocated_bytes * old_capacity,
+				0,
+				params->allocated_bytes * diff_capacity
 		);
 	}
 
