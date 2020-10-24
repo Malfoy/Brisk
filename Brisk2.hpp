@@ -15,6 +15,8 @@ template <class DATA>
 class Brisk {
 private:
 	DenseMenuYo<DATA> * menu;
+
+	uint64_t getMemorySelfMaxUsed() const;
 public:
 	uint8_t k;
 	uint8_t m;
@@ -25,7 +27,7 @@ public:
 	DATA * get(kmer_full & kmer) const;
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const;
 };
 
 
@@ -64,6 +66,15 @@ void Brisk<DATA>::restart_kmer_enumeration() {
 }
 
 template<class DATA>
-void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const {
+uint64_t Brisk<DATA>::getMemorySelfMaxUsed () const{
+	uint64_t result = 0;
+	struct rusage usage;
+	if (getrusage(RUSAGE_SELF, &usage)==0)  {  result = usage.ru_maxrss;  }
+	return result;
+}
+
+template<class DATA>
+void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const {
+	memory_usage = this->getMemorySelfMaxUsed();
 	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed);
 }

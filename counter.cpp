@@ -65,12 +65,14 @@ int main(int argc, char** argv) {
 		verif_counts(counter);
 
 	cout << "Global statistics:" << endl;
-	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed;
-	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed);
+	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory);
 	cout << nb_buckets << " bucket used" << endl;
 	cout << "nb superkmers: " << nb_skmers << endl;
 	cout << "nb kmers: " << nb_kmers << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
+	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
 	return 0;
