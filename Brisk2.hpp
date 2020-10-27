@@ -25,6 +25,10 @@ public:
 
 	DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer) const;
+
+	void protect_data(const kmer_full & kmer);
+	void unprotect_data(const kmer_full & kmer);
+
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const;
@@ -51,6 +55,18 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) const {
 template <class DATA>
 DATA * Brisk<DATA>::insert(kmer_full & kmer) {
 	return this->menu->insert_kmer(kmer);
+}
+
+
+template <class DATA>
+void Brisk<DATA>::protect_data(const kmer_full & kmer) {
+	this->menu->protect_data(kmer);
+}
+
+
+template <class DATA>
+void Brisk<DATA>::unprotect_data(const kmer_full & kmer) {
+	this->menu->unprotect_data(kmer);
 }
 
 

@@ -302,7 +302,7 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 		buffered_data = NULL;
 	}
 
-	static uint8_t * nucleotides_area = new uint8_t[params->allocated_bytes];
+	uint8_t nucleotides_area[32]; // Max 2 * sizeof(kint)
 	SKCL mockskm(kmer.get_compacted(params->m), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
 	mockskm.interleaved = mockskm.interleaved_value(nucleotides_area, *params);
 

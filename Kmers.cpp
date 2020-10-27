@@ -281,31 +281,22 @@ void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uin
 }
 
 
-kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m) {
-	// Position in the sequence
-	static uint64_t seq_idx = 0;
-	static bool saved = false;
-	static kmer_full saved_kmer((kint)0,(uint8_t)0, (uint8_t)0, false);
+SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m)
+: seq( s ), seq_idx( 0 )
+, k( k ), k_mask( ((kint)1 << (2*k)) - 1 )
+, m( m ), m_mask( ((kint)1 << (2*m)) - 1 )
+, saved( false ), saved_kmer( kmer_full((kint)0,(uint8_t)0, (uint8_t)0, false) )
+, current_kmer( 0 ), current_rc_kmer( 0 )
+, mini_candidate( 0 ), rc_mini_candidate( 0 )
+, mini_pos ( 1 )
+{}
 
-	// Useful precomputed values
-	static kint k_mask = ((kint)1 << (2*k)) - 1;
-	static kint m_mask = ((kint)1 << (2*m)) - 1;
-
-	// kmer variables
-	static kint current_kmer = 0;
-	static kint current_rc_kmer = 0;
-
-	// Needed variables
-	static kint mini_candidate = 0, rc_mini_candidate = 0;
-	static bool reversed, multiple;
-	static uint8_t mini_pos = 1;
-	static uint64_t mini, min_hash;
+kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	bool to_return = false;
 	kint return_val;
 
 	// If start of the sequence, init the kmer and the minimizer
 	if (seq_idx == 0) {
-		// cout << seq << endl;
 		// Init kmer
 		init_kmer(seq, seq_idx, current_kmer, current_rc_kmer, k-1, k_mask>>2);
 		current_rc_kmer <<= 2;
@@ -338,9 +329,7 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 
 		//the previous MINIMIZER is outdated
 		if (mini_pos > k-m) {
-			// cout << "Outdated" << endl;
 			// Save previous kmers from superkmer
-			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
@@ -349,13 +338,10 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 			// Prepare new minimizer
 			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
 			min_hash = hash64shift(mini);
-			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 		// New minimizer
 		else if (current_hash < min_hash) {
-			// cout << "NEW" << endl;
 			// Save previous kmers from superkmer
-			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
@@ -367,20 +353,16 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 			min_hash = hash64shift(mini);
 			reversed = mini == rc_mini_candidate;
 			multiple = false;
-			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 		// Equal minimizer
 		else if (current_hash == min_hash) {
-			// cout << "SAME" << endl;
 			// Save previous kmers from superkmer
-			// kmers.insert(kmers.end(), current_kmers.begin(), current_kmers.end());
 			if (reversed)
 				reverse(kmers.begin(), kmers.end());
 			to_return = true;
 			return_val = mini;
 
 			multiple = true;
-			// print_kmer(mini, m); cout << " " << (uint)mini_pos << endl;
 		}
 
 		if (not reversed) {
@@ -406,8 +388,6 @@ kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const
 		return mini;
 	}
 
-	// Prepare the static variables for the next sequences
-	seq_idx = 0;
 	return (kint)0;
 }
 

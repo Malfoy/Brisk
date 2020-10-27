@@ -35,7 +35,7 @@ namespace std {
 }
 
 
-// ----- Kmer class -----
+// ----- Kmer classes -----
 class kmer_full {
 public:
 	kint kmer_s;
@@ -49,6 +49,40 @@ public:
 	kint get_compacted(uint8_t m)const ;
 	// uint64_t get_minimizer() const;
 	bool contains_multi_minimizer() const;
+};
+
+class SuperKmerEnumerator {
+public:
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
+	kint next(vector<kmer_full> & kmers);
+
+private:
+	// Sequence and position in it
+	string seq;
+	uint64_t seq_idx;
+
+	// kmer size and minimizer size
+	uint8_t k;
+	kint k_mask;
+	uint8_t m;
+	kint m_mask;
+
+	// Previous kmer read
+	bool saved;
+	kmer_full saved_kmer;
+
+	// Current values for kmers
+	kint current_kmer;
+	kint current_rc_kmer;
+
+	// Needed variables
+	kint mini_candidate;
+	kint rc_mini_candidate;
+	bool reversed;
+	bool multiple;
+	uint8_t mini_pos;
+	uint64_t mini;
+	uint64_t min_hash;
 };
 
 

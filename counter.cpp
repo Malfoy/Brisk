@@ -11,19 +11,20 @@
 using namespace std;
 
 // --- Useful functions to count kmers ---
-void count_fasta(Brisk<uint8_t> & counter, string & filename);
+void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads);
 void count_sequence(Brisk<uint8_t> & counter, string & sequence);
 void verif_counts(Brisk<uint8_t> & counter);
 
 
 int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
-								uint & mode) {
+								uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
   auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count");
   file_opt->required();
   app.add_option("-k", k, "Kmer size");
   app.add_option("-m", m, "Minimizer size");
+  app.add_option("-t", threads, "Thread number");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
 
   CLI11_PARSE(app, argc, argv);
@@ -37,8 +38,9 @@ int main(int argc, char** argv) {
 	string fasta = "";
 	uint8_t k=63, m=11;
 	uint mode = 0;
+	uint threads = 8;
 
-	parse_args(argc, argv, fasta, k, m, mode);
+	parse_args(argc, argv, fasta, k, m, mode, threads);
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
 	if (mode > 1) {
@@ -53,7 +55,7 @@ int main(int argc, char** argv) {
   
 	auto start = std::chrono::system_clock::now();
 	Brisk<uint8_t> counter(k, m);
-	count_fasta(counter, fasta);
+	count_fasta(counter, fasta, threads);
 	
 	auto end = std::chrono::system_clock::now();
 	chrono::duration<double> elapsed_seconds = end - start;
@@ -151,7 +153,7 @@ string getLineFasta(zstr::ifstream* in) {
 /** Counter function.
   * Read a complete fasta file line by line and store the counts into the Brisk datastructure.
   */
-void count_fasta(Brisk<uint8_t> & counter, string & filename) {
+void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads) {
 	// Test file existance
 	struct stat exist_buffer;
   bool file_existance = (stat (filename.c_str(), &exist_buffer) == 0);
@@ -161,12 +163,10 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 	}
 
 	// Read file line by line
-	// uint nb_core = 8;
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
-	uint line_count = 0;
 
-	// #pragma omp parallel num_threads(nb_core)
+	#pragma omp parallel num_threads(threads)
 	{
 		string line;
 		while (in.good() or not buffer.empty()) {
@@ -185,8 +185,6 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename) {
 					}
 				}
 			}
-			line_count++;
-			// cout << "Line " << line_count << endl;
 			count_sequence(counter, line);
 		}
 	}
@@ -202,20 +200,26 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<vector<kmer_full> > kmers_by_minimizer;
 	vector<kmer_full> superkmer;
 
-	kint minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+	kint minimizer;
+	SuperKmerEnumerator enumerator(sequence, counter.k, counter.m);
+
+	minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		// Add the values
 		for (kmer_full & kmer : superkmer) {
 			if (check) {
-				if (verif.count(kmer.kmer_s) == 0)
-					verif[kmer.kmer_s] = 0;
-				verif[kmer.kmer_s] += 1;
-				verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
+				#pragma omp critical
+				{
+					if (verif.count(kmer.kmer_s) == 0)
+						verif[kmer.kmer_s] = 0;
+					verif[kmer.kmer_s] += 1;
+					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
+				}
 			}
 			
-			// cout << "counted kmer "; print_kmer(kmer.kmer_s, counter.k); cout << endl;
-
+			counter.protect_data(kmer);
 			uint8_t * data_pointer = counter.get(kmer);
+			// cout << "Line " << sequence.substr(0, 10) << endl;
 			if (data_pointer == NULL) {
 				data_pointer = counter.insert(kmer);
 				// Init counter
@@ -223,11 +227,12 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			}
 			// Increment counter
 			*data_pointer += 1;
+			counter.unprotect_data(kmer);
 		}
 
 		// Next superkmer
 		superkmer.clear();
-		minimizer = string_to_kmers_by_minimizer(sequence, superkmer, counter.k, counter.m);
+		minimizer = enumerator.next(superkmer);
 	}
 
 	return;
