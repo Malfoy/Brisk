@@ -1,4 +1,5 @@
 Brisk
-Brisk.d
+counter
+**/*.d
 **/*.o
 **/*.fa*

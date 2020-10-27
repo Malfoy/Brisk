@@ -2,6 +2,7 @@
 #include <tmmintrin.h>
 #include <cstdint>
 #include <string>
+#include <vector>
 #include "robin_hood.h"
 
 
@@ -15,27 +16,13 @@ using namespace std;
 #define KMERS_H
 
 
+// --- Kint definitions ---
+
 typedef __uint128_t kint;
 typedef __uint128_t skint;
 //~ typedef uint64_t kint;
 
-
-
-extern robin_hood::unordered_flat_map<string, uint8_t> real_count;
-extern robin_hood::unordered_map<kint, uint8_t> cursed_kmers[];
-extern mutex mutex_cursed[];
-extern uint64_t counting_errors;
-extern const uint64_t k;
-extern const kint k_mask;
-extern const kint compact_mask;
-extern const  uint64_t minimizer_size;
-extern const  uint64_t super_minimizer_size;
-extern const uint64_t min_mask;
-extern const uint64_t compacted_size;
-extern const uint64_t byte_nuc;
-
-
-
+// Hash function for kint in robin_hood
 namespace std {
  template <> struct hash<kint>
   {
@@ -48,48 +35,96 @@ namespace std {
 }
 
 
+// ----- Kmer classes -----
+class kmer_full {
+public:
+	kint kmer_s;
+	kint minimizer;
+	int8_t minimizer_idx;
+	bool multi_mini;
 
+	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
+	void compute_mini(uint8_t mini_size);
+	void print(uint8_t k, uint8_t m) const;
+	kint get_compacted(uint8_t m)const ;
+	// uint64_t get_minimizer() const;
+	bool contains_multi_minimizer() const;
+};
+
+class SuperKmerEnumerator {
+public:
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
+	kint next(vector<kmer_full> & kmers);
+
+private:
+	// Sequence and position in it
+	string seq;
+	uint64_t seq_idx;
+
+	// kmer size and minimizer size
+	uint8_t k;
+	kint k_mask;
+	uint8_t m;
+	kint m_mask;
+
+	// Previous kmer read
+	bool saved;
+	kmer_full saved_kmer;
+
+	// Current values for kmers
+	kint current_kmer;
+	kint current_rc_kmer;
+
+	// Needed variables
+	kint mini_candidate;
+	kint rc_mini_candidate;
+	bool reversed;
+	bool multiple;
+	uint8_t mini_pos;
+	uint64_t mini;
+	uint64_t min_hash;
+};
 
 
 
 // ----- Usefull binary kmer functions -----
 
-string intToString(kint n);
-
-void print_kmer(kint num,uint64_t n);
+template<typename T>
+void print_kmer(T num, uint8_t n){
+	num &= ((T)1 << (2*n)) - 1;
+	T anc = (T)1<<(2 * (n - 1));
+	for(uint64_t i(0);i<n and anc!=0;++i){
+		uint64_t nuc = num/anc;
+		num = num % anc;
+		if(nuc==2){
+			cout<<"T";
+		}
+		if(nuc==3){
+			cout<<"G";
+		}
+		if(nuc==1){
+			cout<<"C";
+		}
+		if(nuc==0){
+			cout<<"A";
+		}
+		if (nuc>=4){
+			cout<<nuc<<endl;
+			cout<<"WTF"<<endl;
+		}
+		anc>>=2;
+	}
+}
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
-// RC functions
-uint64_t rcb(const uint64_t& in);
-__uint128_t rcb(const __uint128_t& in);
-uint64_t rcbc(uint64_t in, uint64_t n);
-// Hash functions (TODO: move them)
-__m128i mm_bitshift_right(__m128i x, unsigned count);
-__m128i mm_bitshift_left(__m128i x, unsigned count);
-uint64_t hash64shift(uint64_t key);
 // Return the canonical minimizer for a uint64 sequence.
-int64_t get_minimizer(kint seq, int8_t& position);
-uint64_t reversebits(uint64_t b);
+int64_t get_minimizer(kint seq, uint8_t k, int8_t& position, uint8_t m);
 string getCanonical(const string& str);
 
+// void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
+kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
 
 
 
-// ----- Kmer class -----
-class kmer_full {
-public:
-	int8_t minimizer_idx;
-	kint kmer_s;
-	kint prefix;
-	kint suffix;
-	kmer_full(int8_t minimizer_idx, kint value);
-	kint get_compacted()const ;
-	/** Return the minimizer regarding the minimizer_idx property
-		* Warning: The minimizer should be canon
-		*/
-	uint8_t get_minimizer_idx() const;
-	// uint64_t get_minimizer() const;
-	bool contains_multi_minimizer() const;
-};
 
 #endif
