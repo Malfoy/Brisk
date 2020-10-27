@@ -7,6 +7,7 @@
 
 #include "Kmers.hpp"
 #include "DenseMenuYo.hpp"
+#include "parameters.hpp"
 
 using namespace std;
 
@@ -18,10 +19,9 @@ private:
 
 	uint64_t getMemorySelfMaxUsed() const;
 public:
-	uint8_t k;
-	uint8_t m;
+	Parameters params;
 
-	Brisk(uint8_t k, uint8_t m);
+	Brisk(Parameters & parameters);
 
 	DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer) const;
@@ -36,14 +36,11 @@ public:
 
 
 template<class DATA>
-Brisk<DATA>::Brisk(uint8_t k, uint8_t m) {
-	this->k = k;
-	this->m = m;
+Brisk<DATA>::Brisk(Parameters & parameters): params( parameters ) {
+	this->menu = new DenseMenuYo<DATA>(params);
 
-	this->menu = new DenseMenuYo<DATA>(k, m);
-
-	assert(m % 2 == 1);
-	assert(m < k);
+	assert(params.m % 2 == 1);
+	assert(params.m < params.k);
 }
 
 

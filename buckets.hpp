@@ -20,7 +20,7 @@ public:
 
 	uint nb_kmers;
 
-	Bucket(Params * params);
+	Bucket(Parameters * params);
 	Bucket(const Bucket<DATA> &) = delete;
 	Bucket(Bucket<DATA> && bucket);
 	~Bucket();
@@ -35,7 +35,7 @@ public:
 	bool has_next_kmer();
 
 private:
-	Params * params;
+	Parameters * params;
 
 	SKCL * buffered_skmer;
 	kint buffered_get;
@@ -61,7 +61,7 @@ private:
 
 
 template <class DATA>
-Bucket<DATA>::Bucket(Params * params) {
+Bucket<DATA>::Bucket(Parameters * params) {
 	this->sorted_size = 0;
 	this->buffered_skmer = (SKCL *)NULL;
 	this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
@@ -219,7 +219,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 
 	// Create a new superkmer
 	skml.emplace_back(
-		kmer.get_compacted(params->m),
+		kmer.get_compacted(params->m_small),
 		(int)kmer.minimizer_idx,
 		skml.size(),
 		this->nucleotides_reserved_memory + (this->skml.size() * params->allocated_bytes),
@@ -302,7 +302,7 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 	}
 
 	uint8_t nucleotides_area[32]; // Max 2 * sizeof(kint)
-	SKCL mockskm(kmer.get_compacted(params->m), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
+	SKCL mockskm(kmer.get_compacted(params->m_small), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
 	mockskm.interleaved = mockskm.interleaved_value(nucleotides_area, *params);
 
 	// print_kmer(mockskm.interleaved >> 52, 6); cout << " interleaved" << endl;

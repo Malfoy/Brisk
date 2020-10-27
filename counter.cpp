@@ -4,8 +4,9 @@
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
-#include "Brisk2.hpp"
+#include "Brisk.hpp"
 #include "Kmers.hpp"
+#include "parameters.hpp"
 
 
 using namespace std;
@@ -16,7 +17,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence);
 void verif_counts(Brisk<uint8_t> & counter);
 
 
-int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
+int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m, uint8_t & buckets,
 								uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
@@ -24,6 +25,7 @@ int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m,
   file_opt->required();
   app.add_option("-k", k, "Kmer size");
   app.add_option("-m", m, "Minimizer size");
+  app.add_option("-b", buckets, "Bucket order of magnitude. 4^b minimizer per bucket");
   app.add_option("-t", threads, "Thread number");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
 
@@ -36,11 +38,12 @@ static bool check;
 
 int main(int argc, char** argv) {
 	string fasta = "";
-	uint8_t k=63, m=11;
+	uint8_t k=63, m=13, b=4;
 	uint mode = 0;
 	uint threads = 8;
 
-	parse_args(argc, argv, fasta, k, m, mode, threads);
+	parse_args(argc, argv, fasta, k, m, b, mode, threads);
+	Parameters params(k, m, b);
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
 	if (mode > 1) {
@@ -54,7 +57,7 @@ int main(int argc, char** argv) {
 	cout << "Minimizer size:	" << (uint)m << endl;
   
 	auto start = std::chrono::system_clock::now();
-	Brisk<uint8_t> counter(k, m);
+	Brisk<uint8_t> counter(params);
 	count_fasta(counter, fasta, threads);
 	
 	auto end = std::chrono::system_clock::now();
@@ -85,7 +88,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
 
 	// kint mini_mask = (1 << (2 * counter.m)) - 1;
-	kmer_full kmer(0,0, counter.m, false);
+	kmer_full kmer(0,0, counter.params.m, false);
 	// Count 
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0)
@@ -103,9 +106,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		if (it.second != 0) {
 			errors += 1;
 			if (it.second > 0) {
-				cout << "missing "; print_kmer(it.first, counter.k); cout << " " << (uint)it.second << endl;
+				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
 			} else {
-				cout << "too many "; print_kmer(it.first, counter.k); cout << " " << (uint)(-it.second) << endl;
+				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
 				// cout << (uint)it.first << endl;
 			}
 		}
@@ -179,9 +182,9 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 					line = getLineFasta(&in);
 					if(line.size()>100000000000){
 						buffer.push_back(line.substr(0,line.size()/4));
-						buffer.push_back(line.substr(line.size()/4-counter.k+1,line.size()/4+counter.k-1));
-						buffer.push_back(line.substr(line.size()/2-counter.k+1,line.size()/4+counter.k-1));
-						line=line.substr(3*line.size()/4-counter.k+1);
+						buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
+						buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
+						line=line.substr(3*line.size()/4-counter.params.k+1);
 					}
 				}
 			}
@@ -194,14 +197,14 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 
 void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	// Line too short
-	if (sequence.size() < counter.k)
+	if (sequence.size() < counter.params.k)
 		return;
 
 	vector<vector<kmer_full> > kmers_by_minimizer;
 	vector<kmer_full> superkmer;
 
 	kint minimizer;
-	SuperKmerEnumerator enumerator(sequence, counter.k, counter.m);
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 
 	minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
