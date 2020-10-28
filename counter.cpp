@@ -30,6 +30,7 @@ int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m, 
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
 
   CLI11_PARSE(app, argc, argv);
+
   return 0;
 }
 
@@ -42,7 +43,9 @@ int main(int argc, char** argv) {
 	uint mode = 0;
 	uint threads = 8;
 
-	parse_args(argc, argv, fasta, k, m, b, mode, threads);
+	if (parse_args(argc, argv, fasta, k, m, b, mode, threads) != 0 or fasta == "")
+		exit(0);
+	
 	Parameters params(k, m, b);
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
