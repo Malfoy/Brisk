@@ -94,6 +94,8 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		if (verif.count(kmer.kmer_s) == 0)
 			verif[kmer.kmer_s] = 0;
 
+		// print_kmer(kmer.minimizer, 13); cout << endl;
+
 		uint8_t * count = counter.get(kmer);
 		verif[kmer.kmer_s] -= *count;
 
@@ -149,7 +151,7 @@ string getLineFasta(zstr::ifstream* in) {
 		result += line;
 		c = static_cast<char>(in->peek());
 	}
-	clean_dna(result);
+	// clean_dna(result);
 	return result;
 }
 
@@ -166,29 +168,36 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	}
 
 	// Read file line by line
+	cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 
 	#pragma omp parallel num_threads(threads)
 	{
-		string line;
 		while (in.good() or not buffer.empty()) {
+			string line;
 			#pragma omp critical
 			{
 				if(not buffer.empty()){
 					line=buffer[buffer.size()-1];
 					buffer.pop_back();
 				}else{
-					line = getLineFasta(&in);
-					if(line.size()>100000000000){
-						buffer.push_back(line.substr(0,line.size()/4));
-						buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
-						buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
-						line=line.substr(3*line.size()/4-counter.params.k+1);
-					}
+					if (in.good()) {
+						line = getLineFasta(&in);
+						if(line.size()>100000000000){
+							buffer.push_back(line.substr(0,line.size()/4));
+							buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
+							buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
+							line=line.substr(3*line.size()/4-counter.params.k+1);
+						}
+					} else
+						line = "";
 				}
 			}
-			count_sequence(counter, line);
+
+			if (line != "") {
+				count_sequence(counter, line);
+			}
 		}
 	}
 }
@@ -220,6 +229,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			
+			// print_kmer(kmer.kmer_s, 21); cout << endl;
 			counter.protect_data(kmer);
 			uint8_t * data_pointer = counter.get(kmer);
 			// cout << "Line " << sequence.substr(0, 10) << endl;

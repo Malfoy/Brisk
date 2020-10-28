@@ -44,10 +44,13 @@ public:
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
 
 private:
+	// Usefull variables
+	Parameters params;
+	kint mini_reduc_mask;
+
 	// Mutexes
 	uint64_t mutex_order;
 	uint64_t mutex_number;
-	Parameters params;
 
 	// Mutex
 	vector<omp_lock_t> MutexData;
@@ -69,6 +72,7 @@ template <class DATA>
 DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	// If m - reduc > 16, not enougth space for bucket idxs ! (because of uint32_t)
 	assert(params.m_small <= 16);
+	mini_reduc_mask = ((kint)1 << (2 * params.m_small)) - 1;
 
 	// Create the mutexes
 	mutex_order = min((uint8_t)6,params.m_small);
@@ -107,8 +111,8 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	}
 
 	// Transform the super minimizer to the used minimizer
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * params.m_reduc));
-	kmer.minimizer_idx += params.m_reduc;
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Cursed kmers
@@ -136,7 +140,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
 	omp_unset_lock(&MutexBucket[mutex_idx]);
 
-	kmer.minimizer_idx -= params.m_reduc;
+	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
 }
 
@@ -144,8 +148,8 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * params.m_reduc));
-	kmer.minimizer_idx += params.m_reduc;
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Cursed kmers
@@ -169,7 +173,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	// No bucket
 	if (idx == 0) {
 		omp_unset_lock(&MutexBucket[mutex_idx]);
-		kmer.minimizer_idx -= params.m_reduc;
+		// kmer.minimizer_idx -= params.m_reduc;
 		return (DATA *)NULL;
 	}
 
@@ -177,14 +181,14 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	// Looks into the bucket for the right kmer
 	value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
 	omp_unset_lock(&MutexBucket[mutex_idx]);	
-	kmer.minimizer_idx -= params.m_reduc;
+	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
 }
 
 
 template<class DATA>
 void DenseMenuYo<DATA>::protect_data(const kmer_full & kmer) {
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * params.m_reduc));
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	omp_set_lock(&MutexData[mutex_idx]);
@@ -193,7 +197,7 @@ void DenseMenuYo<DATA>::protect_data(const kmer_full & kmer) {
 
 template<class DATA>
 void DenseMenuYo<DATA>::unprotect_data(const kmer_full & kmer) {
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer >> (2 * params.m_reduc));
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	omp_unset_lock(&MutexData[mutex_idx]);
@@ -238,7 +242,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	}
 	
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
-	kmer.minimizer_idx -= params.m_reduc;
+	// kmer.minimizer_idx -= params.m_reduc;
 	kmer.compute_mini(params.m);
 
 	return true;
