@@ -110,11 +110,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		return prev_val;
 	}
 
-	// Transform the super minimizer to the used minimizer
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
-	// kmer.minimizer_idx += params.m_reduc;
-	uint32_t mutex_idx = get_mutex(small_minimizer);
-
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
@@ -122,7 +117,11 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		omp_unset_lock(&multi_lock);
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
-	
+
+	// Transform the super minimizer to the used minimizer
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
+	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Works because m - reduc <= 16
 	uint32_t column_idx = get_column(small_minimizer);
@@ -148,10 +147,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
-	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
-	// kmer.minimizer_idx += params.m_reduc;
-	uint32_t mutex_idx = get_mutex(small_minimizer);
-
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
@@ -163,6 +158,10 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 			return (DATA *)NULL;
 		}
 	}
+	
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
+	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Normal kmer
 	uint32_t column_idx = get_column(small_minimizer);

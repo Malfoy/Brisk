@@ -365,6 +365,14 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			multiple = true;
 		}
 
+		// Multiple minimizer is directed regarding the complete kmer value because there is no reference due to the multiple index for minimizers.
+		if (multiple)
+			if (current_kmer > current_rc_kmer) {
+				reversed = true;
+			} else {
+				reversed = false;
+			}
+
 		if (not reversed) {
 			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple);
 		} else {

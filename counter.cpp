@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 
 	if (parse_args(argc, argv, fasta, k, m, b, mode, threads) != 0 or fasta == "")
 		exit(0);
-	
+
 	Parameters params(k, m, b);
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
@@ -137,9 +137,9 @@ void clean_dna(string& str){
 			case 'G':break;
 			case 't':break;
 			case 'T':break;
-			// case 'N':break;
-			// case 'n':break;
-			default:  str[i]='A';break;;
+			case 'N':break;
+			case 'n':break;
+			default: cout << "WTF ???" << endl; exit(0);
 		}
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
@@ -154,7 +154,7 @@ string getLineFasta(zstr::ifstream* in) {
 		result += line;
 		c = static_cast<char>(in->peek());
 	}
-	// clean_dna(result);
+	clean_dna(result);
 	return result;
 }
 
@@ -232,7 +232,9 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			
+			// print_kmer(kmer.minimizer, 13); cout << endl;
 			// print_kmer(kmer.kmer_s, 21); cout << endl;
+			// cout << kmer.multi_mini << endl;
 			counter.protect_data(kmer);
 			uint8_t * data_pointer = counter.get(kmer);
 			// cout << "Line " << sequence.substr(0, 10) << endl;
