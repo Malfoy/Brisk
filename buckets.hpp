@@ -124,7 +124,8 @@ Bucket<DATA>::~Bucket() {
 template <class DATA>
 void Bucket<DATA>::data_space_update() {
 	if (this->next_data == this->data_reserved_number) {
-		size_t to_reserve = (int)min(1000., 0.5 * this->data_reserved_number);
+		auto factor = this->data_reserved_number > 500 ? 0.2 : 0.5;
+		size_t to_reserve = (int)(factor * this->data_reserved_number);
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
 		
@@ -204,7 +205,8 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
 		auto old_capacity = skml.capacity();
-		skml.reserve(skml.capacity()*1.5);
+		auto factor = old_capacity > 500 ? 1.2 : 1.5;
+		skml.reserve(skml.capacity()*factor);
 		this->nucleotides_reserved_memory = (uint8_t *)realloc(
 				this->nucleotides_reserved_memory,
 				skml.capacity() * params->allocated_bytes

@@ -5,8 +5,6 @@
 #include "CLI11.hpp"
 #include "zstr.hpp"
 #include "Brisk.hpp"
-#include "Kmers.hpp"
-#include "parameters.hpp"
 
 
 using namespace std;
@@ -75,7 +73,7 @@ int main(int argc, char** argv) {
 	cout << "Global statistics:" << endl;
 	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory;
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory);
-	cout << nb_buckets << " bucket used" << endl;
+	cout << nb_buckets << " bucket used (/" << pow(4, counter.params.m_small) << " possible)" << endl;
 	cout << "nb superkmers: " << nb_skmers << endl;
 	cout << "nb kmers: " << nb_kmers << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
@@ -231,13 +229,10 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 				}
 			}
-			
-			// print_kmer(kmer.minimizer, 13); cout << endl;
-			// print_kmer(kmer.kmer_s, 21); cout << endl;
-			// cout << kmer.multi_mini << endl;
+
 			counter.protect_data(kmer);
 			uint8_t * data_pointer = counter.get(kmer);
-			// cout << "Line " << sequence.substr(0, 10) << endl;
+
 			if (data_pointer == NULL) {
 				data_pointer = counter.insert(kmer);
 				// Init counter

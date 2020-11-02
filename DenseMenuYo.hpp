@@ -31,6 +31,8 @@ public:
 	// Cursed kmer buckets
 	robin_hood::unordered_map<kint, DATA> cursed_kmers;
 
+	DATA debug_value;
+
 
 	DenseMenuYo(Parameters & parameters);
 	DATA * insert_kmer(kmer_full & kmer);
@@ -115,6 +117,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		omp_unset_lock(&multi_lock);
+		// return &debug_value;
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 
