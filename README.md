@@ -62,6 +62,28 @@ There are two main operations that can be performed on a Brisk datastructure:
 
 ### Make it parallel (openMP)
 
+The Brisk core code is openMP thread safe.
+So get and insert can be done in parallel using pragma omp parallel (see counter.cpp for a full example).
+
+But data pointers can be invalidate if insertions are performed by other threads and if chunks of memory are reallocated.
+So, to prevent reallocation during data modifications you can protect and unprotect data as follow
+
+```cpp
+  // Forbid reallocations inside of the kmer bucket
+  index.protect_data(kmer);
+  
+  // Get the data pointer and safely modify the value
+  uint8_t * data_pointer = index.get(kmer);
+  *data_pointer = 84;
+
+  // Release constraints on the kmer bucket
+  index.unprotect_data(kmer);
+```
+
+**WARNING**: Different kmers with different minimizers can share the same bucket.
+So, their protection can be mutually exclusive.
+The protection of multiple kmers simultaneously in the same thread is dangerous for interlockings.
+
 ## Example - Brisk counter index
 
 
