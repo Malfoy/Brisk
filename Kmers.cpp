@@ -108,9 +108,8 @@ kmer_full str2kmer(const std::string & str, const uint8_t m) {
 
 	uint8_t min_pos;
 	bool reversed, multiple;
-	kint min_val;
-
-	min_val = get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple);
+	
+	get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple);
 
 	kmer_full kmer;
 
