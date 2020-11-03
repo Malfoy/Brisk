@@ -103,6 +103,25 @@ kint str2num(const string& str) {
 	return res;
 }
 
+kmer_full str2kmer(const std::string & str, const uint8_t m) {
+	kint km_val(str2num(str));
+
+	uint8_t min_pos;
+	bool reversed, multiple;
+	kint min_val;
+
+	min_val = get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple);
+
+	kmer_full kmer;
+
+	if (not reversed)
+		kmer = kmer_full(km_val, min_pos, m, multiple);
+	else
+		kmer = kmer_full(km_val, str.size() - m - min_pos, m, multiple);
+
+	return kmer;
+}
+
 
 
 kint str2num2(const string& str) {
@@ -161,7 +180,7 @@ uint64_t hash64shift(uint64_t key) {
 	*
 	* @return The minimizer value. Negative number if the minimizer is on the reverse complement.
   */
-uint64_t get_minimizer(kint seq, uint8_t k, uint8_t& min_position, uint8_t m, bool & reversed, bool & multiple) {
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple) {
 	// Init with the first possible minimizer
 	uint64_t mini, mmer;
 	uint64_t fwd_mini = seq % (1 << (m*2));

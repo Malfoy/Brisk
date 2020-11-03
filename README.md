@@ -42,7 +42,8 @@ There are two main operations that can be performed on a Brisk datastructure:
 
 ```cpp
   Brisk<uint8_t> index(params);
-  kmer_full kmer = str2kmer("CTTAAAGAGATTTGCGGTCAACCGTTTTTTGAAAAAATTTTATAAAAATATTTATCATATTGT", params);
+  // Warning: This way to create a kmer is not efficient. Always prefer to enumerate kmers from a sequence as in the next part.
+  kmer_full kmer = str2kmer("CTTAAAGAGATTTGCGGTCAACCGTTTTTTGAAAAAATTTTATAAAAATATTTATCATATTGT", params.m);
 
   // Get an absent kmer
   uint8_t * data_pointer = index.get(kmer);

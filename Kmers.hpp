@@ -43,6 +43,7 @@ public:
 	int8_t minimizer_idx;
 	bool multi_mini;
 
+	kmer_full(){};
 	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
 	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;
@@ -117,8 +118,9 @@ void print_kmer(T num, uint8_t n){
 }
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
+kmer_full str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
-int64_t get_minimizer(kint seq, uint8_t k, int8_t& position, uint8_t m);
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple);
 string getCanonical(const string& str);
 
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
