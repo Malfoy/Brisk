@@ -22,10 +22,10 @@ using namespace std;
 template <class DATA>
 class Brisk {
 private:
-	DenseMenuYo<DATA> * menu;
 
 	uint64_t getMemorySelfMaxUsed() const;
 public:
+	DenseMenuYo<DATA> * menu;
 #ifdef TIME_ANALYSIS
 	uint64_t nb_get;
 	uint64_t nb_insert;

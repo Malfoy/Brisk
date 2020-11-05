@@ -81,6 +81,9 @@ int main(int argc, char** argv) {
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
+
+	counter.menu->print_bigest_bucket();
+
 	return 0;
 }
 

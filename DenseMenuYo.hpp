@@ -45,6 +45,8 @@ public:
 	void restart_kmer_enumeration();
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
 
+	void print_bigest_bucket();
+
 private:
 	// Usefull variables
 	Parameters params;
@@ -185,6 +187,25 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	omp_unset_lock(&MutexBucket[mutex_idx]);	
 	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
+}
+
+
+template<class DATA>
+void DenseMenuYo<DATA>::print_bigest_bucket() {
+	uint max_size = 0;
+	uint max_mutex = 0;
+	uint max_idx = 0;
+	for (uint mutex=0 ; mutex<mutex_number ; mutex++) {
+		for (uint i=0 ; i<bucketMatrix[mutex].size() ; i++) {
+			if (max_size < bucketMatrix[mutex][i].skml.size()) {
+				max_size = bucketMatrix[mutex][i].skml.size();
+				max_mutex = mutex;
+				max_idx = i;
+			}
+		}
+	}
+
+	bucketMatrix[max_mutex][max_idx].print();
 }
 
 

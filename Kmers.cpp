@@ -25,6 +25,7 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, 
 	this->multi_mini = multiple_mini;
 }
 
+
 void kmer_full::compute_mini(uint8_t mini_size) {
 	this->minimizer = this->kmer_s >> (2 * this->minimizer_idx);
 	this->minimizer &= ((kint)1 << (2 * mini_size))- 1;

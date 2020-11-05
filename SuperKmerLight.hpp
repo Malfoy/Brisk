@@ -31,7 +31,7 @@ public:
 	SKCL& operator=(const SKCL& rhs);
 
 	bool compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params);
-	int8_t query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const;
+	bool is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const;
 
 	uint32_t interleaved_value(uint8_t * nucleotides, const Parameters & params)const;
 	uint32_t interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params)const;
@@ -276,19 +276,29 @@ uint32_t SKCL::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, co
 }
 
 
-int8_t SKCL::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
-	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
-	if(start_idx<0 or (start_idx>=this->size)){
-		return (int8_t)-1;
-	}
-
-	int64_t kmer_idx = size - start_idx - 1;
-	if (get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small)) {
-		return kmer_idx;
-	} else {
-		return (int8_t)-1;
-	}
+bool SKCL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
+			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
+		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
+		return get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small);
+	} else
+		return false;
 }
+
+
+// int8_t SKCL::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+// 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
+// 	if(start_idx<0 or (start_idx>=this->size)){
+// 		return (int8_t)-1;
+// 	}
+
+// 	int64_t kmer_idx = size - start_idx - 1;
+// 	if (get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small)) {
+// 		return kmer_idx;
+// 	} else {
+// 		return (int8_t)-1;
+// 	}
+// }
 
 
 kint SKCL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params) const {
