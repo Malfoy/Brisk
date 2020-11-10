@@ -7,7 +7,7 @@ counter
 data/
 
 **/CMakeFiles/
-Makefile
+**/Makefile
 **/*.cmake
 **/CMakeCache.txt
 **/*.a
