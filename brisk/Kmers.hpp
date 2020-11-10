@@ -23,14 +23,17 @@ typedef __uint128_t skint;
 //~ typedef uint64_t kint;
 
 
+uint64_t hash64shift(uint64_t key);
+
 // Hash function for kint in robin_hood
-namespace std {
+namespace robin_hood {
  template <> struct hash<kint>
   {
     size_t operator()(const kint & x) const
     {
+		//~ cout<<"uo"<<endl;
       // your code here, e.g. "return hash<int>()(x.value);" 
-      return ((uint64_t)x+(uint64_t)(x>>64));
+      return ((hash64shift(x)) ^ hash64shift(x>>64));
     }
   };
 }

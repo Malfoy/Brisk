@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/yoann/Projects/bioinfo/Brisk
+CMAKE_SOURCE_DIR = /home/malfoy/devel/Brisk
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/yoann/Projects/bioinfo/Brisk
+CMAKE_BINARY_DIR = /home/malfoy/devel/Brisk
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,14 +80,14 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/yoann/Projects/bioinfo/Brisk && $(CMAKE_COMMAND) -E cmake_progress_start /home/yoann/Projects/bioinfo/Brisk/CMakeFiles /home/yoann/Projects/bioinfo/Brisk/brisk/CMakeFiles/progress.marks
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yoann/Projects/bioinfo/Brisk/CMakeFiles 0
+	cd /home/malfoy/devel/Brisk && $(CMAKE_COMMAND) -E cmake_progress_start /home/malfoy/devel/Brisk/CMakeFiles /home/malfoy/devel/Brisk/brisk/CMakeFiles/progress.marks
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/malfoy/devel/Brisk/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/clean
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/clean
 .PHONY : clean
 
 # The main clean target
@@ -97,22 +97,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/preinstall
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/preinstall
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/malfoy/devel/Brisk && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 brisk/CMakeFiles/brisk_lib.dir/rule:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/CMakeFiles/brisk_lib.dir/rule
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f CMakeFiles/Makefile2 brisk/CMakeFiles/brisk_lib.dir/rule
 .PHONY : brisk/CMakeFiles/brisk_lib.dir/rule
 
 # Convenience name for target.
@@ -122,7 +122,7 @@ brisk_lib: brisk/CMakeFiles/brisk_lib.dir/rule
 
 # fast build rule for target.
 brisk_lib/fast:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/build
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/build
 .PHONY : brisk_lib/fast
 
 Kmers.o: Kmers.cpp.o
@@ -131,7 +131,7 @@ Kmers.o: Kmers.cpp.o
 
 # target to build an object file
 Kmers.cpp.o:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.o
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.o
 .PHONY : Kmers.cpp.o
 
 Kmers.i: Kmers.cpp.i
@@ -140,7 +140,7 @@ Kmers.i: Kmers.cpp.i
 
 # target to preprocess a source file
 Kmers.cpp.i:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.i
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.i
 .PHONY : Kmers.cpp.i
 
 Kmers.s: Kmers.cpp.s
@@ -149,7 +149,7 @@ Kmers.s: Kmers.cpp.s
 
 # target to generate assembly for a file
 Kmers.cpp.s:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.s
+	cd /home/malfoy/devel/Brisk && $(MAKE) -f brisk/CMakeFiles/brisk_lib.dir/build.make brisk/CMakeFiles/brisk_lib.dir/Kmers.cpp.s
 .PHONY : Kmers.cpp.s
 
 # Help Target
@@ -175,6 +175,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/yoann/Projects/bioinfo/Brisk && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/malfoy/devel/Brisk && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

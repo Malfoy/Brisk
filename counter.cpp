@@ -140,7 +140,7 @@ void clean_dna(string& str){
 			case 'T':break;
 			case 'N':break;
 			case 'n':break;
-			default: cout << "WTF ???" << endl; exit(0);
+			default: str[i]='A';
 		}
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
