@@ -10,3 +10,4 @@ data/
 Makefile
 **/*.cmake
 **/CMakeCache.txt
+**/*.a
