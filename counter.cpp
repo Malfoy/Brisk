@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
 
-	counter.menu->print_bigest_bucket();
+	// counter.menu->print_bigest_bucket();
 
 	return 0;
 }
