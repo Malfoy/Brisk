@@ -4,7 +4,7 @@
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
-#include "Brisk.hpp"
+#include "brisk/Brisk.hpp"
 
 
 using namespace std;
