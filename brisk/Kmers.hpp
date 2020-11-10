@@ -22,17 +22,18 @@ typedef __uint128_t kint;
 typedef __uint128_t skint;
 //~ typedef uint64_t kint;
 
+
 // Hash function for kint in robin_hood
-// namespace std {
-//  template <> struct hash<kint>
-//   {
-//     size_t operator()(const kint & x) const
-//     {
-//        your code here, e.g. "return hash<int>()(x.value);" 
-//       return ((uint64_t)x+(uint64_t)(x>>64));
-//     }
-//   };
-// }
+namespace std {
+ template <> struct hash<kint>
+  {
+    size_t operator()(const kint & x) const
+    {
+      // your code here, e.g. "return hash<int>()(x.value);" 
+      return ((uint64_t)x+(uint64_t)(x>>64));
+    }
+  };
+}
 
 
 // ----- Kmer classes -----

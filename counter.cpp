@@ -176,7 +176,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 
-	#pragma omp parallel num_threads(threads)
+	// #pragma omp parallel num_threads(threads)
 	{
 		while (in.good() or not buffer.empty()) {
 			string line;
