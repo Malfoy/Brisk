@@ -216,10 +216,11 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<vector<kmer_full> > kmers_by_minimizer;
 	vector<kmer_full> superkmer;
 
-	kint minimizer;
+	// kint minimizer;
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 
-	minimizer = enumerator.next(superkmer);
+	// minimizer = enumerator.next(superkmer);
+	enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		// Add the values
 		for (kmer_full & kmer : superkmer) {
@@ -248,7 +249,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 
 		// Next superkmer
 		superkmer.clear();
-		minimizer = enumerator.next(superkmer);
+		// minimizer = enumerator.next(superkmer);
+		enumerator.next(superkmer);
 	}
 
 	return;

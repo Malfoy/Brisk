@@ -5,6 +5,7 @@ counter
 **/*.fa*
 
 data/
+brisk/lib/kff
 
 **/CMakeFiles/
 **/Makefile

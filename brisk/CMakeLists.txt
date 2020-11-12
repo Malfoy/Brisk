@@ -22,6 +22,10 @@ set(HEADERS
     pow2.hpp
     robin_hood.h
     SuperKmerLight.hpp
+    writer.hpp
     )
+
+add_subdirectory(lib/kff/C++)
+target_link_libraries(kff)
 
 add_library(brisk ${SRCS} ${HEADERS})
