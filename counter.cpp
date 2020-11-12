@@ -4,7 +4,7 @@
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
-#include "Brisk.hpp"
+#include "brisk/Brisk.hpp"
 
 
 using namespace std;
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
 
-	counter.menu->print_bigest_bucket();
+	// counter.menu->print_bigest_bucket();
 
 	return 0;
 }
@@ -140,7 +140,7 @@ void clean_dna(string& str){
 			case 'T':break;
 			case 'N':break;
 			case 'n':break;
-			default: cout << "WTF ???" << endl; exit(0);
+			default: str[i]='A';
 		}
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);

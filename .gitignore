@@ -3,3 +3,11 @@ counter
 **/*.d
 **/*.o
 **/*.fa*
+
+data/
+
+**/CMakeFiles/
+**/Makefile
+**/*.cmake
+**/CMakeCache.txt
+**/*.a
