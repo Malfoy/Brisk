@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#ifndef BRISK_H
+#define BRISK_H
 
 #ifdef TIME_ANALYSIS
 #include <chrono>
@@ -138,3 +140,6 @@ void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & 
 	memory_usage = this->getMemorySelfMaxUsed();
 	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed);
 }
+
+
+#endif

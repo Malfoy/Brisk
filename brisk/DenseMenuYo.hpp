@@ -48,6 +48,7 @@ public:
 	void print_bigest_bucket();
 
 private:
+	friend class BriskWriter;
 	// Usefull variables
 	Parameters params;
 	kint mini_reduc_mask;

@@ -5,6 +5,7 @@
 #include "CLI11.hpp"
 #include "zstr.hpp"
 #include "brisk/Brisk.hpp"
+#include "brisk/writer.hpp"
 
 
 using namespace std;
@@ -81,8 +82,15 @@ int main(int argc, char** argv) {
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
+	// kint tst = (kint)0b1000000001;
+	// uint8_t * bytes = (uint8_t *)(&tst);
+	// for (uint i=0 ; i<sizeof(kint) ; i++)
+	// 	cout << i << " " << (uint)bytes[i] << endl;
 
-	// counter.menu->print_bigest_bucket();
+	// --- Save Brisk index ---
+	BriskWriter writer("toto.kff");
+	writer.write(counter);
+	writer.close();
 
 	return 0;
 }

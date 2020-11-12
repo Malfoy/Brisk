@@ -37,6 +37,8 @@ public:
 	void print();
 
 private:
+	friend class BriskWriter;
+
 	Parameters * params;
 
 	SKCL * buffered_skmer;

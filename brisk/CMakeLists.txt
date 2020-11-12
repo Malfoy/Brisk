@@ -7,6 +7,10 @@ project(brisk_lib)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Ofast")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
+
 # Crée des variables avec les fichiers à compiler
 set(SRCS
     Kmers.cpp

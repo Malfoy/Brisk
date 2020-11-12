@@ -1,8 +1,10 @@
 Brisk
 counter
+**/*.fa*
+**/*.kff
+
 **/*.d
 **/*.o
-**/*.fa*
 
 data/
 brisk/lib/kff
