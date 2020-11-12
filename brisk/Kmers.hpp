@@ -33,7 +33,7 @@ namespace robin_hood {
     {
 		//~ cout<<"uo"<<endl;
       // your code here, e.g. "return hash<int>()(x.value);" 
-      return ((hash64shift(x)) ^ hash64shift(x>>64));
+      return ((hash64shift(x)) + hash64shift(x>>64));
     }
   };
 }

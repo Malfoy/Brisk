@@ -24,4 +24,4 @@ set(HEADERS
     SuperKmerLight.hpp
     )
 
-add_library(brisk_lib ${SRCS} ${HEADERS})
+add_library(brisk ${SRCS} ${HEADERS})

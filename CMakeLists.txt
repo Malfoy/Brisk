@@ -37,4 +37,4 @@ add_executable(counter ${SRCS} ${HEADERS})
 # link libraries
 find_package(ZLIB)
 find_package(OpenMP)
-target_link_libraries(counter ZLIB::ZLIB OpenMP::OpenMP_CXX brisk_lib)
+target_link_libraries(counter ZLIB::ZLIB OpenMP::OpenMP_CXX brisk)
