@@ -1,3 +1,0 @@
-[submodule "lib/kff"]
-	path = lib/kff
-	url = https://github.com/yoann-dufresne/kmer_file_format.git
