@@ -16,7 +16,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence);
 void verif_counts(Brisk<uint8_t> & counter);
 
 
-int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m, uint8_t & buckets,
+int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint8_t & m, uint8_t & buckets,
 								uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
@@ -26,6 +26,7 @@ int parse_args(int argc, char** argv, string & fasta, uint8_t & k, uint8_t & m, 
   app.add_option("-m", m, "Minimizer size");
   app.add_option("-b", buckets, "Bucket order of magnitude. 4^b minimizer per bucket");
   app.add_option("-t", threads, "Thread number");
+  app.add_option("-o", outfile, "Output file (kff format https://github.com/yoann-dufresne/kmer_file_format)");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
 
   CLI11_PARSE(app, argc, argv);
@@ -38,11 +39,12 @@ static bool check;
 
 int main(int argc, char** argv) {
 	string fasta = "";
+	string outfile = "";
 	uint8_t k=63, m=13, b=4;
 	uint mode = 0;
 	uint threads = 8;
 
-	if (parse_args(argc, argv, fasta, k, m, b, mode, threads) != 0 or fasta == "")
+	if (parse_args(argc, argv, fasta, outfile, k, m, b, mode, threads) != 0 or fasta == "")
 		exit(0);
 
 	Parameters params(k, m, b);
@@ -88,9 +90,11 @@ int main(int argc, char** argv) {
 	// 	cout << i << " " << (uint)bytes[i] << endl;
 
 	// --- Save Brisk index ---
-	BriskWriter writer("toto.kff");
-	writer.write(counter);
-	writer.close();
+	if (mode == 0 and outfile != "") {
+		BriskWriter writer(outfile);
+		writer.write(counter);
+		writer.close();
+	}
 
 	return 0;
 }
