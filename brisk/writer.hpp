@@ -90,8 +90,16 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				// Little endian to big endian
 				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m_small;
 				size_t real_seq_bytes = real_seq_size % 4 == 0 ? real_seq_size / 4 : real_seq_size / 4 + 1;
-				// TODO: verify the adress of nucleotides
-				little_to_big_endian(nucleotides_ptr, big_endian_nucleotides, real_seq_bytes);
+				// cout << real_seq_size << " " << real_seq_bytes << endl;
+
+				// Copy the superkmer
+				for (uint i=0 ; i<real_seq_bytes ; i++) {
+					big_endian_nucleotides[i] = nucleotides_ptr[index.params.allocated_bytes-i-1];
+				}
+				// Align the skmer on the right
+				if (real_seq_size % 4 != 0) {
+					rightshift8(big_endian_nucleotides, real_seq_bytes, ((4 - (real_seq_size % 4)) % 4) * 2);
+				}
 
 				sm.write_compacted_sequence_without_mini(
 						big_endian_nucleotides,
@@ -100,15 +108,6 @@ void BriskWriter::write(Brisk<DATA> & index) {
 						data_ptr
 				);
 			}
-
-			// encode_sequence("ACTAAACTGATT", encoded);
-			// counts[0]=32;counts[1]=47;counts[2]=1;
-			// encode_sequence("AAACTGATCG", encoded);
-			// counts[0]=12;
-			// sm.write_compacted_sequence(encoded, 10, 0, counts);
-			// encode_sequence("CTAAACTGATT", encoded);
-			// counts[0]=1;counts[1]=47;
-			// sm.write_compacted_sequence(encoded, 11, 2, counts);
 
 			sm.close();
 			delete[] big_endian_nucleotides;
