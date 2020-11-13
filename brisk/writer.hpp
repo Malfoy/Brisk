@@ -41,6 +41,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	sgv.write_var("max", 1);
 	sgv.close();
 
+	uint64_t nb_kmers = 0;
+
 	// Save the cursed kmers into a raw block
 	Section_Raw sr = current_file->open_section_raw();
 	DenseMenuYo<DATA> * menu = index.menu;
@@ -50,11 +52,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 		kint kmer = it.first;
 		DATA & data = it.second;
 		little_to_big_endian((uint8_t *)(&kmer), big_endian, biggest_usefull_byte);
-		// // From little endian to big endian
-		// for (uint8_t i=0 ; i<biggest_usefull_byte ; i++) {
-		// 	big_endian[i] = ((uint8_t *)(&kmer))[biggest_usefull_byte - i - 1];
-		// }
 		sr.write_compacted_sequence(big_endian, index.params.k, &data);
+		nb_kmers += 1;
 	}
 	sr.close();
 
@@ -83,6 +82,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 			uint8_t * big_endian_nucleotides = new uint8_t[index.params.allocated_bytes];
 			Bucket<DATA> & b = menu->bucketMatrix[mutex_idx][idx-1];
 			for (SKCL & skmer : b.skml) {
+				nb_kmers += skmer.size;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
 				uint8_t * data_ptr = b.data_reserved_memory + skmer.data_idx;
@@ -101,12 +101,27 @@ void BriskWriter::write(Brisk<DATA> & index) {
 					rightshift8(big_endian_nucleotides, real_seq_bytes, ((4 - (real_seq_size % 4)) % 4) * 2);
 				}
 
+				// Save the whole skmer at once
 				sm.write_compacted_sequence_without_mini(
 						big_endian_nucleotides,
 						real_seq_size,
 						skmer.prefix_size(index.params),
 						data_ptr
 				);
+
+				// uint8_t kmer_bytes = index.params.k - index.params.m_small;
+				// kmer_bytes = kmer_bytes % 4 == 0 ? kmer_bytes / 4 : kmer_bytes / 4 + 1;
+				// uint8_t * kmer_start = big_endian_nucleotides + real_seq_bytes - 1 - kmer_bytes;
+				// // Save kmer per kmer
+				// for (uint idx=0 ; idx<skmer.size ; idx++) {
+				// 	sm.write_compacted_sequence_without_mini(
+				// 			kmer_start,
+				// 			index.params.k - index.params.m_small,
+				// 			skmer.prefix_size(index.params) - (skmer.size - 1) + idx,
+				// 			data_ptr + (skmer.size - 1) - idx
+				// 	);
+				// 	rightshift8(big_endian_nucleotides, real_seq_bytes, 2);
+				// }
 			}
 
 			sm.close();

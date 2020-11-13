@@ -84,11 +84,6 @@ int main(int argc, char** argv) {
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << nb_cursed << endl;
 
-	// kint tst = (kint)0b1000000001;
-	// uint8_t * bytes = (uint8_t *)(&tst);
-	// for (uint i=0 ; i<sizeof(kint) ; i++)
-	// 	cout << i << " " << (uint)bytes[i] << endl;
-
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
 		BriskWriter writer(outfile);
