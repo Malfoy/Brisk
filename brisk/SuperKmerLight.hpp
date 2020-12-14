@@ -8,12 +8,12 @@
 
 
 
-#ifndef SKCL_H
-#define SKCL_H
+#ifndef SKL_H
+#define SKL_H
 
 
 
-class SKCL {
+class SKL {
 public:
 	uint32_t idx;
 	uint32_t data_idx;
@@ -26,9 +26,9 @@ public:
 	uint8_t bytes_used;
 
 
-	SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params);
-	SKCL(const SKCL & otto);
-	SKCL& operator=(const SKCL& rhs);
+	SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params);
+	SKL(const SKL & otto);
+	SKL& operator=(const SKL& rhs);
 
 	bool compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params);
 	bool is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const;
@@ -64,7 +64,7 @@ private:
 	* @param kmer The unsigned int used to represent the binary kmer. The minimizer is not present
 	* @param mini_idx The minimizer position in the kmer (equivalent to suffix size).
 	*/
-SKCL::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params) {
+SKL::SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params) {
 	this->idx = idx;
 	this->data_idx = data_idx;
 	// memset(nucleotides, 0, params.allocated_bytes);
@@ -87,7 +87,7 @@ SKCL::SKCL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotide
 	this->bytes_used=ceil(static_cast<float>(params.k - params.m_small)/4.);
 };
 
-SKCL::SKCL(const SKCL & otto) {
+SKL::SKL(const SKL & otto) {
 	this->idx = otto.idx;
 	this->interleaved = otto.interleaved;
 	this->size = otto.size;
@@ -96,7 +96,7 @@ SKCL::SKCL(const SKCL & otto) {
 	this->bytes_used = otto.bytes_used;
 }
 
-SKCL& SKCL::operator=(const SKCL& rhs) {
+SKL& SKL::operator=(const SKL& rhs) {
 	this->idx = rhs.idx;
 	this->interleaved = rhs.interleaved;
 	this->size = rhs.size;
@@ -107,7 +107,7 @@ SKCL& SKCL::operator=(const SKCL& rhs) {
 	return *this;
 }
 
-bool SKCL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params) {
+bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params) {
 	if ((params.compacted_size + size) / 8 > params.allocated_bytes)
 		return false;
 	
@@ -142,16 +142,16 @@ bool SKCL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Pa
 }
 
 
-uint SKCL::suffix_size() const{
+uint SKL::suffix_size() const{
 	return this->minimizer_idx;
 }
 
 
-uint SKCL::prefix_size(const Parameters & params) const{
+uint SKL::prefix_size(const Parameters & params) const{
 	return (this->size + params.compacted_size - 1 - this->minimizer_idx);
 }
 
-kint SKCL::get_prefix(const uint8_t * nucleotides, const Parameters & params) const {
+kint SKL::get_prefix(const uint8_t * nucleotides, const Parameters & params) const {
 	kint result = 0;
 	if (prefix_size(params) == 0)
 		return result;
@@ -168,7 +168,7 @@ kint SKCL::get_prefix(const uint8_t * nucleotides, const Parameters & params) co
 }
 
 
-kint SKCL::get_suffix(const uint8_t * nucleotides, const Parameters & params)const {
+kint SKL::get_suffix(const uint8_t * nucleotides, const Parameters & params)const {
 	kint result = 0;
 	if (suffix_size() == 0)
 		return result;
@@ -186,7 +186,7 @@ kint SKCL::get_suffix(const uint8_t * nucleotides, const Parameters & params)con
 
 
 
-kint SKCL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) const {
+kint SKL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) const {
 	kint result(this->get_compacted_kmer(size-1, nucleotides, params));
 
 	result %= (kint)1 << (2 * (params.k - 1 - params.m_small));
@@ -205,13 +205,13 @@ kint SKCL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) c
   * @return The Byte index in the datastructure.
   * The first 4 nucleotides are inside of the last byte of the byte array (little endian style).
   */
-uint SKCL::byte_index(uint nucl_position, const Parameters & params) const{
+uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 	uint relative_pos = nucl_position / 4;
 	return params.allocated_bytes - relative_pos - 1;
 }
 
 
-uint32_t SKCL::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval, const Parameters & params) const{
+uint32_t SKL::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval, const Parameters & params) const{
 	baseval &= 0b11;
 	kint prefix = get_prefix(nucleotides, params);
 	kint suffix = get_suffix(nucleotides, params);
@@ -254,11 +254,11 @@ uint32_t SKCL::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval, c
 }
 
 
-uint32_t SKCL::interleaved_value(uint8_t * nucleotides, const Parameters & params) const{
+uint32_t SKL::interleaved_value(uint8_t * nucleotides, const Parameters & params) const{
 	return this->param_interleaved_value(nucleotides, 0, params);
 }
 
-uint32_t SKCL::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params) const {
+uint32_t SKL::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params) const {
 	uint32_t min_val = this->interleaved;
 	
 	uint prefix_size = min((uint)max_fix_idx, (uint)this->prefix_size(params));
@@ -276,7 +276,7 @@ uint32_t SKCL::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, co
 }
 
 
-bool SKCL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
 	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
 			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
 		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
@@ -286,7 +286,7 @@ bool SKCL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const P
 }
 
 
-// int8_t SKCL::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+// int8_t SKL::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
 // 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
 // 	if(start_idx<0 or (start_idx>=this->size)){
 // 		return (int8_t)-1;
@@ -301,7 +301,7 @@ bool SKCL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const P
 // }
 
 
-kint SKCL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params) const {
+kint SKL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	kint result = 0;
 
 	// Copy the compacted value
@@ -317,7 +317,7 @@ kint SKCL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotide
 }
 
 
-void SKCL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer, const Parameters & params) const {
+void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer, const Parameters & params) const {
 	kint compacted = get_compacted_kmer(kmer_idx, nucleotides, params);
 	
 	// Suffix preparation
@@ -341,7 +341,7 @@ void SKCL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const k
 }
 
 
-void SKCL::print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const {
+void SKL::print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const {
 	kint prefix = get_prefix(nucleotides, params);
 	kint suffix = get_suffix(nucleotides, params);
 

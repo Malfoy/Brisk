@@ -15,7 +15,7 @@
 template <class DATA>
 class Bucket{
 public:
-	vector<SKCL> skml;
+	vector<SKL> skml;
 	uint32_t sorted_size;
 
 	uint nb_kmers;
@@ -41,7 +41,7 @@ private:
 
 	Parameters * params;
 
-	SKCL * buffered_skmer;
+	SKL * buffered_skmer;
 	kint buffered_get;
 	DATA * buffered_data;
 
@@ -59,7 +59,7 @@ private:
 	bool debug;
 
 	DATA * find_kmer_unsorted(kmer_full& kmer);
-	DATA * find_kmer_from_interleave(kmer_full& kmer, SKCL & mockskm, uint8_t * mock_nucleotides);
+	DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
 	DATA * find_kmer_linear(const kmer_full& kmer, const uint64_t begin, const uint64_t end);
 	DATA * find_kmer_log(const kmer_full & kmer, const uint64_t begin, const uint64_t end, const uint8_t nucleotide_idx);
 	DATA * insert_kmer_buffer(kmer_full & kmer);
@@ -71,7 +71,7 @@ private:
 template <class DATA>
 Bucket<DATA>::Bucket(Parameters * params) {
 	this->sorted_size = 0;
-	this->buffered_skmer = (SKCL *)NULL;
+	this->buffered_skmer = (SKL *)NULL;
 	this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	this->buffered_data = 0;
 
@@ -208,9 +208,9 @@ void Bucket<DATA>::insert_buffer(){
 		);
 	}
 
-	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKCL& lhs, const SKCL& rhs ){
+	sort(skml.begin()+sorted_size , skml.end(),[ ]( const SKL& lhs, const SKL& rhs ){
 		return lhs.interleaved < rhs.interleaved;});
-	inplace_merge(skml.begin(), skml.begin()+sorted_size ,skml.end() ,[ ]( const SKCL& lhs, const SKCL& rhs ){
+	inplace_merge(skml.begin(), skml.begin()+sorted_size ,skml.end() ,[ ]( const SKL& lhs, const SKL& rhs ){
 		return lhs.interleaved < rhs.interleaved;});
 
 	buffered_skmer = NULL;
@@ -263,14 +263,14 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 static uint64_t max_i = 0;
 
 template <class DATA>
-DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKCL & mockskm, uint8_t * mock_nucleotides){
+DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides){
 	DATA * data_pointer = NULL;
 
 	uint64_t low = lower_bound(
 		skml.begin(),
 		skml.begin() + sorted_size,
 		mockskm,
-		[ ]( const SKCL& lhs, const SKCL& rhs ){
+		[ ]( const SKL& lhs, const SKL& rhs ){
 			return lhs.interleaved < rhs.interleaved;
 		}
 	) - skml.begin();
@@ -315,7 +315,7 @@ DATA * Bucket<DATA>::find_kmer_log(const kmer_full & kmer, const uint64_t begin,
 	if (nucleotide_idx == 16 or end - begin < 1) {
 		if (nucleotide_idx == 16) {
 			uint8_t nucleotides_area[32]; // Max 2 * sizeof(kint)
-			SKCL mockskm(kmer.get_compacted(params->m_small), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
+			SKL mockskm(kmer.get_compacted(params->m_small), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
 			mockskm.interleaved = mockskm.interleaved_value(nucleotides_area, *params);
 			// #pragma omp critical
 			// {
@@ -330,7 +330,7 @@ DATA * Bucket<DATA>::find_kmer_log(const kmer_full & kmer, const uint64_t begin,
 
 	// Select the middle skmer
 	uint64_t middle = begin + (end - begin) / 2;
-	SKCL & skmer = skml[middle];
+	SKL & skmer = skml[middle];
 	uint8_t middle_nucl = skmer.interleaved >> (30 - (2 * nucleotide_idx));
 	middle_nucl = middle_nucl & 0b11;
 
@@ -500,7 +500,7 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 // 	}
 
 // 	uint8_t nucleotides_area[32]; // Max 2 * sizeof(kint)
-// 	SKCL mockskm(kmer.get_compacted(params->m_small), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
+// 	SKL mockskm(kmer.get_compacted(params->m_small), kmer.minimizer_idx, 0, nucleotides_area, 0, *params);
 // 	mockskm.interleaved = mockskm.interleaved_value(nucleotides_area, *params);
 
 // 	// print_kmer(mockskm.interleaved >> 52, 6); cout << " interleaved" << endl;
@@ -606,7 +606,7 @@ bool Bucket<DATA>::has_next_kmer() {
 	if (enumeration_skmer_idx >= skml.size())
 		return false;
 
-	SKCL & skmer = skml[enumeration_skmer_idx];
+	SKL & skmer = skml[enumeration_skmer_idx];
 	if (enumeration_kmer_idx >= skmer.size) {	
 		enumeration_skmer_idx += 1;
 		enumeration_kmer_idx = 0;
@@ -623,7 +623,7 @@ void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 	if (not has_next_kmer())
 		return;
 
-	SKCL & skmer = skml[enumeration_skmer_idx];
+	SKL & skmer = skml[enumeration_skmer_idx];
 	skmer.get_kmer(
 			enumeration_kmer_idx,
 			this->nucleotides_reserved_memory + (skmer.idx * params->allocated_bytes),

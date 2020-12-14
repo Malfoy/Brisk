@@ -81,7 +81,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 			uint8_t * big_endian_nucleotides = new uint8_t[index.params.allocated_bytes];
 			Bucket<DATA> & b = menu->bucketMatrix[mutex_idx][idx-1];
-			for (SKCL & skmer : b.skml) {
+			for (SKL & skmer : b.skml) {
 				nb_kmers += skmer.size;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
@@ -108,20 +108,6 @@ void BriskWriter::write(Brisk<DATA> & index) {
 						skmer.prefix_size(index.params),
 						data_ptr
 				);
-
-				// uint8_t kmer_bytes = index.params.k - index.params.m_small;
-				// kmer_bytes = kmer_bytes % 4 == 0 ? kmer_bytes / 4 : kmer_bytes / 4 + 1;
-				// uint8_t * kmer_start = big_endian_nucleotides + real_seq_bytes - 1 - kmer_bytes;
-				// // Save kmer per kmer
-				// for (uint idx=0 ; idx<skmer.size ; idx++) {
-				// 	sm.write_compacted_sequence_without_mini(
-				// 			kmer_start,
-				// 			index.params.k - index.params.m_small,
-				// 			skmer.prefix_size(index.params) - (skmer.size - 1) + idx,
-				// 			data_ptr + (skmer.size - 1) - idx
-				// 	);
-				// 	rightshift8(big_endian_nucleotides, real_seq_bytes, 2);
-				// }
 			}
 
 			sm.close();
