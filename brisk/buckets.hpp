@@ -290,13 +290,7 @@ DATA * Bucket<DATA>::find_kmer_from_interleave(kmer_full& kmer, SKCL & mockskm, 
 			uint8_t kmer_position = skml[low].size - (skml[low].minimizer_idx - kmer.minimizer_idx) - 1;
 			buffered_data = data_pointer;
 
-			// if (i > max_i) {
-			// 	max_i = i;
-			// 	cout << "max linear " << i << endl;
-			// }
-
 			return this->data_reserved_memory + skml[low].data_idx + kmer_position;
-			// data_pointer = this->data_reserved_memory + skml[low].data_idx + kmer_position;
 		}
 
 		low++;

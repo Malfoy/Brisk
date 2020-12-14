@@ -36,6 +36,7 @@ public:
 	Parameters params;
 
 	Brisk(Parameters & parameters);
+	~Brisk();
 
 	DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer);
@@ -60,6 +61,12 @@ Brisk<DATA>::Brisk(Parameters & parameters): params( parameters ) {
 
 	assert(params.m % 2 == 1);
 	assert(params.m < params.k);
+}
+
+
+template<class DATA>
+Brisk<DATA>::~Brisk() {
+	delete this->menu;
 }
 
 

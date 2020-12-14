@@ -35,6 +35,7 @@ public:
 
 
 	DenseMenuYo(Parameters & parameters);
+	~DenseMenuYo();
 	DATA * insert_kmer(kmer_full & kmer);
 	DATA * get_kmer(kmer_full & kmer);
 
@@ -100,6 +101,13 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	enumeration_started = false;
 	cursed_iter = cursed_kmers.begin();
 	current_minimizer = 0;
+}
+
+
+template <class DATA>
+DenseMenuYo<DATA>::~DenseMenuYo() {
+	delete[] bucket_indexes;
+	delete[] bucketMatrix;
 }
 
 
