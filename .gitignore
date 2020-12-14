@@ -7,7 +7,6 @@ counter
 **/*.o
 
 data/
-brisk/lib/kff
 
 **/CMakeFiles/
 **/Makefile
