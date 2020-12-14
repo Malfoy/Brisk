@@ -1,4 +1,4 @@
-#include "lib/kff/C++/kff_io.hpp"
+#include "lib/kff/kff_io.hpp"
 #include "Brisk.hpp"
 
 
@@ -34,7 +34,7 @@ void little_to_big_endian(uint8_t * little, uint8_t * big, size_t bytes_to_conve
 template <class DATA>
 void BriskWriter::write(Brisk<DATA> & index) {
 	// Set global variables
-	Section_GV sgv = current_file->open_section_GV();
+	Section_GV sgv(current_file);
 	sgv.write_var("k", index.params.k);
 	sgv.write_var("m", index.params.m_small);
 	sgv.write_var("data_size", 1);
@@ -44,7 +44,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	uint64_t nb_kmers = 0;
 
 	// Save the cursed kmers into a raw block
-	Section_Raw sr = current_file->open_section_raw();
+	Section_Raw sr(current_file);
 	DenseMenuYo<DATA> * menu = index.menu;
 	uint8_t big_endian[32];
 	uint8_t biggest_usefull_byte = index.params.k % 4 == 0 ? index.params.k / 4 : index.params.k / 4 + 1;
@@ -58,7 +58,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	sr.close();
 
 	// Prepare max value for super kmer size
-	sgv = current_file->open_section_GV();
+	sgv = Section_GV(current_file);
 	sgv.write_var("max", 2 * (index.params.k - index.params.m_small));
 	sgv.close();
 
@@ -75,7 +75,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
-			Section_Minimizer sm = current_file->open_section_minimizer();
+			Section_Minimizer sm(current_file);
 			little_to_big_endian((uint8_t *)(&minimizer), mini_seq, bytes_mini);
 			sm.write_minimizer(mini_seq);
 
