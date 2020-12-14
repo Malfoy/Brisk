@@ -29,7 +29,7 @@ set(HEADERS
     writer.hpp
     )
 
-add_subdirectory(lib/kff/C++)
+add_subdirectory(lib/kff)
 target_link_libraries(kff)
 
 add_library(brisk ${SRCS} ${HEADERS})
