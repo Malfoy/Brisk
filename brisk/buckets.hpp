@@ -162,8 +162,6 @@ void Bucket<DATA>::data_space_update() {
 
 template <class DATA>
 DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
-	if (2572943361 == (uint)kmer.kmer_s)
-		debug = true;
 	// 0 - Update space for DATA if needed
 	this->data_space_update();
 	// 1 - Try to compact with the last kmer
@@ -181,7 +179,6 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 			
 			this->buffered_data = data_reserved_memory + this->next_data - 1;
 			this->buffered_get = kmer.kmer_s;
-			debug = false;
 			return buffered_data;
 		}
 	}
@@ -198,7 +195,6 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	this->buffered_data = value;
 	this->buffered_get = kmer.kmer_s;
 
-	debug = false;
 	return value;
 }
 
