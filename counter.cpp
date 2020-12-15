@@ -102,12 +102,19 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	kmer_full kmer(0,0, counter.params.m, false);
 	// Count 
 	while (counter.next(kmer)) {
-		if (verif.count(kmer.kmer_s) == 0)
+		if (verif.count(kmer.kmer_s) == 0) {
+			cout << "Was not present before" << endl;
 			verif[kmer.kmer_s] = 0;
+		}
 
-		// print_kmer(kmer.minimizer, 13); cout << endl;
 
 		uint8_t * count = counter.get(kmer);
+		if (count == NULL) {
+			print_kmer(kmer.minimizer, 13); cout << endl;
+			cout << (uint*)count << endl;
+			print_kmer(kmer.kmer_s, 31); cout << endl;
+			cout << (uint)kmer.kmer_s << endl;
+		}
 		verif[kmer.kmer_s] -= *count;
 
 		kmer.kmer_s = 0;
@@ -185,6 +192,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 
 	#pragma omp parallel num_threads(threads)
 	{
+		// uint idx = 0;
 		while (in.good() or not buffer.empty()) {
 			string line;
 			#pragma omp critical
@@ -208,6 +216,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 
 			if (line != "") {
 				count_sequence(counter, line);
+				// cout << idx++ << endl;
 			}
 		}
 	}

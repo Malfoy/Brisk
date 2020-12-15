@@ -29,6 +29,9 @@ set(HEADERS
     writer.hpp
     )
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+link_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory(lib/kff)
 target_link_libraries(kff)
 

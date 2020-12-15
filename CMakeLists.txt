@@ -21,6 +21,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 
 # declare libraries
 add_subdirectory(brisk)
+link_directories(brisk)
 
 set(SRCS
     counter.cpp

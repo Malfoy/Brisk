@@ -71,6 +71,14 @@ string kmer2str(__uint128_t num, uint k) {
 }
 
 
+uint8_t kmer_full::suffix_size() const {
+	return minimizer_idx;
+}
+
+uint8_t kmer_full::prefix_size(const uint8_t k, const uint8_t m) const {
+	return k - m - minimizer_idx;
+}
+
 
 // SUFFIX IS AT RIGHT!!!!!!DO NOT CHANGE THIS
 kint kmer_full::get_compacted(uint8_t m) const {

@@ -54,7 +54,7 @@ public:
 	kint get_compacted(uint8_t m)const ;
 	// uint64_t get_minimizer() const;
 	bool contains_multi_minimizer() const;
-	uint8_t prefix_size() const;
+	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;
 	uint8_t suffix_size() const;
 };
 
