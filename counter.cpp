@@ -190,9 +190,9 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 
+	// uint idx = 0;
 	#pragma omp parallel num_threads(threads)
 	{
-		// uint idx = 0;
 		while (in.good() or not buffer.empty()) {
 			string line;
 			#pragma omp critical
@@ -216,7 +216,12 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 
 			if (line != "") {
 				count_sequence(counter, line);
-				// cout << idx++ << endl;
+				// #pragma omp critical
+				// {
+				// 	if (idx % 10000 == 0)
+				// 		cout << idx << endl;
+				// 	idx++;
+				// }
 			}
 		}
 	}

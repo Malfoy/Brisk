@@ -213,71 +213,6 @@ uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 }
 
 
-// uint32_t SKL::param_interleaved_value(uint8_t * nucleotides, uint8_t baseval, const Parameters & params) const{
-// 	baseval &= 0b11;
-// 	kint prefix = get_prefix(nucleotides, params);
-// 	kint suffix = get_suffix(nucleotides, params);
-// 	uint8_t suf_size = suffix_size();
-// 	uint8_t pref_size = prefix_size(params);
-
-// 	uint32_t value = 0;
-// 	// Suffix interleaved
-// 	uint8_t max_suffix = min((uint)8, (uint)suf_size);
-// 	uint8_t i;
-// 	for (i=0 ; i<max_suffix ; i++) {
-// 		// Get the value of the nucleotide at the position
-// 		uint64_t nucl_value = (suffix >> (2 * (suf_size - i - 1))) & 0b11;
-// 		// shift the value to the right place
-// 		nucl_value <<= 30 - i*4;
-// 		// Add the nucleotide to the interleaved
-// 		value |= nucl_value;
-// 	}
-// 	// Fill missing suffix nucleotides
-// 	for (; i<8 ; i++) {
-// 		value |= ((uint64_t)baseval << (30 - i*4));
-// 	}
-
-//  	// prefix interleaved
-// 	uint8_t max_prefix = min((uint)8, (uint)pref_size);
-// 	for (i=0 ; i<max_prefix ; i++) {
-// 		// Get the value of the nucleotide at the position
-// 		uint64_t nucl_value = (prefix >> (2 * i)) & 0b11;
-// 		// shift the value to the right place
-// 		nucl_value <<= 28 - i*4;
-// 		// Add the nucleotide to the interleaved
-// 		value |= nucl_value;
-// 	}
-// 	// Fill missing prefix nucleotides
-// 	for (; i<8 ; i++) {
-// 		value |= ((uint64_t)baseval << (28 - i*4));
-// 	}
-
-// 	return value;
-// }
-
-
-// uint32_t SKL::interleaved_value(uint8_t * nucleotides, const Parameters & params) const{
-// 	return this->param_interleaved_value(nucleotides, 0, params);
-// }
-
-// uint32_t SKL::interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params) const {
-// 	uint32_t min_val = this->interleaved;
-	
-// 	uint prefix_size = min((uint)max_fix_idx, (uint)this->prefix_size(params));
-// 	uint suffix_size = min((uint)max_fix_idx, (uint)this->suffix_size());
-// 	uint fix_point;
-// 	if (prefix_size <= suffix_size) {
-// 		fix_point = min(max_fix_idx, 2 * (suffix_size - 1));
-// 	} else {
-// 		fix_point = min(max_fix_idx, 2 * (prefix_size - 1) + 1);
-// 	}
-
-// 	uint32_t increment_value = (uint32_t)1 << (30 - fix_point * 2);
-
-// 	return min_val + increment_value;
-// }
-
-
 bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
 	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
 			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
@@ -287,20 +222,6 @@ bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Pa
 		return false;
 }
 
-
-// int8_t SKL::query_kmer(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
-// 	int64_t start_idx  = (int64_t)this->minimizer_idx - (int64_t)kmer.minimizer_idx;
-// 	if(start_idx<0 or (start_idx>=this->size)){
-// 		return (int8_t)-1;
-// 	}
-
-// 	int64_t kmer_idx = size - start_idx - 1;
-// 	if (get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small)) {
-// 		return kmer_idx;
-// 	} else {
-// 		return (int8_t)-1;
-// 	}
-// }
 
 
 kint SKL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params) const {
@@ -401,23 +322,29 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 
 int8_t SKL::interleaved_nucleotide(const uint nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	uint side_idx = nucl_idx / 2;
+	uint skmer_nucl_idx = 0; // From the beginning of the prefix
 
 	if (nucl_idx % 2 == 0) {
 		// Verify borders
 		if (side_idx >= this->suffix_size())
 			return -1;
-		// TODO: Optimization here to avoid kint copy
-		kint suff = this->get_suffix(nucleotides, params);
-		return (suff >> (2 * (this->suffix_size() - 1 - side_idx))) & 0b11;
+
+		skmer_nucl_idx = this->prefix_size(params) + side_idx;
 	} else {
 		// Verify borders
 		if (side_idx >= this->prefix_size(params))
 			return -1;
-		// TODO: Optimization here to avoid kint copy
-		kint pref = this->get_prefix(nucleotides, params);
-		return (pref >> (2 * side_idx)) & 0b11;
+
+		skmer_nucl_idx = this->prefix_size(params) - 1 - side_idx;
 	}
+
+	// Get the right bytes
+	uint byte = nucleotides[byte_index(skmer_nucl_idx, params)];
+	uint8_t val = (byte >> (2 * (3 - (skmer_nucl_idx % 4))))	 & 0b11;
+
+	return val;
 }
+
 
 
 void SKL::print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const {
