@@ -12,7 +12,11 @@ uint64_t rcbc(uint64_t in, uint64_t n);
 // Hash functions (TODO: move them)
 uint64_t hash64shift(uint64_t key);
 
-
+// 	kint kmer_s;
+// 	kint minimizer;
+// 	int8_t minimizer_idx;
+// 	bool multi_mini;
+// 	vector<int8_t> interleaved;
 
 // ----- Kmer class -----
 kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini) {
@@ -24,6 +28,27 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, 
 	this->minimizer &= ((kint)1 << (2 * minimizer_size))- 1;
 	this->multi_mini = multiple_mini;
 }
+
+kmer_full::kmer_full(kmer_full&& kmer) :
+	kmer_s(kmer.kmer_s),
+	minimizer(kmer.minimizer),
+	minimizer_idx(kmer.minimizer_idx),
+	multi_mini(kmer.multi_mini),
+	interleaved(move(interleaved))
+{
+	// cout << "move constructed" << endl;
+}
+
+kmer_full & kmer_full::operator=(kmer_full&& kmer) {
+	this->minimizer_idx = kmer.minimizer_idx;
+	this->kmer_s = kmer.kmer_s;
+	this->minimizer = kmer.minimizer;
+	this->multi_mini = kmer.multi_mini;
+	this->interleaved = move(kmer.interleaved);
+	// cout << "move assigned" << endl;
+	return *this;
+}
+
 
 
 void kmer_full::compute_mini(uint8_t mini_size) {
@@ -39,35 +64,61 @@ void kmer_full::print(uint8_t k, uint8_t m) const {
 	print_kmer(mini, m); cout << endl;
 }
 
+static int8_t const lookup[4][256] = {
+	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3},
+	{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
+};
 
-string kmer2str(__uint128_t num, uint k) {
-	string res;
-	Pow2<__uint128_t> anc(2 * (k - 1));
-	for (uint64_t i(0); i < k; ++i) {
-		uint64_t nuc = num / anc;
-		num             = num % anc;
-		if (nuc == 3) {
-			res += "G";
-		}
-		if (nuc == 2) {
-			res += "T";
-		}
-		if (nuc == 1) {
-			res += "C";
-		}
-		if (nuc == 0) {
-			res += "A";
-		}
-		if (nuc >= 4) {
-			cout << "WTF kmer2str" << endl;
-			cout<<kmer2str(num,k)<<endl;
-			// cout<<(uint6)anc.value()<<endl;
-			cout<<nuc<<endl;
-			return "";
-		}
-		anc >>= 2;
+vector<int8_t> debug_save;
+
+const int8_t unset_val = -2;
+int8_t kmer_full::interleaved_nucleotide(const uint8_t interleaved_nucl_idx, const uint8_t k, const uint8_t m, bool debug=false) {
+	if (this->interleaved.size() > interleaved_nucl_idx) {
+		return this->interleaved[interleaved_nucl_idx];
 	}
-	return res;
+
+	static const kint endian_test = 1;
+	static const bool little_endian = *((uint8_t*)&endian_test) == (uint8_t)1;
+	
+	uint8_t side_idx = interleaved_nucl_idx / 2;
+	uint8_t skmer_nucl_idx = 0; // 0 is the end of the suffix
+
+	if (interleaved_nucl_idx % 2 == 0) {
+		if (side_idx >= this->suffix_size()) {
+			this->interleaved.push_back(-1);
+			if (debug)
+				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+			return -1;
+		} else {
+			skmer_nucl_idx = this->suffix_size() - 1 - side_idx;
+		}
+	} else {
+		if (side_idx >= this->prefix_size(k, m)) {
+			this->interleaved.push_back(-1);
+			if (debug)
+				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+			return -1;
+		} else {
+			skmer_nucl_idx = this->suffix_size() + m + side_idx;
+		}
+	}
+
+	if (little_endian) {
+		uint8_t byte = ((uint8_t*)&kmer_s)[skmer_nucl_idx/4];
+		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
+		if (debug) {
+			print_kmer(this->kmer_s, 31); cout << endl;
+			// cout << "kmer " << (uint)interleaved_nucl_idx << " " << (uint)side_idx << " " << (uint)skmer_nucl_idx << " " << (uint)byte << " " << (int)this->interleaved[interleaved_nucl_idx] << endl;
+			cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+		}
+		return this->interleaved[interleaved_nucl_idx];
+	} else {
+		uint8_t byte = ((uint8_t*)&kmer_s)[sizeof(kint) - 1 - (skmer_nucl_idx/4)];
+		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
+		return this->interleaved[interleaved_nucl_idx];
+	}
 }
 
 
@@ -103,6 +154,37 @@ bool kmer_full::contains_multi_minimizer() const {
 // ----- Useful binary kmer functions -----
 
 
+string kmer2str(__uint128_t num, uint k) {
+	string res;
+	Pow2<__uint128_t> anc(2 * (k - 1));
+	for (uint64_t i(0); i < k; ++i) {
+		uint64_t nuc = num / anc;
+		num             = num % anc;
+		if (nuc == 3) {
+			res += "G";
+		}
+		if (nuc == 2) {
+			res += "T";
+		}
+		if (nuc == 1) {
+			res += "C";
+		}
+		if (nuc == 0) {
+			res += "A";
+		}
+		if (nuc >= 4) {
+			cout << "WTF kmer2str" << endl;
+			cout<<kmer2str(num,k)<<endl;
+			// cout<<(uint6)anc.value()<<endl;
+			cout<<nuc<<endl;
+			return "";
+		}
+		anc >>= 2;
+	}
+	return res;
+}
+
+
 kint str2num(const string& str) {
 	kint res(0);
 	for (uint64_t i(0); i < str.size(); i++) {
@@ -112,7 +194,7 @@ kint str2num(const string& str) {
 	return res;
 }
 
-kmer_full str2kmer(const std::string & str, const uint8_t m) {
+kmer_full * str2kmer(const std::string & str, const uint8_t m) {
 	kint km_val(str2num(str));
 
 	uint8_t min_pos;
@@ -120,12 +202,12 @@ kmer_full str2kmer(const std::string & str, const uint8_t m) {
 	
 	get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple);
 
-	kmer_full kmer;
+	kmer_full * kmer;
 
 	if (not reversed)
-		kmer = kmer_full(km_val, min_pos, m, multiple);
+		kmer = new kmer_full(km_val, min_pos, m, multiple);
 	else
-		kmer = kmer_full(km_val, str.size() - m - min_pos, m, multiple);
+		kmer = new kmer_full(km_val, str.size() - m - min_pos, m, multiple);
 
 	return kmer;
 }
@@ -338,7 +420,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 
 	if (saved) {
 		saved = false;
-		kmers.push_back(saved_kmer);
+		kmers.push_back(move(saved_kmer));
 	}
 
 	// Loop over all kmers
@@ -414,7 +496,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		} else {
 			if (seq_idx == 0)
 				to_return = false;
-			kmers.push_back(saved_kmer);
+			kmers.push_back(move(saved_kmer));
 		}
 	}
 

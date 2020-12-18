@@ -60,8 +60,9 @@ private:
 
 	DATA * find_kmer_unsorted(kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
-	DATA * find_kmer_linear(const kmer_full& kmer, const int64_t begin, const int64_t end);
-	DATA * find_kmer_log(const kmer_full & kmer, const int64_t begin, const int64_t end, const uint nucleotide_idx);
+	DATA * find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end);
+	DATA * find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
+	inline DATA * find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
 	DATA * insert_kmer_buffer(kmer_full & kmer);
 	void insert_buffer();
 	void data_space_update();
@@ -152,8 +153,6 @@ void Bucket<DATA>::data_space_update() {
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
 		
-		if (debug)
-			cout << "realloc modified" << endl;
 		this->buffered_data = NULL;
 		this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	}
@@ -267,122 +266,80 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 
 
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_log(const kmer_full & kmer, const int64_t begin, const int64_t end, const uint nucleotide_idx) {
-	if (debug)
-		cout << begin << " " << end << " " << nucleotide_idx << endl;
+inline DATA * Bucket<DATA>::find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx) {
+	int8_t begin_nucl = skml[begin].interleaved_nucleotide(nucleotide_idx,
+				this->nucleotides_reserved_memory + params->allocated_bytes * skml[begin].idx,
+				*params);
+	int8_t end_nucl = skml[end].interleaved_nucleotide(nucleotide_idx,
+				this->nucleotides_reserved_memory + params->allocated_bytes * skml[end].idx,
+				*params);
+	// if (debug)
+	// 	cout << "start/end " << (int)begin_nucl << " " << (int)end_nucl << endl;
+
+	uint middle = begin + (end - begin) / 2;
+	if (begin_nucl == end_nucl) {
+		return find_kmer_log(kmer, begin, end, nucleotide_idx + 1);
+	} else {
+		DATA * val = find_kmer_log(kmer, begin, middle, nucleotide_idx);
+		if (val != NULL)
+			return val;
+		return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
+	}
+}
+
+
+template<class DATA>
+DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx) {
+	// if (debug)
+	// 	cout << begin << " " << end << " " << (uint)nucleotide_idx << endl;
 	// Base case, linear interogation
 	if (end - begin < 1) {
 		return find_kmer_linear(kmer, begin, end);
 	}
 
-	uint side_idx = nucleotide_idx / 2;
-	uint max_side_idx = max(kmer.suffix_size(), kmer.prefix_size(params->k, params->m_small));
-	if (side_idx > max_side_idx)
+	uint8_t side_idx = nucleotide_idx / 2;
+	uint8_t max_side_idx = max(kmer.suffix_size(), kmer.prefix_size(params->k, params->m_small));
+	if (side_idx > max_side_idx or nucleotide_idx == 255) {
+		// cout << "find max " << begin << " " << end << endl;
 		return find_kmer_linear(kmer, begin, end);
+	}
 
-	// Select the middle skmer
-	uint64_t middle = begin + (end - begin) / 2;
-	SKL & skmer = skml[middle];
-
-	uint8_t nucl = 0;
-	// Suffix work
-	if (nucleotide_idx % 2 == 0) {
-		// If outiside of kmer, no information on this nucleotide
-		if (side_idx >= kmer.suffix_size()) {
-			if (debug)
-				cout << "suffix too short" << endl;
-			bool same_beginning = true;
-			for (uint i=0 ; i<= nucleotide_idx ; i++) {
-				int8_t begin_nucl = skml[begin].interleaved_nucleotide(i,
-							this->nucleotides_reserved_memory + params->allocated_bytes * skml[begin].idx,
-							*params);
-				int8_t end_nucl = skml[end].interleaved_nucleotide(i,
-							this->nucleotides_reserved_memory + params->allocated_bytes * skml[end].idx,
-							*params);
-
-				if (begin_nucl != end_nucl) {
-					same_beginning = false;
-					break;
-				}
-			}
-
-			if (same_beginning)
-				return this->find_kmer_log(kmer, begin, end, nucleotide_idx + 1);
-			else {
-				DATA * val = this->find_kmer_log(kmer, begin, middle, 0);
-				if (val == NULL)
-					val = this->find_kmer_log(kmer, middle + 1, end, 0);
-				return val;
-			}
-		}
-		// Must be after the middle
-		else if (side_idx >= skmer.suffix_size())
-			return this->find_kmer_log(kmer, middle+1, end, 0);
-		// Get the nucleotide of interest of the kmer
-		nucl = (kmer.kmer_s >> (2 * (kmer.minimizer_idx - 1 - side_idx))) & 0b11;
-
-	// Prefix work
+	int8_t nucl = kmer.interleaved_nucleotide(nucleotide_idx, params->k, params->m_small, debug);
+	// if (debug)
+	// 	cout << "nucl " << (int)nucl << endl;
+	
+	if (nucl < 0) {
+		return find_recur_log_split(kmer, begin, end, nucleotide_idx);
 	} else {
-		// If outiside of kmer, no information on this nucleotide
-		if (side_idx >= kmer.prefix_size(params->k, params->m_small)) {
-			if (debug)
-				cout << "prefix too short" << endl;
-			bool same_beginning = true;
-			for (uint i=0 ; i<= nucleotide_idx ; i++) {
-				int8_t begin_nucl = skml[begin].interleaved_nucleotide(i,
-							this->nucleotides_reserved_memory + params->allocated_bytes * skml[begin].idx,
+		// Select the middle skmer
+		uint64_t middle = begin + (end - begin) / 2;
+		SKL & mid_skmer = skml[middle];
+		int8_t middle_nucl = mid_skmer.interleaved_nucleotide(nucleotide_idx,
+							this->nucleotides_reserved_memory + params->allocated_bytes * mid_skmer.idx,
 							*params);
-				int8_t end_nucl = skml[end].interleaved_nucleotide(i,
-							this->nucleotides_reserved_memory + params->allocated_bytes * skml[end].idx,
-							*params);
+		// if (debug) {
+		// 	cout << "mid " << (int)middle_nucl << endl << endl;
+		// }
 
-				if (begin_nucl != end_nucl) {
-					same_beginning = false;
-					break;
-				}
-			}
-
-			if (same_beginning)
-				return this->find_kmer_log(kmer, begin, end, nucleotide_idx + 1);
-			else {
-				DATA * val = this->find_kmer_log(kmer, begin, middle, 0);
-				if (val == NULL)
-					val = this->find_kmer_log(kmer, middle + 1, end, 0);
-				return val;
+		// Middle nucleotide absent
+		if (middle_nucl < 0) {
+			return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
+		} else {
+			if (nucl < middle_nucl) {
+				return find_kmer_log(kmer, begin, middle-1, nucleotide_idx);
+			} else if (nucl > middle_nucl) {
+				return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
+			} else {
+				return find_recur_log_split(kmer, begin, end, nucleotide_idx);
 			}
 		}
-		// Must be after the middle
-		else if (side_idx >= skmer.prefix_size(*params))
-			return this->find_kmer_log(kmer, middle+1, end, 0);
-		// Get the nucleotide of interest of the kmer
-		nucl = (kmer.kmer_s >> (2 * (kmer.minimizer_idx + this->params->m_small + side_idx))) & 0b11;
-	}
-	if (debug)
-		cout << "nucl " << (uint)nucl << endl;
-
-	// Get the nucleotide of interest for the middle superkmer of the list
-	uint8_t middle_nucl = skmer.interleaved_nucleotide(
-				nucleotide_idx,
-				this->nucleotides_reserved_memory + params->allocated_bytes * skmer.idx,
-				*params
-	);
-	if (debug)
-		cout << "m nucl " << (uint)middle_nucl << endl;
-
-	if (nucl < middle_nucl) {
-		return find_kmer_log(kmer, begin, middle-1, 0);
-	} else if (nucl > middle_nucl) {
-		return find_kmer_log(kmer, middle+1, end, 0);
-	} else { // equality
-		return find_kmer_log(kmer,begin, end, nucleotide_idx+1);
 	}
 
-	cout << "WTF ??" << endl;
-	return NULL;
 }
 
+
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_linear(const kmer_full& kmer, const int64_t begin, const int64_t end) {
+DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end) {
 	for (int i=begin ; i<=end ; i++) {
 		bool is_present = skml[i].is_kmer_present(
 				kmer,
@@ -410,12 +367,25 @@ DATA * Bucket<DATA>::find_kmer_unsorted(kmer_full& kmer) {
 
 template <class DATA>
 DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
+	// if ((uint)kmer.kmer_s == 2214592512) {
+	// if (*(((uint*)&(kmer.kmer_s))+1) == 553648128) {
+	// 	debug = true;
+	// }
+	// if (debug)
+		// for (SKL & skmer : skml){
+		// 	skmer.print(nucleotides_reserved_memory + params->allocated_bytes * skmer.idx, (kint)34603008UL, *params); cout << endl;
+		// }
 	if (sorted_size > 0) {
 		DATA * ptr = find_kmer_log(kmer, 0, sorted_size-1, 0);
-
-		if (ptr != NULL)
+		// if (debug) {
+		// 	print_kmer(kmer.kmer_s, 31); cout << endl;
+		// }
+		debug = false;
+		if (ptr != NULL) {
 			return ptr;
+		}
 	}
+	debug = false;
 
 	return find_kmer_unsorted(kmer);
 }

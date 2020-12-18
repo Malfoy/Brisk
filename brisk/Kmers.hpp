@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <utility>
 #include "robin_hood.h"
 
 
@@ -39,6 +40,7 @@ namespace robin_hood {
 }
 
 
+
 // ----- Kmer classes -----
 class kmer_full {
 public:
@@ -46,9 +48,13 @@ public:
 	kint minimizer;
 	int8_t minimizer_idx;
 	bool multi_mini;
+	vector<int8_t> interleaved;
 
-	kmer_full(){};
 	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
+	kmer_full() = delete;
+	kmer_full(kmer_full&& kmer);
+	kmer_full & operator=(kmer_full&& kmer);
+
 	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;
 	kint get_compacted(uint8_t m)const ;
@@ -56,7 +62,10 @@ public:
 	bool contains_multi_minimizer() const;
 	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;
 	uint8_t suffix_size() const;
+	int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 };
+
+
 
 class SuperKmerEnumerator {
 public:
@@ -124,7 +133,7 @@ void print_kmer(T num, uint8_t n){
 }
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
-kmer_full str2kmer(const std::string & str, const uint8_t m);
+kmer_full * str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple);
 string getCanonical(const string& str);

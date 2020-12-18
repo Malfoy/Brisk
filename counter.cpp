@@ -103,17 +103,17 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	// Count 
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {
-			cout << "Was not present before" << endl;
 			verif[kmer.kmer_s] = 0;
 		}
 
 
 		uint8_t * count = counter.get(kmer);
 		if (count == NULL) {
-			print_kmer(kmer.minimizer, 13); cout << endl;
+			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
+			cout << (uint)kmer.minimizer << endl;
 			cout << (uint*)count << endl;
-			print_kmer(kmer.kmer_s, 31); cout << endl;
-			cout << (uint)kmer.kmer_s << endl;
+			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
+			cout << *(((uint*)&(kmer.kmer_s))+1) << " " << (uint)kmer.kmer_s << endl;
 		}
 		verif[kmer.kmer_s] -= *count;
 

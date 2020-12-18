@@ -161,6 +161,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
+	
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);

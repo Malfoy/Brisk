@@ -19,10 +19,6 @@ public:
 	uint32_t data_idx;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
-	/**
-	 * The number of bytes that are really occupied by the nucleotides
-	 */
-	uint8_t bytes_used;
 
 
 	SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params);
@@ -45,7 +41,7 @@ public:
 	// kint get_compacted(const uint8_t * nucleotides)const;
 
 	bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
-	int8_t interleaved_nucleotide(const uint nucl_idx, const uint8_t * nucleotides, const Parameters & params) const;
+	int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const;
 
 	void print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const;
 
@@ -85,8 +81,6 @@ SKL::SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides,
 	// this->interleaved = 0;
 	this->size = 1;
 	this->minimizer_idx = mini_idx;
-	// this->kmer_data = vector<DATA>(1);
-	this->bytes_used=ceil(static_cast<float>(params.k - params.m_small)/4.);
 };
 
 SKL::SKL(const SKL & otto) {
@@ -95,7 +89,6 @@ SKL::SKL(const SKL & otto) {
 	this->size = otto.size;
 	this->minimizer_idx = otto.minimizer_idx;
 	this->data_idx = otto.data_idx;
-	this->bytes_used = otto.bytes_used;
 }
 
 SKL& SKL::operator=(const SKL& rhs) {
@@ -104,7 +97,6 @@ SKL& SKL::operator=(const SKL& rhs) {
 	this->size = rhs.size;
 	this->minimizer_idx = rhs.minimizer_idx;
 	this->data_idx = rhs.data_idx;
-	this->bytes_used = rhs.bytes_used;
 
 	return *this;
 }
@@ -134,7 +126,6 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 		nucleotides[byte_to_update] += (nuc << (2 * padding));
 		size++;
 		// Size of a kmer - size of minimizer + 1 for each supplementary nucleotide
-		bytes_used = ceil(static_cast<float>(params.k - params.m_small + size - 1)/4.);
 		minimizer_idx++;
 
 		return true;
@@ -261,6 +252,8 @@ void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const ki
 	kmer.multi_mini = false;
 	kmer.minimizer_idx = suffix_size;
 	kmer.minimizer = mini;
+
+	kmer.interleaved.clear();
 }
 
 
@@ -320,9 +313,22 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 }
 
 
-int8_t SKL::interleaved_nucleotide(const uint nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
-	uint side_idx = nucl_idx / 2;
-	uint skmer_nucl_idx = 0; // From the beginning of the prefix
+
+int8_t const lookup[4][256] = {
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+	{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3},
+	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}
+};
+
+
+int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
+	if (nucl_idx == 255) {
+		cout << "PASGLOP" << endl;
+		exit(1);
+	}
+	uint8_t side_idx = nucl_idx / 2;
+	uint8_t skmer_nucl_idx = 0; // From the beginning of the prefix
 
 	if (nucl_idx % 2 == 0) {
 		// Verify borders
@@ -339,8 +345,10 @@ int8_t SKL::interleaved_nucleotide(const uint nucl_idx, const uint8_t * nucleoti
 	}
 
 	// Get the right bytes
-	uint byte = nucleotides[byte_index(skmer_nucl_idx, params)];
-	uint8_t val = (byte >> (2 * (3 - (skmer_nucl_idx % 4))))	 & 0b11;
+	uint8_t byte = nucleotides[byte_index(skmer_nucl_idx, params)];
+	// int8_t old_val = (byte >> (2 * (3 - (skmer_nucl_idx % 4))))	 & 0b11;
+	int8_t val = lookup[skmer_nucl_idx % 4][byte];
+	// cout << (uint)old_val << " " << (uint)val << endl;
 
 	return val;
 }
@@ -354,6 +362,7 @@ void SKL::print(const uint8_t * nucleotides, const kint & mini, const Parameters
 	print_kmer(prefix, prefix_size(params));
 	print_kmer(mini, params.m_small);
 	print_kmer(suffix, suffix_size());
+	cout << " " << (uint)minimizer_idx;
 }
 
 
