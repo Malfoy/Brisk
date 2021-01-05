@@ -66,7 +66,7 @@ void kmer_full::print(uint8_t k, uint8_t m) const {
 	print_kmer(mini, m); cout << endl;
 }
 
-static int8_t const lookup[4][256] = {
+static int const lookup[4][256] = {
 	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3},
 	{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
@@ -75,8 +75,8 @@ static int8_t const lookup[4][256] = {
 
 
 
-vector<int8_t> kmer_full::compute_interleaved(const uint8_t k, const uint8_t m) const {
-	vector<int8_t> interleaved;
+vector<int> kmer_full::compute_interleaved(const uint8_t k, const uint8_t m) const {
+	vector<int> interleaved;
 
 	uint8_t suff_size = this->suffix_size();
 	uint8_t pref_size = this->prefix_size(k, m);
@@ -102,55 +102,55 @@ vector<int8_t> kmer_full::compute_interleaved(const uint8_t k, const uint8_t m) 
 
 
 
-vector<int8_t> debug_save;
+// vector<int8_t> debug_save;
 
-const int8_t unset_val = -2;
-int8_t kmer_full::interleaved_nucleotide(const uint8_t interleaved_nucl_idx, const uint8_t k, const uint8_t m, bool debug=false) {
-	if (this->interleaved.size() > interleaved_nucl_idx) {
-		return this->interleaved[interleaved_nucl_idx];
-	}
+// const int8_t unset_val = -2;
+// int8_t kmer_full::interleaved_nucleotide(const uint8_t interleaved_nucl_idx, const uint8_t k, const uint8_t m, bool debug=false) {
+// 	if (this->interleaved.size() > interleaved_nucl_idx) {
+// 		return this->interleaved[interleaved_nucl_idx];
+// 	}
 
-	static const kint endian_test = 1;
-	static const bool little_endian = *((uint8_t*)&endian_test) == (uint8_t)1;
+// 	static const kint endian_test = 1;
+// 	static const bool little_endian = *((uint8_t*)&endian_test) == (uint8_t)1;
 	
-	uint8_t side_idx = interleaved_nucl_idx / 2;
-	uint8_t skmer_nucl_idx = 0; // 0 is the end of the suffix
+// 	uint8_t side_idx = interleaved_nucl_idx / 2;
+// 	uint8_t skmer_nucl_idx = 0; // 0 is the end of the suffix
 
-	if (interleaved_nucl_idx % 2 == 0) {
-		if (side_idx >= this->suffix_size()) {
-			this->interleaved.push_back(-1);
-			if (debug)
-				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-			return -1;
-		} else {
-			skmer_nucl_idx = this->suffix_size() - 1 - side_idx;
-		}
-	} else {
-		if (side_idx >= this->prefix_size(k, m)) {
-			this->interleaved.push_back(-1);
-			if (debug)
-				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-			return -1;
-		} else {
-			skmer_nucl_idx = this->suffix_size() + m + side_idx;
-		}
-	}
+// 	if (interleaved_nucl_idx % 2 == 0) {
+// 		if (side_idx >= this->suffix_size()) {
+// 			this->interleaved.push_back(-1);
+// 			if (debug)
+// 				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+// 			return -1;
+// 		} else {
+// 			skmer_nucl_idx = this->suffix_size() - 1 - side_idx;
+// 		}
+// 	} else {
+// 		if (side_idx >= this->prefix_size(k, m)) {
+// 			this->interleaved.push_back(-1);
+// 			if (debug)
+// 				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+// 			return -1;
+// 		} else {
+// 			skmer_nucl_idx = this->suffix_size() + m + side_idx;
+// 		}
+// 	}
 
-	if (little_endian) {
-		uint8_t byte = ((uint8_t*)&kmer_s)[skmer_nucl_idx/4];
-		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
-		if (debug) {
-			print_kmer(this->kmer_s, 31); cout << endl;
-			// cout << "kmer " << (uint)interleaved_nucl_idx << " " << (uint)side_idx << " " << (uint)skmer_nucl_idx << " " << (uint)byte << " " << (int)this->interleaved[interleaved_nucl_idx] << endl;
-			cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-		}
-		return this->interleaved[interleaved_nucl_idx];
-	} else {
-		uint8_t byte = ((uint8_t*)&kmer_s)[sizeof(kint) - 1 - (skmer_nucl_idx/4)];
-		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
-		return this->interleaved[interleaved_nucl_idx];
-	}
-}
+// 	if (little_endian) {
+// 		uint8_t byte = ((uint8_t*)&kmer_s)[skmer_nucl_idx/4];
+// 		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
+// 		if (debug) {
+// 			print_kmer(this->kmer_s, 31); cout << endl;
+// 			// cout << "kmer " << (uint)interleaved_nucl_idx << " " << (uint)side_idx << " " << (uint)skmer_nucl_idx << " " << (uint)byte << " " << (int)this->interleaved[interleaved_nucl_idx] << endl;
+// 			cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
+// 		}
+// 		return this->interleaved[interleaved_nucl_idx];
+// 	} else {
+// 		uint8_t byte = ((uint8_t*)&kmer_s)[sizeof(kint) - 1 - (skmer_nucl_idx/4)];
+// 		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
+// 		return this->interleaved[interleaved_nucl_idx];
+// 	}
+// }
 
 
 uint8_t kmer_full::suffix_size() const {

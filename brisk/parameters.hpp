@@ -7,7 +7,7 @@ public:
 	uint8_t m;
 	uint8_t m_reduc;
 	uint8_t m_small;
-	uint64_t allocated_bytes;
+	uint allocated_bytes;
 	uint8_t compacted_size;
 
 	Parameters (uint8_t k, uint8_t m, uint8_t bucket_magnitude) {
