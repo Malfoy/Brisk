@@ -62,6 +62,7 @@ public:
 	bool contains_multi_minimizer() const;
 	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;
 	uint8_t suffix_size() const;
+	vector<int8_t> compute_interleaved(const uint8_t k, const uint8_t m) const;
 	int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 };
 

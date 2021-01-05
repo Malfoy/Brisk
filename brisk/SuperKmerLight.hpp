@@ -42,6 +42,7 @@ public:
 
 	bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
 	int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const;
+	void compute_interleaved(vector<int8_t> & interleaved, const uint8_t * nucleotides, const Parameters & params) const;
 
 	void print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const;
 
@@ -321,7 +322,6 @@ int8_t const lookup[4][256] = {
 	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}
 };
 
-
 int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	if (nucl_idx == 255) {
 		cout << "PASGLOP" << endl;
@@ -351,6 +351,32 @@ int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucle
 	// cout << (uint)old_val << " " << (uint)val << endl;
 
 	return val;
+}
+
+
+void SKL::compute_interleaved(vector<int8_t> & interleaved, const uint8_t * nucleotides, const Parameters & params) const {
+
+	uint suff_size = this->suffix_size();
+	uint pref_size = this->prefix_size(params);
+	uint inter_size = interleaved.size();
+
+	// Compute suffix interleved
+	for (uint offset=0 ; offset<min(suff_size, inter_size/2) ; offset++) {
+		uint8_t nucl_idx = this->prefix_size(params) + offset;
+		uint8_t byte = nucleotides[byte_index(nucl_idx, params)];
+		interleaved[2*offset] = lookup[nucl_idx%4][byte];
+	}
+	for (uint idx=suff_size ; idx<inter_size/2 ; idx++)
+		interleaved[2*idx] = -1;
+
+	// Compute prefix interleved
+	for (uint offset=0 ; offset<min(pref_size, inter_size/2) ; offset++) {
+		uint8_t nucl_idx = this->prefix_size(params) - 1 - offset;
+		uint8_t byte = nucleotides[byte_index(nucl_idx, params)];
+		interleaved[2*offset+1] = lookup[nucl_idx%4][byte];
+	}
+	for (uint idx=pref_size ; idx<inter_size/2 ; idx++)
+		interleaved[2*idx+1] = -1;
 }
 
 
