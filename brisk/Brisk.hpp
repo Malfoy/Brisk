@@ -2,16 +2,17 @@
 #include <string>
 #include <assert.h>
 #include <vector>
-
 #include <iostream>
-
 // #define TIME_ANALYSIS
-
 #include "Kmers.hpp"
 #include "DenseMenuYo.hpp"
 #include "parameters.hpp"
 
+
+
 using namespace std;
+
+
 
 #ifndef BRISK_H
 #define BRISK_H
@@ -19,6 +20,7 @@ using namespace std;
 #ifdef TIME_ANALYSIS
 #include <chrono>
 #endif
+
 
 
 template <class DATA>
@@ -48,6 +50,7 @@ public:
 	void restart_kmer_enumeration();
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const;
 };
+
 
 
 template<class DATA>

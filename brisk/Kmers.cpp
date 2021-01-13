@@ -1,6 +1,5 @@
 #include <iostream>
 #include <algorithm>
-
 #include "Kmers.hpp"
 #include "pow2.hpp"
 
@@ -9,16 +8,13 @@
 using namespace std;
 
 
+
 // RC functions
 uint64_t rcbc(uint64_t in, uint64_t n);
 // Hash functions (TODO: move them)
 uint64_t hash64shift(uint64_t key);
 
-// 	kint kmer_s;
-// 	kint minimizer;
-// 	int8_t minimizer_idx;
-// 	bool multi_mini;
-// 	vector<int8_t> interleaved;
+
 
 // ----- Kmer class -----
 kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini) {
@@ -31,6 +27,8 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, 
 	this->multi_mini = multiple_mini;
 }
 
+
+
 kmer_full::kmer_full(kmer_full&& kmer) :
 	kmer_s(kmer.kmer_s),
 	minimizer(kmer.minimizer),
@@ -40,6 +38,8 @@ kmer_full::kmer_full(kmer_full&& kmer) :
 {
 	// cout << "move constructed" << endl;
 }
+
+
 
 kmer_full & kmer_full::operator=(kmer_full&& kmer) {
 	this->minimizer_idx = kmer.minimizer_idx;
@@ -58,6 +58,8 @@ void kmer_full::compute_mini(uint8_t mini_size) {
 	this->minimizer &= ((kint)1 << (2 * mini_size))- 1;
 }
 
+
+
 void kmer_full::print(uint8_t k, uint8_t m) const {
 	print_kmer(this->kmer_s, k); cout << endl;
 	for (uint8_t i=0 ; i<k - m - this->minimizer_idx ; i++)
@@ -65,6 +67,8 @@ void kmer_full::print(uint8_t k, uint8_t m) const {
 	kint mini = this->kmer_s >> (2 * this->minimizer_idx);
 	print_kmer(mini, m); cout << endl;
 }
+
+
 
 static int const lookup[4][256] = {
 	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3},
@@ -102,60 +106,11 @@ vector<int> kmer_full::compute_interleaved(const uint8_t k, const uint8_t m) con
 
 
 
-// vector<int8_t> debug_save;
-
-// const int8_t unset_val = -2;
-// int8_t kmer_full::interleaved_nucleotide(const uint8_t interleaved_nucl_idx, const uint8_t k, const uint8_t m, bool debug=false) {
-// 	if (this->interleaved.size() > interleaved_nucl_idx) {
-// 		return this->interleaved[interleaved_nucl_idx];
-// 	}
-
-// 	static const kint endian_test = 1;
-// 	static const bool little_endian = *((uint8_t*)&endian_test) == (uint8_t)1;
-	
-// 	uint8_t side_idx = interleaved_nucl_idx / 2;
-// 	uint8_t skmer_nucl_idx = 0; // 0 is the end of the suffix
-
-// 	if (interleaved_nucl_idx % 2 == 0) {
-// 		if (side_idx >= this->suffix_size()) {
-// 			this->interleaved.push_back(-1);
-// 			if (debug)
-// 				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-// 			return -1;
-// 		} else {
-// 			skmer_nucl_idx = this->suffix_size() - 1 - side_idx;
-// 		}
-// 	} else {
-// 		if (side_idx >= this->prefix_size(k, m)) {
-// 			this->interleaved.push_back(-1);
-// 			if (debug)
-// 				cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-// 			return -1;
-// 		} else {
-// 			skmer_nucl_idx = this->suffix_size() + m + side_idx;
-// 		}
-// 	}
-
-// 	if (little_endian) {
-// 		uint8_t byte = ((uint8_t*)&kmer_s)[skmer_nucl_idx/4];
-// 		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
-// 		if (debug) {
-// 			print_kmer(this->kmer_s, 31); cout << endl;
-// 			// cout << "kmer " << (uint)interleaved_nucl_idx << " " << (uint)side_idx << " " << (uint)skmer_nucl_idx << " " << (uint)byte << " " << (int)this->interleaved[interleaved_nucl_idx] << endl;
-// 			cout << (uint)interleaved_nucl_idx << " " << interleaved.size() << endl;
-// 		}
-// 		return this->interleaved[interleaved_nucl_idx];
-// 	} else {
-// 		uint8_t byte = ((uint8_t*)&kmer_s)[sizeof(kint) - 1 - (skmer_nucl_idx/4)];
-// 		this->interleaved.push_back(lookup[skmer_nucl_idx%4][byte]);
-// 		return this->interleaved[interleaved_nucl_idx];
-// 	}
-// }
-
-
 uint8_t kmer_full::suffix_size() const {
 	return minimizer_idx;
 }
+
+
 
 uint8_t kmer_full::prefix_size(const uint8_t k, const uint8_t m) const {
 	return k - m - minimizer_idx;
@@ -181,8 +136,37 @@ bool kmer_full::contains_multi_minimizer() const {
 }
 
 
+void kmer_full::hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){
+	//return;
+	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
+	kint suffix = kmer_s & mask;
+	kmer_s >>=(2*minimizer_idx);
+	mask=(((kint)1) << (m * 2 )) - 1;
+	kint new_minimizer=kmer_s & mask;
+	kmer_s >>=(2*m);
+	kint prefix =kmer_s;
+	new_minimizer=bfc_hash_64(minimizer,mask_large_minimizer);
+	kmer_s=suffix+(new_minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
+	minimizer=new_minimizer;
+}
+
+
+void kmer_full::unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){
+	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
+	kint suffix = kmer_s & mask;
+	kmer_s >>=(2*minimizer_idx);
+	mask=(((kint)1) << (m * 2 )) - 1;
+	kint minimizer=kmer_s & mask;
+	kmer_s >>=(2*m);
+	kint prefix =kmer_s;
+	minimizer=bfc_hash_64_inv(minimizer,mask_large_minimizer);
+	kmer_s=suffix+(minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
+}
+
+
 
 // ----- Useful binary kmer functions -----
+
 
 
 string kmer2str(__uint128_t num, uint k) {
@@ -224,6 +208,8 @@ kint str2num(const string& str) {
 	}
 	return res;
 }
+
+
 
 kmer_full * str2kmer(const std::string & str, const uint8_t m) {
 	kint km_val(str2num(str));
@@ -276,6 +262,59 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 
 
 
+ inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask)
+{
+	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
+	key = key ^ key >> 24;
+	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
+	key = key ^ key >> 14;
+	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
+	key = key ^ key >> 28;
+	key = (key + (key << 31)) & mask;
+	return key;
+}
+
+
+
+ inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask)
+{
+	uint64_t tmp;
+ 
+	// Invert key = key + (key << 31)
+	tmp = (key - (key << 31));
+	key = (key - (tmp << 31)) & mask;
+ 
+	// Invert key = key ^ (key >> 28)
+	tmp = key ^ key >> 28;
+	key = key ^ tmp >> 28;
+ 
+	// Invert key *= 21
+	key = (key * 14933078535860113213ull) & mask;
+ 
+	// Invert key = key ^ (key >> 14)
+	tmp = key ^ key >> 14;
+	tmp = key ^ tmp >> 14;
+	tmp = key ^ tmp >> 14;
+	key = key ^ tmp >> 14;
+ 
+	// Invert key *= 265
+	key = (key * 15244667743933553977ull) & mask;
+ 
+	// Invert key = key ^ (key >> 24)
+	tmp = key ^ key >> 24;
+	key = key ^ tmp >> 24;
+ 
+	// Invert key = (~key) + (key << 21)
+	tmp = ~key;
+	tmp = ~(key - (tmp << 21));
+	tmp = ~(key - (tmp << 21));
+	key = ~(key - (tmp << 21)) & mask;
+ 
+	return key;
+}
+
+
+
 uint64_t hash64shift(uint64_t key) {
 	// uint64_t ab=abundance_mini[key];
 	// uint64_t ab=0;
@@ -289,6 +328,9 @@ uint64_t hash64shift(uint64_t key) {
 	key = key + (key << 31);
 	return (uint64_t)key;
 }
+
+
+
 
 
 /** Get the minimizer from a sequence and modify the position parameter.
@@ -306,7 +348,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	uint64_t mini, mmer;
 	uint64_t fwd_mini = seq % (1 << (m*2));
 	mini = mmer = canonize(fwd_mini, m);
-	uint64_t hash_mini = hash64shift(mmer);
+	uint64_t hash_mini = bfc_hash_64(mmer,((1<<(2*m))-1));
 	// print_kmer(mini, m); 	cout << endl;
 	// cout << hash_mini << endl;
 
@@ -320,7 +362,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 		seq >>= 2;
 		fwd_mini = seq % (1 << (m*2));
 		mmer = canonize(fwd_mini, m);
-		uint64_t hash = (hash64shift(mmer));
+		uint64_t hash = bfc_hash_64(mmer,((1<<(2*m))-1));
 		// print_kmer(mmer, m); 	cout << endl;
 		// cout << (uint)i << " " << hash << endl;
 
@@ -338,9 +380,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 		}
 	}
 
-	// cout << endl;
-	// print_kmer(mini, m); 	cout << endl;
-	// exit(0);
+	//return hash_mini;
 	return mini;
 }
 
@@ -375,30 +415,49 @@ string getCanonical(const string& str) {
 }
 
 
+
 uint64_t nuc2int(char c) {
 	return (c >> 1) & 0b11;
 }
+
+
+
 uint64_t nuc2intrc(char c) {
 	return ((c >> 1) & 0b11) ^ 2;
 }
+
+
+
 inline void updateK(kint& min, uint8_t nuc, kint mask) {
 	min <<= 2;
 	min += nuc;
 	min &= mask;
 }
+
+
+
 inline void updateM(uint64_t& min, uint8_t nuc, uint64_t mask) {
 	min <<= 2;
 	min += nuc;
 	min &= mask;
 }
+
+
+
 inline void updateRCK(kint& min, char nuc, uint8_t k) {
 	min >>= 2;
 	min += ((kint)nuc << (2 * k - 2));
 }
+
+
+
 inline void updateRCM(uint64_t& min, char nuc, uint8_t m) {
 	min >>= 2;
 	min += (nuc << (2 * m - 2));
 }
+
+
+
 /**
   * Read a string for the first k-1 nucleotides and init the kmer and rc_kmer values
   */
@@ -413,12 +472,16 @@ void init_kmer(const string & seq, uint64_t & seq_idx, kint & kmer_seq, kint & r
 		updateRCK(rc_kmer_seq, nuc, k);
 	}
 }
+
+
+
 void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const 								kint k_mask) {
 	auto nuc = nuc2int(nucl);
 	updateK(kmer_seq, nuc, k_mask);
 	nuc = nuc ^ 2;
 	updateRCK(rc_kmer_seq, nuc, k);
 }
+
 
 
 SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m)
@@ -430,6 +493,8 @@ SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint
 , mini_candidate( 0 ), rc_mini_candidate( 0 )
 , mini_pos ( 1 )
 {}
+
+
 
 kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	bool to_return = false;
@@ -445,12 +510,12 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 
 		// Init real minimizer
 		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple);
-		min_hash = hash64shift(mini);
-		// print_kmer(mini, m); cout << endl;
+		min_hash = bfc_hash_64(mini,m_mask);
 	} 
 
 	if (saved) {
 		saved = false;
+		saved_kmer.hash_kmer_body(m,m_mask);
 		kmers.push_back(move(saved_kmer));
 	}
 
@@ -464,41 +529,45 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		
 		// Get canonical minimizer
 		kint candidate_canon = min(mini_candidate, rc_mini_candidate);
-		uint64_t current_hash = hash64shift((uint64_t)candidate_canon);
-		
+		uint64_t current_hash = bfc_hash_64((uint64_t)candidate_canon,m_mask);
 
 		//the previous MINIMIZER is outdated
 		if (mini_pos > k-m) {
 			// Save previous kmers from superkmer
-			if (reversed)
+			if (reversed){
 				reverse(kmers.begin(), kmers.end());
+			}
 			to_return = true;
 			return_val = mini;
 
 			// Prepare new minimizer
 			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
-			min_hash = hash64shift(mini);
+			min_hash = bfc_hash_64(mini,m_mask);
 		}
 		// New minimizer
 		else if (current_hash < min_hash) {
 			// Save previous kmers from superkmer
-			if (reversed)
+			if (reversed){
 				reverse(kmers.begin(), kmers.end());
+			}
+				
 			to_return = true;
 			return_val = mini;
 
 			// Update for the new minimizer value
 			mini = candidate_canon;
 			mini_pos = 0;
-			min_hash = hash64shift(mini);
+			min_hash = bfc_hash_64(mini,m_mask);
 			reversed = mini == rc_mini_candidate;
 			multiple = false;
 		}
 		// Equal minimizer
 		else if (current_hash == min_hash) {
 			// Save previous kmers from superkmer
-			if (reversed)
+			if (reversed){
 				reverse(kmers.begin(), kmers.end());
+			}
+				
 			to_return = true;
 			return_val = mini;
 
@@ -525,8 +594,10 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			saved = true;
 			return return_val;
 		} else {
-			if (seq_idx == 0)
+			if (seq_idx == 0){
 				to_return = false;
+			}
+			saved_kmer.hash_kmer_body(m,m_mask);
 			kmers.push_back(move(saved_kmer));
 		}
 	}
@@ -534,6 +605,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	if (kmers.size() > 0) {
 		if (reversed)
 			reverse(kmers.begin(), kmers.end());
+		return min_hash;
 		return mini;
 	}
 

@@ -25,6 +25,9 @@ typedef __uint128_t skint;
 
 
 uint64_t hash64shift(uint64_t key);
+  uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
+  uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
+
 
 // Hash function for kint in robin_hood
 namespace robin_hood {
@@ -53,8 +56,7 @@ public:
 	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
 	kmer_full() = delete;
 	kmer_full(kmer_full&& kmer);
-	kmer_full & operator=(kmer_full&& kmer);
-
+	kmer_full & operator=(kmer_full&& kmer);	
 	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;
 	kint get_compacted(uint8_t m)const ;
@@ -64,6 +66,9 @@ public:
 	uint8_t suffix_size() const;
 	vector<int> compute_interleaved(const uint8_t k, const uint8_t m) const;
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
+	void hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
+	void unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
+
 };
 
 
@@ -132,13 +137,15 @@ void print_kmer(T num, uint8_t n){
 		anc>>=2;
 	}
 }
+
+
+
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 kmer_full * str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple);
 string getCanonical(const string& str);
-
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
 kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
 

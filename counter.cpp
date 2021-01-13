@@ -34,8 +34,48 @@ int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t 
   return 0;
 }
 
+
+string pretty_int(uint64_t n){
+	string result;
+	uint64_t order=1000000000000000000;
+	bool started(false);
+	while(order!=1){
+		if(n/order>=1){
+			string local( to_string(n/order));
+			if(started){
+				if(local.size()==2){
+					result+='0';
+				}
+				if(local.size()==1){
+					result+="00";
+				}
+			}
+			result+=local+",";
+			started=true;
+			n%=order;
+		}else if (started){
+			result+="000,";
+		}
+		order/=1000;
+	}
+	string local( to_string(n));
+	if(started){
+		if(local.size()==2){
+			result+='0';
+		}
+		if(local.size()==1){
+			result+="00";
+		}
+	}
+	result+=local;
+
+	return result;
+}
+
 static robin_hood::unordered_map<kint, int16_t> verif;
 static bool check;
+static uint64_t number_kmer_count(0);
+
 
 int main(int argc, char** argv) {
 	string fasta = "";
@@ -76,13 +116,14 @@ int main(int argc, char** argv) {
 	cout << "Global statistics:" << endl;
 	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory;
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory);
-	cout << nb_buckets << " bucket used (/" << pow(4, counter.params.m_small) << " possible)" << endl;
-	cout << "nb superkmers: " << nb_skmers << endl;
-	cout << "nb kmers: " << nb_kmers << endl;
+	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
+	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
+	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
 	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
-	cout << "nb cursed kmers: " << nb_cursed << endl;
+	cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
+	cout<<"nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
 
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
@@ -134,8 +175,11 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		}
 	}
 
-	if (errors == 0)
+	if (errors == 0){
 		cout << "All counts are correct !" << endl;
+	}else{
+		cout<<errors << " errors" << endl;
+	}
 
 	cout << endl;
 }
@@ -248,24 +292,31 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			if (check) {
 				#pragma omp critical
 				{
-					if (verif.count(kmer.kmer_s) == 0)
+					if (verif.count(kmer.kmer_s) == 0){
 						verif[kmer.kmer_s] = 0;
+					}
+						
 					verif[kmer.kmer_s] += 1;
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 				}
 			}
+			if(kmer.suffix_size()>=0){
+				#pragma omp atomic
+				number_kmer_count++;
+				counter.protect_data(kmer);
+				uint8_t * data_pointer = counter.get(kmer);
 
-			counter.protect_data(kmer);
-			uint8_t * data_pointer = counter.get(kmer);
-
-			if (data_pointer == NULL) {
-				data_pointer = counter.insert(kmer);
-				// Init counter
-				*data_pointer = (uint8_t)0;
+				if (data_pointer == NULL) {
+					data_pointer = counter.insert(kmer);
+					// Init counter
+					*data_pointer = (uint8_t)0;
+				}
+				// Increment counter
+				*data_pointer += 1;
+				counter.unprotect_data(kmer);
 			}
-			// Increment counter
-			*data_pointer += 1;
-			counter.unprotect_data(kmer);
+
+			
 		}
 
 		// Next superkmer
