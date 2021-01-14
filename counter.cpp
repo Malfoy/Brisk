@@ -249,25 +249,21 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 				}else{
 					if (in.good()) {
 						line = getLineFasta(&in);
-						if(line.size()>1000000){
-							buffer.push_back(line.substr(0,line.size()/4));
-							buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
-							buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
-							buffer.push_back(line.substr(3*line.size()/4-counter.params.k+1));
-						}
-					} else
+					} else{
 						line = "";
+					}
+				}
+				if(line.size()>1000000000){
+					buffer.push_back(line.substr(0,line.size()/4));
+					buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
+					buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
+					buffer.push_back(line.substr(3*line.size()/4-counter.params.k+1));
+					line="";
 				}
 			}
 
 			if (line != "") {
 				count_sequence(counter, line);
-				// #pragma omp critical
-				// {
-				// 	if (idx % 10000 == 0)
-				// 		cout << idx << endl;
-				// 	idx++;
-				// }
 			}
 		}
 	}

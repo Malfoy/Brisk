@@ -184,7 +184,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	}
 	
 	// 2 - Sort if needed
-	if(skml.size()-sorted_size>2){
+	if(skml.size()-sorted_size>1000){
 		// cout << "Sorting" << endl;
 		this->insert_buffer();
 	}
@@ -267,77 +267,6 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 }
 
 
-// template<class DATA>
-// inline DATA * Bucket<DATA>::find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx) {
-// 	int8_t begin_nucl = skml[begin].interleaved_nucleotide(nucleotide_idx,
-// 				this->nucleotides_reserved_memory + params->allocated_bytes * skml[begin].idx,
-// 				*params);
-// 	int8_t end_nucl = skml[end].interleaved_nucleotide(nucleotide_idx,
-// 				this->nucleotides_reserved_memory + params->allocated_bytes * skml[end].idx,
-// 				*params);
-// 	// if (debug)
-// 	// 	cout << "start/end " << (int)begin_nucl << " " << (int)end_nucl << endl;
-
-// 	uint middle = begin + (end - begin) / 2;
-// 	if (begin_nucl == end_nucl) {
-// 		return find_kmer_log(kmer, begin, end, nucleotide_idx + 1);
-// 	} else {
-// 		DATA * val = find_kmer_log(kmer, begin, middle, nucleotide_idx);
-// 		if (val != NULL)
-// 			return val;
-// 		return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
-// 	}
-// }
-
-
-// template<class DATA>
-// DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx) {
-// 	// if (debug)
-// 	// 	cout << begin << " " << end << " " << (uint)nucleotide_idx << endl;
-// 	// Base case, linear interogation
-// 	if (end - begin < 1) {
-// 		return find_kmer_linear(kmer, begin, end);
-// 	}
-
-// 	uint8_t side_idx = nucleotide_idx / 2;
-// 	uint8_t max_side_idx = max(kmer.suffix_size(), kmer.prefix_size(params->k, params->m_small));
-// 	if (side_idx > max_side_idx or nucleotide_idx == 255) {
-// 		// cout << "find max " << begin << " " << end << endl;
-// 		return find_kmer_linear(kmer, begin, end);
-// 	}
-
-// 	int8_t nucl = kmer.interleaved_nucleotide(nucleotide_idx, params->k, params->m_small, debug);
-// 	// if (debug)
-// 	// 	cout << "nucl " << (int)nucl << endl;
-	
-// 	if (nucl < 0) {
-// 		return find_recur_log_split(kmer, begin, end, nucleotide_idx);
-// 	} else {
-// 		// Select the middle skmer
-// 		uint64_t middle = begin + (end - begin) / 2;
-// 		SKL & mid_skmer = skml[middle];
-// 		int8_t middle_nucl = mid_skmer.interleaved_nucleotide(nucleotide_idx,
-// 							this->nucleotides_reserved_memory + params->allocated_bytes * mid_skmer.idx,
-// 							*params);
-// 		// if (debug) {
-// 		// 	cout << "mid " << (int)middle_nucl << endl << endl;
-// 		// }
-
-// 		// Middle nucleotide absent
-// 		if (middle_nucl < 0) {
-// 			return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
-// 		} else {
-// 			if (nucl < middle_nucl) {
-// 				return find_kmer_log(kmer, begin, middle-1, nucleotide_idx);
-// 			} else if (nucl > middle_nucl) {
-// 				return find_kmer_log(kmer, middle+1, end, nucleotide_idx);
-// 			} else {
-// 				return find_recur_log_split(kmer, begin, end, nucleotide_idx);
-// 			}
-// 		}
-// 	}
-
-// }
 
 class find_params {
 public:
@@ -356,6 +285,7 @@ public:
 		cout << begin << " " << end << " " << (int)start_letter << " " << (int)stop_letter << " " << (uint)start_interleaved_idx << " " << (uint)current_interleaved_idx << endl;
 	}
 };
+
 
 
 template<class DATA>
