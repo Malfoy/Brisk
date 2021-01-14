@@ -119,7 +119,9 @@ int main(int argc, char** argv) {
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
 	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
 	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
+	cout << "kmer / second: " << ((float)nb_kmers / elapsed_seconds.count()) << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+	cout << "average superkmer / bucket: " << ((float)nb_skmers / (float)nb_buckets) << endl;
 	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
@@ -247,7 +249,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 				}else{
 					if (in.good()) {
 						line = getLineFasta(&in);
-						if(line.size()>100000000000){
+						if(line.size()>1000000){
 							buffer.push_back(line.substr(0,line.size()/4));
 							buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
 							buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
