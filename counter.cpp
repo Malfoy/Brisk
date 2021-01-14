@@ -253,7 +253,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 							buffer.push_back(line.substr(0,line.size()/4));
 							buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
 							buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
-							line=line.substr(3*line.size()/4-counter.params.k+1);
+							buffer.push_back(line.substr(3*line.size()/4-counter.params.k+1));
 						}
 					} else
 						line = "";
