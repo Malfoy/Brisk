@@ -2,6 +2,8 @@
 #include <algorithm>
 #include "Kmers.hpp"
 #include "pow2.hpp"
+#include <cmath>
+
 
 
 
@@ -26,6 +28,10 @@ kmer_full::kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, 
 	this->minimizer &= ((kint)1 << (2 * minimizer_size))- 1;
 	this->multi_mini = multiple_mini;
 }
+
+
+
+kmer_full::kmer_full(){}
 
 
 
@@ -149,6 +155,41 @@ void kmer_full::hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){
 	kmer_s=suffix+(new_minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
 	minimizer=new_minimizer;
 }
+
+
+
+double kmer_full::bimer_entropy(int k){
+	//cout<<"bimer_entropy"<<endl;
+	double entropy(0);
+	kint kmer=kmer_s;
+	uint8_t counts[16] = {0};
+	for(int i = 0; i < k-1; i++) {
+		counts[kmer & kint(15u)]++;
+		kmer >>= 2;
+    }
+	for(int i(0); i <16;++i){
+		entropy+=occ2mer_entropy[counts[i]];
+		//cout<<occ2mer_entropy[counts[i]]<<" "<<entropy/precision2bit<<endl;
+	}
+	//cin.get();
+	return entropy/precision2bit;
+}
+
+uint16_t* kmer_full::occ2mer_entropy;
+
+void kmer_full::initocc2mer_entropy(int k){
+	//cout<<"init"<<endl;
+	occ2mer_entropy=new uint16_t[k];
+	occ2mer_entropy[0]=0;
+	occ2mer_entropy[k-1]=0;
+	for(int i(1);i<k-1;++i){
+		double p = i / double(k);
+		occ2mer_entropy[i]=uint16_t(-log2(p)*p*precision2bit);
+		//cout<<i<<" "<<occ2mer_entropy[i]<<endl;
+	}
+	//cin.get();
+}
+
 
 
 void kmer_full::unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){

@@ -25,8 +25,10 @@ typedef __uint128_t skint;
 
 
 uint64_t hash64shift(uint64_t key);
-  uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
-  uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
+uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
+uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
+static constexpr double precision2bit = std::numeric_limits<uint16_t>::max() * 1.88416938536372; // * log(2)/exp(-1)
+
 
 
 // Hash function for kint in robin_hood
@@ -52,9 +54,10 @@ public:
 	int8_t minimizer_idx;
 	bool multi_mini;
 	vector<int8_t> interleaved;
+	static uint16_t* occ2mer_entropy;
 
 	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
-	kmer_full() = delete;
+	kmer_full();
 	kmer_full(kmer_full&& kmer);
 	kmer_full & operator=(kmer_full&& kmer);	
 	void compute_mini(uint8_t mini_size);
@@ -68,7 +71,8 @@ public:
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 	void hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
 	void unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
-
+	double bimer_entropy(int k );
+	void initocc2mer_entropy(int k);
 };
 
 

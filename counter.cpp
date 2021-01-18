@@ -75,6 +75,7 @@ string pretty_int(uint64_t n){
 static robin_hood::unordered_map<kint, int16_t> verif;
 static bool check;
 static uint64_t number_kmer_count(0);
+uint64_t low_complexity_kmer(0);
 
 
 int main(int argc, char** argv) {
@@ -126,6 +127,7 @@ int main(int argc, char** argv) {
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
 	cout<<"nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
+	cout<<" Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
 
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
@@ -223,6 +225,8 @@ string getLineFasta(zstr::ifstream* in) {
   * Read a complete fasta file line by line and store the counts into the Brisk datastructure.
   */
 void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads) {
+	kmer_full init;
+	init.initocc2mer_entropy(counter.params.k);
 	// Test file existance
 	struct stat exist_buffer;
   bool file_existance = (stat (filename.c_str(), &exist_buffer) == 0);
@@ -298,7 +302,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 				}
 			}
-			if(kmer.suffix_size()>=0){
+			if(kmer.bimer_entropy(counter.params.k)>2){
+			//if(true){
 				#pragma omp atomic
 				number_kmer_count++;
 				counter.protect_data(kmer);
@@ -312,6 +317,11 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				// Increment counter
 				*data_pointer += 1;
 				counter.unprotect_data(kmer);
+			}else{
+				#pragma omp atomic
+				low_complexity_kmer++;
+				//print_kmer(kmer.kmer_s,counter.params.k);
+				//cin.get();
 			}
 
 			
