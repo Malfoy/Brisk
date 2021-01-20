@@ -539,7 +539,7 @@ SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint
 
 kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	bool to_return = false;
-	kint return_val;
+	uint64_t return_val;
 
 	// If start of the sequence, init the kmer and the minimizer
 	if (seq_idx == 0) {
@@ -579,7 +579,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 				reverse(kmers.begin(), kmers.end());
 			}
 			to_return = true;
-			return_val = mini;
+			return_val = min_hash;
 
 			// Prepare new minimizer
 			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
@@ -593,12 +593,13 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			}
 				
 			to_return = true;
-			return_val = mini;
+			return_val = min_hash;
 
 			// Update for the new minimizer value
 			mini = candidate_canon;
 			mini_pos = 0;
 			min_hash = bfc_hash_64(mini,m_mask);
+		
 			reversed = mini == rc_mini_candidate;
 			multiple = false;
 		}
@@ -610,7 +611,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			}
 				
 			to_return = true;
-			return_val = mini;
+			return_val = min_hash;
 
 			multiple = true;
 		}
@@ -644,12 +645,13 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	}
 
 	if (kmers.size() > 0) {
-		if (reversed)
+		if (reversed){
 			reverse(kmers.begin(), kmers.end());
+		}
+		
 		return min_hash;
 		return mini;
 	}
-
 	return (kint)0;
 }
 

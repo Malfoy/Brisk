@@ -62,9 +62,11 @@ private:
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
 	DATA * find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end);
 	DATA * find_kmer_log(kmer_full & kmer);
+	DATA * find_kmer_log_simple(kmer_full & kmer);
 	// DATA * find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
 	// inline DATA * find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
 	DATA * insert_kmer_buffer(kmer_full & kmer);
+	void discard_last_kmer();
 	void insert_buffer();
 	void data_space_update();
 };
@@ -168,8 +170,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	if (buffered_skmer != NULL) {
 		bool is_compacted = buffered_skmer->compact_right(
 				kmer,
-				this->nucleotides_reserved_memory +
-						this->params->allocated_bytes * buffered_skmer->idx,
+				this->nucleotides_reserved_memory + this->params->allocated_bytes * buffered_skmer->idx,
 				*params
 		);
 
@@ -184,7 +185,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	}
 	
 	// 2 - Sort if needed
-	if(skml.size()-sorted_size>1000){
+	if(skml.size()-sorted_size>1000000){
 		// cout << "Sorting" << endl;
 		this->insert_buffer();
 	}
@@ -216,8 +217,8 @@ void Bucket<DATA>::insert_buffer(){
 		// cout << val << endl;
 		return val;
 	};
-
-	sort(skml.begin()+sorted_size, skml.end(), comp_function);
+sort(
+	skml.begin()+sorted_size, skml.end(), comp_function);
 	inplace_merge(skml.begin(), skml.begin()+sorted_size, skml.end(), comp_function);
 
 	buffered_skmer = NULL;
@@ -268,6 +269,14 @@ DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 
 
 
+template <class DATA>
+void Bucket<DATA>::discard_last_kmer(){
+	skml.pop_back();
+	buffered_skmer = &(skml[skml.size()-1]);
+}
+
+
+
 class find_params {
 public:
 	int64_t begin;
@@ -285,6 +294,40 @@ public:
 		cout << begin << " " << end << " " << (int)start_letter << " " << (int)stop_letter << " " << (uint)start_interleaved_idx << " " << (uint)current_interleaved_idx << endl;
 	}
 };
+
+
+template<class DATA>
+DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
+	insert_kmer_buffer(kmer);
+	auto comp_function = [&](const SKL & a, const SKL & b) {
+		bool val = a.inf(
+				nucleotides_reserved_memory + a.idx * params->allocated_bytes,
+				b,
+				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
+				*params
+		);
+		// cout << val << endl;
+		return val;
+	};
+	auto comp_function_max = [&](const SKL & a, const SKL & b) {
+		bool val = a.inf_max(
+				nucleotides_reserved_memory + a.idx * params->allocated_bytes,
+				b,
+				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
+				*params
+		);
+		// cout << val << endl;
+		return val;
+	};
+	uint bottom(lower_bound(skml.begin()+sorted_size, skml.end(),skml[skml.size()-1] ,comp_function));
+	uint top(upper_bound(skml.begin()+sorted_size, skml.end(),skml[skml.size()-1] ,comp_function_max));
+	auto search(find_kmer_linear(kmer,bottom,top));
+	discard_last_kmer();
+	if (search!=NULL){	
+		return search;
+	}
+	return find_kmer_linear(kmer, sorted_size, skml.size()-1);
+}
 
 
 
@@ -440,94 +483,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 	return NULL;
 }
 
-// template<class DATA>
-// DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
-// 	cout << endl << "Find log" << endl;
-// 	vector<find_params> call_stack;
-
-// 	for (SKL & skmer : skml) {
-// 		skmer.print(nucleotides_reserved_memory + params->allocated_bytes * skmer.idx, (kint)1, *params); cout << endl;
-// 	}
-// 	cout << endl;
-
-// 	// Init the call stack
-// 	int8_t first_nucl = kmer.interleaved_nucleotide(0, params->k, params->m_small, debug);	
-// 	call_stack.emplace_back(0, sorted_size-1, first_nucl, first_nucl == -1 ? 3 : first_nucl, 0, 0);
-
-// 	while (not call_stack.empty()) {
-// 		// Get the current parameters
-// 		find_params boundaries = call_stack[call_stack.size()-1];
-// 		call_stack.pop_back();
-// 		boundaries.print();
-
-// 		// Base case
-// 		if (boundaries.end - boundaries.begin < 1 or boundaries.current_interleaved_idx == 255) {
-// 			DATA * val = find_kmer_linear(kmer, boundaries.begin, boundaries.end);
-// 			if (val != NULL)
-// 				return val;
-// 		}
-// 		else {
-// 			// Get the letter of the middle superkmer
-// 			uint64_t middle_idx = boundaries.begin + (boundaries.end - boundaries.begin) / 2;
-// 			SKL & mid_skmer = skml[middle_idx];
-// 			int8_t mid_letter = mid_skmer.interleaved_nucleotide(boundaries.current_interleaved_idx,
-// 								nucleotides_reserved_memory + params->allocated_bytes * mid_skmer.idx,
-// 								*params);
-// 			cout << "mid skmer " << middle_idx << " " << (int) mid_letter << endl;
-
-// 			// Check the boundaries
-// 			if (boundaries.start_letter <= mid_letter and mid_letter <= boundaries.stop_letter) {
-// 				// Multiple possible letter and try to divide into multiple requests
-// 				if (boundaries.start_letter != boundaries.stop_letter) {
-// 					// First letters before mid
-// 					for (int8_t letter=boundaries.start_letter ; letter<mid_letter ; letter++) {
-// 						call_stack.emplace_back(
-// 							boundaries.begin, middle_idx-1,
-// 							letter, letter,
-// 							boundaries.start_interleaved_idx, boundaries.start_interleaved_idx);
-// 					}
-// 					// Last letters after mid
-// 					for (int8_t letter=mid_letter+1 ; letter<=boundaries.stop_letter ; letter++) {
-// 						call_stack.emplace_back(
-// 							middle_idx+1, boundaries.end,
-// 							letter, letter,
-// 							boundaries.start_interleaved_idx, boundaries.start_interleaved_idx);
-// 					}
-// 					// Letter of mid
-// 					call_stack.emplace_back(
-// 						boundaries.begin, boundaries.end,
-// 						mid_letter, mid_letter,
-// 						boundaries.start_interleaved_idx, boundaries.current_interleaved_idx);
-// 				}
-// 				// Single possible letter
-// 				else {
-// 					while (mid_letter == boundaries.start_letter and mid_letter == boundaries.stop_letter) {
-// 						boundaries.start_letter = kmer.interleaved_nucleotide(
-// 							boundaries.current_interleaved_idx+1, params->k, params->m, debug);
-// 						boundaries.stop_letter =
-// 					}
-// 				}
-// 			}
-// 			// Before mid
-// 			else if (boundaries.stop_letter < mid_letter) {
-
-// 			}
-// 			// After mid
-// 			else /*if (mid_letter < boundaries.start_letter)*/ {
-
-// 			}
-// 		}
-
-// 		cout << "Stack" << endl;
-// 		for (auto & p : call_stack) {
-// 			p.print();
-// 		}
-// 		exit(0);
-// 	}
-
-// 	cout << "End find log" << endl << endl;
-// 	return NULL;
-// }
 
 
 template<class DATA>

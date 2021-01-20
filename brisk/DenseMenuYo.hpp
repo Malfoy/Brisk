@@ -27,6 +27,19 @@ public:
 	// /!\ The number of bucket is the number of distinct minimizer / 4
 	uint64_t bucket_number;
 	uint64_t matrix_column_number;
+	// Usefull variables
+	kint mini_reduc_mask;
+	Parameters params;
+	
+
+	// Mutexes
+	uint64_t mutex_order;
+	uint64_t mutex_number;
+
+	// Mutex
+	vector<omp_lock_t> MutexData;
+	vector<omp_lock_t> MutexBucket;
+	omp_lock_t multi_lock;
 
 	// Cursed kmer buckets
 	robin_hood::unordered_map<kint, DATA> cursed_kmers;
@@ -38,30 +51,24 @@ public:
 	~DenseMenuYo();
 	DATA * insert_kmer(kmer_full & kmer);
 	DATA * get_kmer(kmer_full & kmer);
+	DATA * insert_kmer_no_mutex(kmer_full & kmer);
+	DATA * get_kmer_no_mutex(kmer_full & kmer);
 
 	void protect_data(const kmer_full & kmer);
 	void unprotect_data(const kmer_full & kmer);
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & largest_bucket) const;
 
 	void print_bigest_bucket();
 
 private:
 	friend class BriskWriter;
-	// Usefull variables
-	Parameters params;
-	kint mini_reduc_mask;
+	
+	
 
-	// Mutexes
-	uint64_t mutex_order;
-	uint64_t mutex_number;
-
-	// Mutex
-	vector<omp_lock_t> MutexData;
-	vector<omp_lock_t> MutexBucket;
-	omp_lock_t multi_lock;
+	
 
 	// Buffers
 	kint buffered_minimizer;
@@ -158,6 +165,45 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 }
 
 
+template <class DATA>
+DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer) {
+	DATA * prev_val = this->get_kmer_no_mutex(kmer);
+	if (prev_val != NULL) {
+		return prev_val;
+	}
+
+	// Cursed kmers
+	if (kmer.multi_mini) {
+		omp_set_lock(&multi_lock);
+		cursed_kmers[kmer.kmer_s] = DATA();
+		omp_unset_lock(&multi_lock);
+		// return &debug_value;
+		return &(cursed_kmers[kmer.kmer_s]);
+	}
+	// Transform the super minimizer to the used minimizer
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
+	uint32_t mutex_idx = get_mutex(small_minimizer);
+
+	// Works because m - reduc <= 16
+	uint32_t column_idx = get_column(small_minimizer);
+	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
+
+	
+	uint32_t idx = bucket_indexes[matrix_idx];
+	// Create the bucket if not already existing
+	if (idx == 0) {
+		bucketMatrix[mutex_idx].emplace_back(&params);
+		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
+		idx = bucket_indexes[matrix_idx];
+	}
+	// Insert the kmer in the right bucket
+	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+
+	return value;
+}
+
+
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
@@ -195,6 +241,44 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	// Looks into the bucket for the right kmer
 	value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
 	omp_unset_lock(&MutexBucket[mutex_idx]);	
+	// kmer.minimizer_idx -= params.m_reduc;
+	return value;
+}
+
+
+template <class DATA>
+DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(kmer_full & kmer) {
+	
+	// Cursed kmers
+	if (kmer.multi_mini) {
+		omp_set_lock(&multi_lock);
+		if (cursed_kmers.count(kmer.kmer_s) != 0) {
+			omp_unset_lock(&multi_lock);
+			return &(cursed_kmers[kmer.kmer_s]);
+		} else {
+			omp_unset_lock(&multi_lock);
+			return (DATA *)NULL;
+		}
+	}
+	
+	uint64_t small_minimizer = (uint32_t)(kmer.minimizer & mini_reduc_mask);
+	// kmer.minimizer_idx += params.m_reduc;
+	uint32_t mutex_idx = get_mutex(small_minimizer);
+
+	// Normal kmer
+	uint32_t column_idx = get_column(small_minimizer);
+	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
+
+	uint32_t idx = bucket_indexes[matrix_idx];
+	// No bucket
+	if (idx == 0) {
+		// kmer.minimizer_idx -= params.m_reduc;
+		return (DATA *)NULL;
+	}
+
+	DATA * value;
+	// Looks into the bucket for the right kmer
+	value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
 	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
 }
@@ -288,11 +372,13 @@ void DenseMenuYo<DATA>::restart_kmer_enumeration() {
 }
 
 template<class DATA>
-void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed) const {
+void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & largest_bucket) const {
 	nb_buckets = 0;
 	nb_kmers = 0;
 	nb_skmers = 0;
+	largest_bucket=0;
 
+	//#pragma omp parallel for
 	for (uint32_t mini=0 ; mini<bucket_number ; mini++) {
 		uint32_t mutex_idx = get_mutex(mini);
 		uint32_t column_idx = get_column(mini);
@@ -300,9 +386,16 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 		uint32_t idx = bucket_indexes[matrix_idx];
 
 		if (idx != 0) {
+			#pragma omp atomic
 			nb_buckets += 1;
+			#pragma omp atomic
 			nb_skmers += bucketMatrix[mutex_idx][idx-1].skml.size();
+			#pragma omp atomic
 			nb_kmers += bucketMatrix[mutex_idx][idx-1].nb_kmers;
+			if(largest_bucket<bucketMatrix[mutex_idx][idx-1].skml.size()){
+				#pragma omp critical (max)
+				largest_bucket=bucketMatrix[mutex_idx][idx-1].skml.size();
+			}
 		}
 	}
 

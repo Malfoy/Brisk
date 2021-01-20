@@ -17,7 +17,6 @@ public:
 		this->m_reduc = bucket_magnitude;
 		this->m_small = m - m_reduc;
 		this->mask_large_minimizer =(1<<(2*m))-1;
-
 		this->compacted_size = k - m_small;
 		this->allocated_bytes = ceil((float)(2 * compacted_size) / 4.);
 	}

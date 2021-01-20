@@ -115,19 +115,21 @@ int main(int argc, char** argv) {
 		verif_counts(counter);
 
 	cout << "Global statistics:" << endl;
-	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory;
-	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory);
+	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket);
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
 	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
 	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
-	cout << "kmer / second: " << ((float)nb_kmers / elapsed_seconds.count()) << endl;
+	cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
 	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
 	cout << "average superkmer / bucket: " << ((float)nb_skmers / (float)nb_buckets) << endl;
+	cout << "Largest bucket :	"<<pretty_int(largest_bucket) <<endl;
 	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
-	cout<<"nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
-	cout<<" Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
+	cout<<"Nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
+	cout<<"Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
+	cout<<"Comparison made : "<<pretty_int(comparaisons)<<endl;
 
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
@@ -258,10 +260,8 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 					}
 				}
 				if(line.size()>1000000000){
-					buffer.push_back(line.substr(0,line.size()/4));
-					buffer.push_back(line.substr(line.size()/4-counter.params.k+1,line.size()/4+counter.params.k-1));
-					buffer.push_back(line.substr(line.size()/2-counter.params.k+1,line.size()/4+counter.params.k-1));
-					buffer.push_back(line.substr(3*line.size()/4-counter.params.k+1));
+					buffer.push_back(line.substr(0,line.size()/2));
+					buffer.push_back(line.substr(line.size()/2-counter.params.k+1));
 					line="";
 				}
 			}
@@ -277,21 +277,19 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 
 void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	// Line too short
-	if (sequence.size() < counter.params.k)
+	if (sequence.size() < counter.params.k){
 		return;
+	}
 
-	vector<vector<kmer_full> > kmers_by_minimizer;
 	vector<kmer_full> superkmer;
 
-	// kint minimizer;
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 
-	// minimizer = enumerator.next(superkmer);
-	enumerator.next(superkmer);
+	kint minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		// Add the values
-		for (kmer_full & kmer : superkmer) {
-			if (check) {
+		if (check) {
+			for (kmer_full & kmer : superkmer) {
 				#pragma omp critical
 				{
 					if (verif.count(kmer.kmer_s) == 0){
@@ -302,36 +300,22 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 				}
 			}
-			if(kmer.bimer_entropy(counter.params.k)>2){
-			//if(true){
-				#pragma omp atomic
-				number_kmer_count++;
-				counter.protect_data(kmer);
-				uint8_t * data_pointer = counter.get(kmer);
-
-				if (data_pointer == NULL) {
-					data_pointer = counter.insert(kmer);
-					// Init counter
-					*data_pointer = (uint8_t)0;
-				}
-				// Increment counter
-				*data_pointer += 1;
-				counter.unprotect_data(kmer);
-			}else{
-				#pragma omp atomic
-				low_complexity_kmer++;
-				//print_kmer(kmer.kmer_s,counter.params.k);
-				//cin.get();
-			}
-
-			
 		}
-
+		vector<uint8_t*> vec(counter.insert_superkmer(superkmer));
+		for(uint i(0); i < vec.size();++i){
+			//TODO CHANGE PROTECT MINIMIZER
+			//counter.protect_data(superkmer[i]);
+			uint8_t * data_pointer(vec[i]);
+			if(data_pointer==NULL){
+				cout<<"wtf"<<endl;
+				cin.get();
+			}else{
+				//(*data_pointer)++;
+			}
+			//counter.unprotect_data(superkmer[i]);
+		}
 		// Next superkmer
 		superkmer.clear();
-		// minimizer = enumerator.next(superkmer);
-		enumerator.next(superkmer);
+		minimizer = enumerator.next(superkmer);
 	}
-
-	return;
 }

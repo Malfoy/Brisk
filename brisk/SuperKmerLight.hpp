@@ -41,10 +41,12 @@ public:
 	// kint get_compacted(const uint8_t * nucleotides)const;
 
 	bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
+	bool inf_max (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
 	int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const;
 	void compute_interleaved(vector<int> & interleaved, const uint8_t * nucleotides, const Parameters & params) const;
 
 	void print(const uint8_t * nucleotides, const kint & mini, const Parameters & params) const;
+	void add_nuc(int nuc,uint8_t * nucleotides, const Parameters & params);
 
 private:
 	kint get_right_overlap(uint8_t * nucleotides, const Parameters & params)const;
@@ -102,6 +104,8 @@ SKL& SKL::operator=(const SKL& rhs) {
 	return *this;
 }
 
+
+
 bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params) {
 	if ((params.compacted_size + size) / 8 > params.allocated_bytes)
 		return false;
@@ -133,6 +137,15 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 	}
 
 	return false;
+}
+
+
+void SKL::add_nuc(int nuc,uint8_t * nucleotides, const Parameters & params){
+	int byte_to_update = byte_index(params.compacted_size + size - 1, params);
+	int padding = (4 - ((params.compacted_size + size) % 4)) % 4;
+	nucleotides[byte_to_update] += (nuc << (2 * padding));
+	size++;
+	minimizer_idx++;
 }
 
 
@@ -205,7 +218,10 @@ uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 }
 
 
+uint64_t comparaisons(0);
+
 bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+	
 	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
 			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
 		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
@@ -264,6 +280,65 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 	uint8_t my_pref_size = this->prefix_size(params);
 	kint my_pref = this->get_prefix(my_nucleotides, params);
 	kint my_suff = this->get_suffix(my_nucleotides, params);
+
+	// Compute other max number of iteration
+	uint8_t sk_suff_size = skmer.suffix_size();
+	uint8_t sk_pref_size = skmer.prefix_size(params);
+	kint sk_pref = skmer.get_prefix(sk_nucleotides, params);
+	kint sk_suff = skmer.get_suffix(sk_nucleotides, params);
+
+	// Compare when inside of both superkmers
+	uint max_nucl = 2 * max(max(my_suff_size, my_pref_size), max(sk_suff_size, sk_pref_size));
+	for (uint idx=0 ; idx<max_nucl ; idx++) {
+		uint side_idx = idx / 2;
+		uint8_t my_nucl = 0;
+		uint8_t sk_nucl = 0;
+
+		if (idx % 2 == 0) {
+			// Verify borders
+			if (side_idx >= my_suff_size and side_idx >= sk_suff_size)
+				continue;
+			else if (side_idx >= my_suff_size)
+				return true;
+			else if (side_idx >= sk_suff_size)
+				return false;
+
+			// Get the nucleotides to compare
+			my_nucl = (my_suff >> (2 * (my_suff_size - 1 - side_idx))) & 0b11;
+			sk_nucl = (sk_suff >> (2 * (sk_suff_size - 1 - side_idx))) & 0b11;
+		} else {
+			// Verify borders
+			if (side_idx >= my_pref_size and side_idx >= sk_pref_size)
+				continue;
+			else if (side_idx >= my_pref_size)
+				return true;
+			else if (side_idx >= sk_pref_size)
+				return false;
+
+			// Get the nucleotides to compare
+			my_nucl = (my_pref >> (2 * side_idx)) & 0b11;
+			sk_nucl = (sk_pref >> (2 * side_idx)) & 0b11;
+		}
+		
+		// Compare nucleotides
+		if (my_nucl < sk_nucl)
+			return true;
+		else if (my_nucl > sk_nucl)
+			return false;
+	}
+	return false;
+}
+
+
+
+bool SKL::inf_max (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const {
+	// Compute my max number of iteration
+	uint8_t my_suff_size = this->suffix_size()+1;
+	uint8_t my_pref_size = this->prefix_size(params);
+	kint my_pref = this->get_prefix(my_nucleotides, params);
+	kint my_suff = this->get_suffix(my_nucleotides, params);
+	my_suff<<=2;
+	my_suff+=3;
 
 	// Compute other max number of iteration
 	uint8_t sk_suff_size = skmer.suffix_size();

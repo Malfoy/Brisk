@@ -40,15 +40,22 @@ public:
 	Brisk(Parameters & parameters);
 	~Brisk();
 
+
 	DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer);
+	
+	vector<DATA *> insert_superkmer( vector<kmer_full>& v);
+	vector<DATA *> get_superkmer( vector<kmer_full>& v);
+
+	vector<DATA *> insert_sequence(const string& str);
+	vector<DATA *> get_sequence(const string& str);
 
 	void protect_data(const kmer_full & kmer);
 	void unprotect_data(const kmer_full & kmer);
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage, uint64_t & largest_bucket) const;
 };
 
 
@@ -92,6 +99,97 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) {
 	#endif
 	return this->menu->get_kmer(kmer);
 }
+
+
+template<class DATA>
+vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
+	vector<DATA *> result;
+	// Line too short
+	if (str.size() < this.params.k){
+		return result;
+	}
+	vector<kmer_full> superkmer;
+	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
+	enumerator.next(superkmer);
+	while (superkmer.size() > 0) {
+		// Add the values
+		for (kmer_full & kmer : superkmer) {
+			result.push_back(this->menu->get_kmer(kmer));
+		}
+
+	}
+	return result;
+}
+
+
+
+template<class DATA>
+vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
+	vector<DATA *> result;
+	if (superkmer.size() > 0) {
+		// Add the values
+		for (kmer_full & kmer : superkmer) {
+			result.push_back(this->menu->get_kmer(kmer));
+		}
+
+	}
+	return result;
+}
+
+
+template<class DATA>
+vector<DATA *> Brisk<DATA>::insert_sequence(const string& str) {
+	vector<DATA *> result;
+	// Line too short
+	if (str.size() < this.params.k){
+		return result;
+	}
+	vector<kmer_full> superkmer;
+	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
+	enumerator.next(superkmer);
+	while (superkmer.size() > 0) {
+		// Add the values
+		uint64_t small_minimizer = (uint32_t)(superkmer[0].minimizer & this->menu->mini_reduc_mask);
+		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
+		omp_set_lock(this->menu->MutexBucket[mutex_idx]);
+		for (kmer_full & kmer : superkmer) {
+			result.push_back(this->menu->insert_kmer_no_mutex(kmer));
+		}
+		omp_unset_lock(this->menu->MutexBucket[mutex_idx]);
+
+	}
+	return result;
+}
+
+
+template<class DATA>
+vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer){
+	vector<DATA *> result;
+	if (superkmer.size() > 0) {
+		// Add the values
+		uint64_t minimizer(superkmer[0].minimizer);
+		uint64_t small_minimizer = (uint32_t)(minimizer & this->menu->mini_reduc_mask);
+		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
+		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
+		for (kmer_full & kmer : superkmer) {
+			//%UTEXCHANGE TODO THIS IS A FIX IT SHOULD NOT BE NEEDED
+			// if (kmer.minimizer!=minimizer){
+			// 	omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
+			// 	minimizer=kmer.minimizer;
+			// 	omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
+			// 	small_minimizer = (uint32_t)(minimizer & this->menu->mini_reduc_mask);
+			// 	mutex_idx = (small_minimizer%this->menu->mutex_number);
+			// 	omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
+			// }
+			DATA* lol=this->menu->insert_kmer_no_mutex(kmer);
+			result.push_back(lol);
+		}
+		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
+	}
+	return result;
+}
+
+
 
 template <class DATA>
 DATA * Brisk<DATA>::insert(kmer_full & kmer) {
@@ -146,9 +244,9 @@ uint64_t Brisk<DATA>::getMemorySelfMaxUsed () const{
 }
 
 template<class DATA>
-void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage) const {
+void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage, uint64_t & largest_bucket) const {
 	memory_usage = this->getMemorySelfMaxUsed();
-	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed);
+	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, largest_bucket);
 }
 
 
