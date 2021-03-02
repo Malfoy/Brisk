@@ -286,7 +286,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 
 	kint minimizer = enumerator.next(superkmer);
-	while (superkmer.size() > 0) {
+	if (superkmer.size() > 0) {
+		counter.protect_data(superkmer[0]);
 		// Add the values
 		if (check) {
 			for (kmer_full & kmer : superkmer) {
@@ -301,21 +302,24 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 		}
-		vector<uint8_t*> vec(counter.insert_superkmer(superkmer));
+		vector<bool> newly_inserted;
+		vector<uint8_t*> vec(counter.insert_superkmer(superkmer,newly_inserted));
 		for(uint i(0); i < vec.size();++i){
 			//TODO CHANGE PROTECT MINIMIZER
-			//counter.protect_data(superkmer[i]);
+			// counter.protect_data(superkmer[i]);
 			uint8_t * data_pointer(vec[i]);
-			if(data_pointer==NULL){
-				cout<<"wtf"<<endl;
-				cin.get();
+			if(newly_inserted[i]){
+				(*data_pointer)=1;
 			}else{
-				//(*data_pointer)++;
+				(*data_pointer)++;
 			}
-			//counter.unprotect_data(superkmer[i]);
+			
+			// counter.unprotect_data(superkmer[i]);
 		}
+		counter.unprotect_data(superkmer[0]);
 		// Next superkmer
 		superkmer.clear();
+		
 		minimizer = enumerator.next(superkmer);
 	}
 }

@@ -44,7 +44,7 @@ public:
 	DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer);
 	
-	vector<DATA *> insert_superkmer( vector<kmer_full>& v);
+	vector<DATA *> insert_superkmer( vector<kmer_full>& v, vector<bool>& newly_inserted);
 	vector<DATA *> get_superkmer( vector<kmer_full>& v);
 
 	vector<DATA *> insert_sequence(const string& str);
@@ -163,7 +163,7 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str) {
 
 
 template<class DATA>
-vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer){
+vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		// Add the values
@@ -181,13 +181,23 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer){
 			// 	mutex_idx = (small_minimizer%this->menu->mutex_number);
 			// 	omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 			// }
-			DATA* lol=this->menu->insert_kmer_no_mutex(kmer);
+			bool newly_inserted_element;
+			DATA* lol=this->menu->insert_kmer_no_mutex(kmer,newly_inserted_element);
+			newly_inserted.push_back(newly_inserted_element);
+			// result.push_back(lol);
+		}
+		for (kmer_full & kmer : superkmer) {
+			
+			DATA* lol=this->menu->get_kmer_no_mutex(kmer);
 			result.push_back(lol);
 		}
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
 	}
 	return result;
 }
+
+
+
 
 
 

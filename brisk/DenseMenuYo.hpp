@@ -51,7 +51,7 @@ public:
 	~DenseMenuYo();
 	DATA * insert_kmer(kmer_full & kmer);
 	DATA * get_kmer(kmer_full & kmer);
-	DATA * insert_kmer_no_mutex(kmer_full & kmer);
+	DATA * insert_kmer_no_mutex(kmer_full & kmer, bool& newly_inserted_element);
 	DATA * get_kmer_no_mutex(kmer_full & kmer);
 
 	void protect_data(const kmer_full & kmer);
@@ -166,12 +166,13 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 
 template <class DATA>
-DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer) {
+DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inserted) {
 	DATA * prev_val = this->get_kmer_no_mutex(kmer);
 	if (prev_val != NULL) {
+		newly_inserted=false;
 		return prev_val;
 	}
-
+	newly_inserted=true;
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
