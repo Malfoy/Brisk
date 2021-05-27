@@ -27,6 +27,8 @@ public:
 
 	bool compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params);
 	bool is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const;
+	bool kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const;
+
 
 	// uint32_t interleaved_value(uint8_t * nucleotides, const Parameters & params)const;
 	// uint32_t interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params)const;
@@ -85,6 +87,8 @@ SKL::SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides,
 	this->size = 1;
 	this->minimizer_idx = mini_idx;
 };
+
+
 
 SKL::SKL(const SKL & otto) {
 	this->idx = otto.idx;
@@ -220,12 +224,42 @@ uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 
 uint64_t comparaisons(0);
 
-bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
-	
+bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{	
 	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
 			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
 		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
 		return get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small);
+	} else
+		return false;
+}
+
+
+bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
+	inferior=equal=superior=false;	
+	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
+			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
+		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
+		// vector<int> kmer_interleave=kmer.compute_interleaved(params.k,params.m);
+		for(uint i(0);i<kmer_interleave.size(); ++i){
+			int nuckmer(kmer_interleave[i]);
+			
+			int nuc(interleaved_nucleotide(i, nucleotides, params));
+			if(nuckmer<-1){
+				if(nuc==3){continue;}
+				break;
+			}
+			if(nuc>nuckmer){
+				superior=true;
+				return true;
+			}else if(nuc<nuckmer){
+				inferior=true;
+				return true;
+			}
+		}
+		auto submer(get_compacted_kmer(kmer_idx, nucleotides, params));
+		auto kmer_comp(kmer.get_compacted(params.m_small));
+		equal=(submer==kmer_comp);
+		return true;
 	} else
 		return false;
 }

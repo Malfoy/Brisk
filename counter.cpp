@@ -286,7 +286,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 
 	kint minimizer = enumerator.next(superkmer);
-	if (superkmer.size() > 0) {
+	while (superkmer.size() > 0) {
 		counter.protect_data(superkmer[0]);
 		// Add the values
 		if (check) {
@@ -321,5 +321,9 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 		superkmer.clear();
 		
 		minimizer = enumerator.next(superkmer);
+		if(minimizer==0){
+			return;
+		}
 	}
+	// cout<<"done"<<endl;
 }

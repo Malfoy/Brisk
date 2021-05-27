@@ -241,6 +241,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	DATA * value;
 	// Looks into the bucket for the right kmer
 	value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
+
 	omp_unset_lock(&MutexBucket[mutex_idx]);	
 	// kmer.minimizer_idx -= params.m_reduc;
 	return value;

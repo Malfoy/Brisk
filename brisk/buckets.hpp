@@ -61,6 +61,7 @@ private:
 	DATA * find_kmer_unsorted(kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
 	DATA * find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end);
+	DATA * find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end);
 	DATA * find_kmer_log(kmer_full & kmer);
 	DATA * find_kmer_log_simple(kmer_full & kmer);
 	// DATA * find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
@@ -185,7 +186,8 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	}
 	
 	// 2 - Sort if needed
-	if(skml.size()-sorted_size>1000000){
+	//TAMPON
+	if(skml.size()-sorted_size>100){
 		// cout << "Sorting" << endl;
 		this->insert_buffer();
 	}
@@ -232,7 +234,7 @@ template <class DATA>
 DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
 	DATA * value_pointer = NULL;
 	this->data_space_update();
-
+	
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
 		auto old_capacity = skml.capacity();
@@ -306,27 +308,13 @@ DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
 				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
 				*params
 		);
-		// cout << val << endl;
 		return val;
 	};
-	auto comp_function_max = [&](const SKL & a, const SKL & b) {
-		bool val = a.inf_max(
-				nucleotides_reserved_memory + a.idx * params->allocated_bytes,
-				b,
-				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
-				*params
-		);
-		// cout << val << endl;
-		return val;
-	};
-	uint bottom(lower_bound(skml.begin()+sorted_size, skml.end(),skml[skml.size()-1] ,comp_function));
-	uint top(upper_bound(skml.begin()+sorted_size, skml.end(),skml[skml.size()-1] ,comp_function_max));
-	auto search(find_kmer_linear(kmer,bottom,top));
+
+	uint bottom(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
+	DATA* search=(find_kmer_linear_sorted_stop(kmer,bottom,sorted_size-1));
 	discard_last_kmer();
-	if (search!=NULL){	
-		return search;
-	}
-	return find_kmer_linear(kmer, sorted_size, skml.size()-1);
+	return search;
 }
 
 
@@ -496,14 +484,36 @@ DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, cons
 		debug_count += 1;
 
 		if (is_present) {
+			// cout<<"found in pos:	"<<i<<endl;
 			uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer.minimizer_idx) - 1;
 			buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			return this->data_reserved_memory + skml[i].data_idx + kmer_position;
 		}
 	}
-
 	return NULL;
 }
+
+
+template<class DATA>
+DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end) {
+	uint step(0);
+	vector<int> kmer_interleave=kmer.compute_interleaved(params->k,params->m);
+	for (int i=begin ; i<=end ; i++) {
+		bool inferior,superior,equal;
+		if(skml[i].kmer_comparison(kmer,kmer_interleave,this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
+			if(equal){
+				uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer.minimizer_idx) - 1;
+				buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+				return this->data_reserved_memory + skml[i].data_idx + kmer_position;
+			}else if(superior){
+				return NULL;
+			}
+		}
+		step++;
+	}
+	return NULL;
+}
+
 
 
 template <class DATA>
@@ -514,26 +524,20 @@ DATA * Bucket<DATA>::find_kmer_unsorted(kmer_full& kmer) {
 
 template <class DATA>
 DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
-	// if ((uint)kmer.kmer_s == 2214592512) {
-	// if (*(((uint*)&(kmer.kmer_s))+1) == 553648128) {
-	// 	debug = true;
-	// }
-	// if (debug)
-		// for (SKL & skmer : skml){
-		// 	skmer.print(nucleotides_reserved_memory + params->allocated_bytes * skmer.idx, (kint)34603008UL, *params); cout << endl;
-		// }
 	if (sorted_size > 0) {
-		DATA * ptr = find_kmer_log(kmer);
-		// if (debug) {
-		// 	print_kmer(kmer.kmer_s, 31); cout << endl;
-		// }
-		debug = false;
+		// DATA * ptr = find_kmer_log(kmer);
+		DATA * ptr = find_kmer_log_simple(kmer);
 		if (ptr != NULL) {
 			return ptr;
+		}else{			
+			// ptr = find_kmer_log(kmer);
+			// if(ptr != NULL){
+			// 	cout<<"ON AURAIT DU LE TROUVER"<<endl;
+			// 	cin.get();
+			// 	return ptr;
+			// }
 		}
 	}
-	debug = false;
-
 	return find_kmer_unsorted(kmer);
 }
 
