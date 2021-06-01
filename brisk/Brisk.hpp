@@ -127,10 +127,10 @@ template<class DATA>
 vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		// Add the values
-		for (kmer_full & kmer : superkmer) {
-			result.push_back(this->menu->get_kmer(kmer));
-		}
+		// for (kmer_full & kmer : superkmer) {
+		// 	result.push_back(this->menu->get_kmer(kmer));
+		// }
+		return this->menu->get_kmer_vector(superkmer);
 
 	}
 	return result;
@@ -171,26 +171,18 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 		uint64_t small_minimizer = (uint32_t)(minimizer & this->menu->mini_reduc_mask);
 		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
-		for (kmer_full & kmer : superkmer) {
-			//%UTEXCHANGE TODO THIS IS A FIX IT SHOULD NOT BE NEEDED
-			// if (kmer.minimizer!=minimizer){
-			// 	omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
-			// 	minimizer=kmer.minimizer;
-			// 	omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
-			// 	small_minimizer = (uint32_t)(minimizer & this->menu->mini_reduc_mask);
-			// 	mutex_idx = (small_minimizer%this->menu->mutex_number);
-			// 	omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
-			// }
-			bool newly_inserted_element;
-			DATA* lol=this->menu->insert_kmer_no_mutex(kmer,newly_inserted_element);
-			newly_inserted.push_back(newly_inserted_element);
-			// result.push_back(lol);
-		}
-		for (kmer_full & kmer : superkmer) {
-			
-			DATA* lol=this->menu->get_kmer_no_mutex(kmer);
-			result.push_back(lol);
-		}
+		result=this->menu->insert_kmer_vector(superkmer,newly_inserted);
+		// for (kmer_full & kmer : superkmer) {
+		// 	bool newly_inserted_element;
+		// 	DATA* lol=this->menu->insert_kmer_no_mutex(kmer,newly_inserted_element);
+		// 	newly_inserted.push_back(newly_inserted_element);
+		// }
+		// for (kmer_full & kmer : superkmer) {
+		// 	DATA* lol=this->menu->get_kmer_no_mutex(kmer);
+		// 	result.push_back(lol);
+		// }
+		result=this->menu->get_kmer_vector(superkmer);
+		// cout<<"kmer get"<<endl;
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
 	}
 	return result;

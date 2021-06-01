@@ -51,7 +51,9 @@ public:
 	~DenseMenuYo();
 	DATA * insert_kmer(kmer_full & kmer);
 	DATA * get_kmer(kmer_full & kmer);
-	DATA * insert_kmer_no_mutex(kmer_full & kmer, bool& newly_inserted_element);
+	vector<DATA*> insert_kmer_vector(vector<kmer_full> & kmers, vector<bool>& newly_inserted);
+	vector<DATA*> get_kmer_vector(vector<kmer_full> & kmers);
+	DATA * insert_kmer_no_mutex(kmer_full & kmer, bool& newly_inserted_element,bool already_checked=false);
 	DATA * get_kmer_no_mutex(kmer_full & kmer);
 
 	void protect_data(const kmer_full & kmer);
@@ -166,11 +168,59 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 
 template <class DATA>
-DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inserted) {
-	DATA * prev_val = this->get_kmer_no_mutex(kmer);
-	if (prev_val != NULL) {
-		newly_inserted=false;
-		return prev_val;
+vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,vector<bool>& newly_inserted) {
+	vector<DATA *> result = this->get_kmer_vector(kmers);
+	for(uint i(0);i<kmers.size(); ++i){
+		if(result[i]==NULL){
+			newly_inserted.push_back(true);
+			bool dog;
+			insert_kmer_no_mutex(kmers[i],dog,true);
+		}else{
+			newly_inserted.push_back(false);
+		}
+	}
+	// uint64_t small_minimizer = (uint32_t)(kmers[0b11].minimizer & mini_reduc_mask);
+	// // kmer.minimizer_idx += params.m_reduc;
+	// uint32_t mutex_idx = get_mutex(small_minimizer);
+
+	// // Works because m - reduc <= 16
+	// uint32_t column_idx = get_column(small_minimizer);
+	// uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
+
+	// uint32_t idx = bucket_indexes[matrix_idx];
+	// // Create the bucket if not already existing
+	// if (idx == 0) {
+	// 	bucketMatrix[mutex_idx].emplace_back(&params);
+	// 	bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
+	// 	idx = bucket_indexes[matrix_idx];
+	// }
+	// for(uint i(0);i<kmers.size(); ++i){
+	// 	if(result[i]==NULL){
+	// 		newly_inserted.push_back(true);
+	// 		if (kmers[i].multi_mini) {
+	// 			omp_set_lock(&multi_lock);
+	// 			cursed_kmers[kmers[i].kmer_s] = DATA();
+	// 			omp_unset_lock(&multi_lock);
+	// 			result[i]=&(cursed_kmers[kmers[i].kmer_s]);
+	// 		}else{
+	// 			result[i] = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmers[i]);
+	// 		}
+	// 	}else{
+	// 		newly_inserted.push_back(false);
+	// 	}
+	// }
+	return result;
+}
+
+
+template <class DATA>
+DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inserted, bool already_checked) {
+	if(not already_checked){
+		DATA * prev_val = this->get_kmer_no_mutex(kmer);
+		if (prev_val != NULL) {
+			newly_inserted=false;
+			return prev_val;
+		}
 	}
 	newly_inserted=true;
 	// Cursed kmers
@@ -208,7 +258,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
-	
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
@@ -249,10 +298,70 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 
 
 template <class DATA>
+vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
+	// cout<<"get_kmer_vector"<<endl;
+	vector<DATA *> result(kmers.size(),NULL);
+	//WE ASSUME HERE THAT ALL KMERS are equally cursed
+	if (kmers[0].multi_mini) {
+		// cout<<"cvursedf"<<endl;
+		omp_set_lock(&multi_lock);
+		for(uint i(0);i<kmers.size();++i){
+			// if(kmers[i].multi_mini==false){
+			// 	cout<<"WTF MAN"<<endl;
+			// 	cin.get();
+			// }
+			if (cursed_kmers.count(kmers[i].kmer_s) != 0) {
+				result[i] =&cursed_kmers[kmers[i].kmer_s];
+			}
+		}
+		omp_unset_lock(&multi_lock);
+		return result;
+	}
+	
+	//WE ASSUME HERE THAT ALL KMER HAVE THE SAME MINIMIZER
+	uint64_t small_minimizer = (uint32_t)(kmers[0].minimizer & mini_reduc_mask);
+	uint32_t mutex_idx = get_mutex(small_minimizer);
+
+	// Normal kmer
+	uint32_t column_idx = get_column(small_minimizer);
+	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
+
+	uint32_t idx = bucket_indexes[matrix_idx];
+	// No bucket
+	if (idx == 0) {
+		// cout<<"OUT get_kmer_vector OUT "<<endl;
+
+		return result;
+	}
+
+	// Looks into the bucket for the right kmer
+	result = bucketMatrix[mutex_idx][idx-1].find_kmer_vector(kmers);
+	// for(uint i(0);i<result.size();i++) {
+	// 	if((result[i])!=bucketMatrix[mutex_idx][idx-1].find_kmer(kmers[i])){
+	// 		cout<<"FIND WTF"<<endl;
+	// 		if((result[i])==NULL){cout<<"RNULL"<<endl;}
+	// 		if(bucketMatrix[mutex_idx][idx-1].find_kmer(kmers[i])==NULL){cout<<"F  NULL"<<endl;}
+	// 		// cin.get();
+	// 	}
+	// 	if((result[i])!=get_kmer_no_mutex(kmers[i])){
+			
+	// 		cout<<"FIND WTF2"<<endl;
+	// 		cin.get();
+	// 	}else{
+	// 		// cout<<i<<" ok"<<endl;
+	// 	}
+	// }
+	// cout<<"OUT get_kmer_vector OUT "<<endl;
+	return result;
+}
+
+
+template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(kmer_full & kmer) {
 	
 	// Cursed kmers
 	if (kmer.multi_mini) {
+		// cout<<"cursed"<<endl;
 		omp_set_lock(&multi_lock);
 		if (cursed_kmers.count(kmer.kmer_s) != 0) {
 			omp_unset_lock(&multi_lock);

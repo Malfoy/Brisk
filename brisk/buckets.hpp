@@ -30,6 +30,7 @@ public:
 
 	DATA * insert_kmer(kmer_full & kmer);
 	DATA * find_kmer(kmer_full& kmer);
+	vector<DATA *> find_kmer_vector(vector<kmer_full>& kmers);
 
 	void next_kmer(kmer_full & kmer, kint minimizer);
 	bool has_next_kmer();
@@ -61,9 +62,12 @@ private:
 	DATA * find_kmer_unsorted(kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
 	DATA * find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end);
+	vector<DATA *> find_kmer_linear_vector(vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end);
 	DATA * find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end);
+	vector<DATA*>  find_kmer_linear_sorted_stop_vector(const vector<kmer_full>& kmers,  vector<uint64_t>& begins, const uint64_t end);
 	DATA * find_kmer_log(kmer_full & kmer);
 	DATA * find_kmer_log_simple(kmer_full & kmer);
+	vector<DATA *> find_kmer_log_simple_vector(vector<kmer_full> & kmers);
 	// DATA * find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
 	// inline DATA * find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
 	DATA * insert_kmer_buffer(kmer_full & kmer);
@@ -185,19 +189,19 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 		}
 	}
 	
-	// 2 - Sort if needed
-	//TAMPON
-	if(skml.size()-sorted_size>100){
-		// cout << "Sorting" << endl;
-		this->insert_buffer();
-	}
-
 	// 3 - Create a new skmer
 	DATA * value = this->insert_kmer_buffer(kmer);
 	this->nb_kmers += 1;
 	this->next_data += 1;
 	this->buffered_data = value;
 	this->buffered_get = kmer.kmer_s;
+
+	// 2 - Sort if needed
+	//TAMPON
+	if(skml.size()-sorted_size>10){
+		// cout << "Sorting" << endl;
+		this->insert_buffer();
+	}
 
 	return value;
 }
@@ -300,6 +304,7 @@ public:
 
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
+	return (find_kmer_linear_sorted_stop(kmer,0,sorted_size-1));
 	insert_kmer_buffer(kmer);
 	auto comp_function = [&](const SKL & a, const SKL & b) {
 		bool val = a.inf(
@@ -311,10 +316,32 @@ DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
 		return val;
 	};
 
-	uint bottom(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
+	uint64_t bottom(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
 	DATA* search=(find_kmer_linear_sorted_stop(kmer,bottom,sorted_size-1));
 	discard_last_kmer();
 	return search;
+}
+
+
+template<class DATA>
+vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kmers) {
+	auto comp_function = [&](const SKL & a, const SKL & b) {
+		bool val = a.inf(
+				nucleotides_reserved_memory + a.idx * params->allocated_bytes,
+				b,
+				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
+				*params
+		);
+		return val;
+	};
+	
+	vector<uint64_t> begins(kmers.size());
+	for(uint i(0);i<kmers.size(); ++i){
+		insert_kmer_buffer(kmers[i]);
+		begins[i]=(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
+		discard_last_kmer();
+	}
+	return find_kmer_linear_sorted_stop_vector(kmers,begins,sorted_size-1);
 }
 
 
@@ -494,9 +521,30 @@ DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, cons
 }
 
 
+
+template<class DATA>
+vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end) {
+	for (uint64_t i=begin ; i<=end ; i++) {
+		for(uint64_t j(0);j<kmers.size(); ++j){
+			if(result[j]==NULL){
+				bool is_present = skml[i].is_kmer_present(
+				kmers[j],
+				this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,
+				*params);
+				if (is_present) {
+					uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmers[j].minimizer_idx) - 1;
+					buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+					result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
+				}
+			}
+		}
+	}
+	return result;
+}
+
+
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end) {
-	uint step(0);
 	vector<int> kmer_interleave=kmer.compute_interleaved(params->k,params->m);
 	for (int i=begin ; i<=end ; i++) {
 		bool inferior,superior,equal;
@@ -509,9 +557,60 @@ DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t
 				return NULL;
 			}
 		}
-		step++;
 	}
 	return NULL;
+}
+
+
+template<class DATA>
+vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<kmer_full>& kmers,  vector<uint64_t>& begins, const uint64_t end) {
+	vector<vector<int>> kmer_interleaves(kmers.size());
+	vector<int> superkmer_interleave_buffer(2* params->k,-3);
+	vector<DATA*> result(kmers.size(),NULL);
+	for(uint64_t i(0);i<kmers.size(); ++i){
+		kmer_interleaves[i]=(kmers[i].compute_interleaved(params->k,params->m));
+	}
+	uint64_t min_value(*min_element(begins.begin(),begins.end()));
+	uint64_t min_kmer_indice(0);
+	//FOREACH SUPERKMER in RANGE
+	for (uint64_t i=min_value; i<=end ; i=max(i+1,min_value)) {
+		superkmer_interleave_buffer.assign(2* params->k,-3);
+		//FOREACH KMER
+		for(uint64_t j(min_kmer_indice);j<kmers.size(); ++j){
+			if(begins[j]<=i){
+				bool inferior,superior,equal;
+				if(skml[i].kmer_comparison(kmers[j],kmer_interleaves[j],superkmer_interleave_buffer,this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
+					if(equal){
+						uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmers[j].minimizer_idx) - 1;
+						buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+						result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
+						if(min_kmer_indice==j){
+							min_kmer_indice++;
+						}
+						if(begins[j]==min_value){
+							begins[j]=end+1;
+							min_value =*min_element(begins.begin(),begins.end());
+						}else{
+							begins[j]=end+1;
+						}
+					}else if(superior){
+						if(min_kmer_indice==j){
+							min_kmer_indice++;
+						}
+						if(begins[j]==min_value){
+							begins[j]=end+1;
+							min_value =*min_element(begins.begin(),begins.end());
+						}else{
+							begins[j]=end+1;
+						}
+					}
+				}else{
+				}
+			}else{
+			}
+		} 
+	}
+	return result;
 }
 
 
@@ -533,12 +632,21 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 			// ptr = find_kmer_log(kmer);
 			// if(ptr != NULL){
 			// 	cout<<"ON AURAIT DU LE TROUVER"<<endl;
-			// 	cin.get();
 			// 	return ptr;
 			// }
 		}
 	}
 	return find_kmer_unsorted(kmer);
+}
+
+
+template <class DATA>
+vector<DATA *> Bucket<DATA>::find_kmer_vector(vector<kmer_full>& kmers) {
+	vector<DATA *> result(kmers.size(),NULL);
+	if(sorted_size > 0){
+		result = find_kmer_log_simple_vector(kmers);
+	}
+	return find_kmer_linear_vector(kmers,result,sorted_size,skml.size()-1);
 }
 
 

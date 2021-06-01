@@ -303,9 +303,11 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			}
 		}
 		vector<bool> newly_inserted;
+		// cout<<"go insert_superkmer"<<endl;
 		vector<uint8_t*> vec(counter.insert_superkmer(superkmer,newly_inserted));
+		// cout<<"end insert_superkmer"<<endl;
+		// cout<<"counter has inserted"<<endl;
 		for(uint i(0); i < vec.size();++i){
-			//TODO CHANGE PROTECT MINIMIZER
 			// counter.protect_data(superkmer[i]);
 			uint8_t * data_pointer(vec[i]);
 			if(newly_inserted[i]){
@@ -313,14 +315,14 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			}else{
 				(*data_pointer)++;
 			}
-			
 			// counter.unprotect_data(superkmer[i]);
 		}
 		counter.unprotect_data(superkmer[0]);
 		// Next superkmer
 		superkmer.clear();
-		
+		// cout<<"go enumeraztor"<<endl;
 		minimizer = enumerator.next(superkmer);
+		// cout<<"end enumeraztor"<<endl;
 		if(minimizer==0){
 			return;
 		}
