@@ -97,7 +97,7 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) {
 		}
 	}
 	#endif
-	return this->menu->get_kmer(kmer);
+	return this->menu->get_kmer_no_mutex(kmer);
 }
 
 
@@ -167,8 +167,11 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		// Add the values
-		uint64_t minimizer(superkmer[0].minimizer);
-		uint64_t small_minimizer = (uint32_t)(minimizer & this->menu->mini_reduc_mask);
+		// uint64_t minimizer(superkmer[0].minimizer);
+		uint64_t small_minimizer = (((uint32_t)(superkmer[0].minimizer & this->menu->mini_reduc_mask))>>(params.m-params.m_small));
+		for(uint i(0);i<superkmer.size();++i){
+			superkmer[i].minimizer_idx+=(params.m-params.m_small)/2;
+		}
 		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 		result=this->menu->insert_kmer_vector(superkmer,newly_inserted);

@@ -198,8 +198,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>10){
-		// cout << "Sorting" << endl;
+	if(skml.size()-sorted_size>10 and skml.size()-sorted_size>sorted_size*0.03){
 		this->insert_buffer();
 	}
 
@@ -304,7 +303,8 @@ public:
 
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
-	return (find_kmer_linear_sorted_stop(kmer,0,sorted_size-1));
+	// return (find_kmer_linear_sorted_stop(kmer,0,sorted_size-1));
+	// kmer.minimizer_idx+=params->m-params->m_small;
 	insert_kmer_buffer(kmer);
 	auto comp_function = [&](const SKL & a, const SKL & b) {
 		bool val = a.inf(
@@ -317,8 +317,11 @@ DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
 	};
 
 	uint64_t bottom(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
-	DATA* search=(find_kmer_linear_sorted_stop(kmer,bottom,sorted_size-1));
 	discard_last_kmer();
+	// bottom=0;
+	// kmer.minimizer_idx+=params->m-params->m_small;
+	DATA* search=(find_kmer_linear_sorted_stop(kmer,bottom,sorted_size-1));
+	// kmer.minimizer_idx-=params->m-params->m_small;
 	return search;
 }
 
@@ -340,6 +343,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kme
 		insert_kmer_buffer(kmers[i]);
 		begins[i]=(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
 		discard_last_kmer();
+		// cout<<(double)begins[i]*100/sorted_size<<endl;
 	}
 	return find_kmer_linear_sorted_stop_vector(kmers,begins,sorted_size-1);
 }
@@ -545,7 +549,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(vector<kmer_full>& kmers,ve
 
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end) {
-	vector<int> kmer_interleave=kmer.compute_interleaved(params->k,params->m);
+	vector<int> kmer_interleave=kmer.compute_interleaved(params->k,params->m_small);
 	for (int i=begin ; i<=end ; i++) {
 		bool inferior,superior,equal;
 		if(skml[i].kmer_comparison(kmer,kmer_interleave,this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
@@ -567,8 +571,13 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 	vector<vector<int>> kmer_interleaves(kmers.size());
 	vector<int> superkmer_interleave_buffer(2* params->k,-3);
 	vector<DATA*> result(kmers.size(),NULL);
+	// cout<<"find_kmer_linear_sorted_stop_vector"<<endl;
 	for(uint64_t i(0);i<kmers.size(); ++i){
-		kmer_interleaves[i]=(kmers[i].compute_interleaved(params->k,params->m));
+		kmer_interleaves[i]=(kmers[i].compute_interleaved(params->k,params->m_small));
+		// for(uint j(0);j<kmer_interleaves.size(); ++j){
+		// 	cout<<kmer_interleaves[i][j]<<" ";
+		// }
+		// cout<<endl;
 	}
 	uint64_t min_value(*min_element(begins.begin(),begins.end()));
 	uint64_t min_kmer_indice(0);
@@ -579,7 +588,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 		for(uint64_t j(min_kmer_indice);j<kmers.size(); ++j){
 			if(begins[j]<=i){
 				bool inferior,superior,equal;
-				if(skml[i].kmer_comparison(kmers[j],kmer_interleaves[j],superkmer_interleave_buffer,this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
+				if(skml[i].kmer_comparison(kmers[j],superkmer_interleave_buffer,kmer_interleaves[j],this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
 					if(equal){
 						uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmers[j].minimizer_idx) - 1;
 						buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
@@ -587,22 +596,20 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 						if(min_kmer_indice==j){
 							min_kmer_indice++;
 						}
+						begins[j]=end+1;
 						if(begins[j]==min_value){
-							begins[j]=end+1;
 							min_value =*min_element(begins.begin(),begins.end());
-						}else{
-							begins[j]=end+1;
 						}
+						begins[j]=end+1;
 					}else if(superior){
 						if(min_kmer_indice==j){
 							min_kmer_indice++;
 						}
+						begins[j]=end+1;
 						if(begins[j]==min_value){
-							begins[j]=end+1;
 							min_value =*min_element(begins.begin(),begins.end());
-						}else{
-							begins[j]=end+1;
 						}
+						
 					}
 				}else{
 				}
@@ -629,7 +636,7 @@ DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
 		if (ptr != NULL) {
 			return ptr;
 		}else{			
-			// ptr = find_kmer_log(kmer);
+			// ptr = find_kmer_linear(kmer,0,skml.size()-1);
 			// if(ptr != NULL){
 			// 	cout<<"ON AURAIT DU LE TROUVER"<<endl;
 			// 	return ptr;

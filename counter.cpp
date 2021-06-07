@@ -110,6 +110,28 @@ int main(int argc, char** argv) {
 	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
 	cout << endl;
 
+	// kmer_comp_call=0;
+	// fasta="nosuffix.fa";
+	// cout << "\n\n\nI count " << fasta << endl;
+	// start = std::chrono::system_clock::now();
+	// count_fasta(counter, fasta, threads);
+	// end = std::chrono::system_clock::now();
+	// elapsed_seconds = end - start;
+	// cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
+	// cout << endl;
+	cout<<"kmer comparison calls: " << pretty_int(kmer_comp_call)<<endl;
+
+	// kmer_comp_call=0;
+	// fasta="nicekmer.fa";
+	// cout << "\n\n\nI count " << fasta << endl;
+	// start = std::chrono::system_clock::now();
+	// count_fasta(counter, fasta, threads);	
+	// end = std::chrono::system_clock::now();
+	// elapsed_seconds = end - start;
+	// cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
+	// cout << endl;
+	// cout<<pretty_int(kmer_comp_call)<<endl;
+	// counter.menu->print_bigest_bucket();
 
 	if (check)
 		verif_counts(counter);
@@ -144,25 +166,29 @@ int main(int argc, char** argv) {
 
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
-
+	// cout<<verif.size() <<endl;
 	// kint mini_mask = (1 << (2 * counter.m)) - 1;
 	kmer_full kmer(0,0, counter.params.m, false);
 	// Count 
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {
+			cout << "pas dans verif weird"<<endl;cin.get();
 			verif[kmer.kmer_s] = 0;
+		}else{
+			
 		}
 
 
 		uint8_t * count = counter.get(kmer);
 		if (count == NULL) {
+			cout<<"NULL COUNT"<<endl;
 			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
 			cout << (uint)kmer.minimizer << endl;
-			cout << (uint*)count << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
-			cout << *(((uint*)&(kmer.kmer_s))+1) << " " << (uint)kmer.kmer_s << endl;
+			// cin.get();
+		}else{
+			verif[kmer.kmer_s] -= *count;
 		}
-		verif[kmer.kmer_s] -= *count;
 
 		kmer.kmer_s = 0;
 	}
@@ -274,6 +300,8 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 }
 
 
+// ofstream no_suffix("nosuffix.fasta");
+// ofstream nice_kmer("nicekmer.fasta");
 
 void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	// Line too short
@@ -284,7 +312,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<kmer_full> superkmer;
 
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-
+	uint64_t id(0);
 	kint minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		counter.protect_data(superkmer[0]);
@@ -296,26 +324,28 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					if (verif.count(kmer.kmer_s) == 0){
 						verif[kmer.kmer_s] = 0;
 					}
-						
 					verif[kmer.kmer_s] += 1;
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
+					// if(kmer.suffix_size()>22 and kmer.prefix_size(counter.params.k,counter.params.m)>22){
+					// 	nice_kmer<<">"+to_string(id++)+"\n";
+					// 	nice_kmer<<kmer2str(kmer.kmer_s,counter.params.k)<<"\n";
+					// }
+					// if(kmer.suffix_size()==0){
+					// 	no_suffix<<">"+to_string(id++)+"\n";
+					// 	no_suffix<<kmer2str(kmer.kmer_s,counter.params.k)<<"\n";
+					// }
 				}
 			}
 		}
 		vector<bool> newly_inserted;
-		// cout<<"go insert_superkmer"<<endl;
 		vector<uint8_t*> vec(counter.insert_superkmer(superkmer,newly_inserted));
-		// cout<<"end insert_superkmer"<<endl;
-		// cout<<"counter has inserted"<<endl;
 		for(uint i(0); i < vec.size();++i){
-			// counter.protect_data(superkmer[i]);
 			uint8_t * data_pointer(vec[i]);
 			if(newly_inserted[i]){
 				(*data_pointer)=1;
 			}else{
 				(*data_pointer)++;
 			}
-			// counter.unprotect_data(superkmer[i]);
 		}
 		counter.unprotect_data(superkmer[0]);
 		// Next superkmer
