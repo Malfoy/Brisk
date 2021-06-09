@@ -323,8 +323,8 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
 	key = key ^ key >> 28;
 	key = (key + (key << 31)) & mask;
-	if(key<(mask>>5)){
-		key=mask;
+	if(key<(mask>>10)){
+		key=hash64shift(key);
 	}
 	return key;
 }
