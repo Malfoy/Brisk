@@ -59,6 +59,7 @@ public:
 	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
 	kmer_full();
 	kmer_full(kmer_full&& kmer);
+	kmer_full(const kmer_full&& kmer);
 	kmer_full & operator=(kmer_full&& kmer);	
 	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;

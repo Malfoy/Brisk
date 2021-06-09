@@ -331,9 +331,6 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 
 
 
-
-
-
  inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask)
 {
 	uint64_t tmp;

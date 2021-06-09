@@ -185,20 +185,11 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 		for(uint i(0);i<superkmer.size();++i){
 			superkmer[i].minimizer_idx+=(params.m-params.m_small)/2;
 		}
+		// cout<<bfc_hash_64_nomask(0)<<endl;cin.get();
 		uint32_t mutex_idx = ((bfc_hash_64_nomask(small_minimizer))%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 		result=this->menu->insert_kmer_vector(superkmer,newly_inserted);
-		// for (kmer_full & kmer : superkmer) {
-		// 	bool newly_inserted_element;
-		// 	DATA* lol=this->menu->insert_kmer_no_mutex(kmer,newly_inserted_element);
-		// 	newly_inserted.push_back(newly_inserted_element);
-		// }
-		// for (kmer_full & kmer : superkmer) {
-		// 	DATA* lol=this->menu->get_kmer_no_mutex(kmer);
-		// 	result.push_back(lol);
-		// }
 		result=this->menu->get_kmer_vector(superkmer);
-		// cout<<"kmer get"<<endl;
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
 	}
 	return result;
