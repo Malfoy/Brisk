@@ -162,6 +162,19 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str) {
 }
 
 
+ inline uint64_t bfc_hash_64_nomask(uint64_t key)
+{
+	key = (~key + (key << 21)) ; // key = (key << 21) - key - 1;
+	key = key ^ key >> 24;
+	key = ((key + (key << 3)) + (key << 8)) ; // key * 265
+	key = key ^ key >> 14;
+	key = ((key + (key << 2)) + (key << 4)); // key * 21
+	key = key ^ key >> 28;
+	key = (key + (key << 31)) ;
+	return key;
+}
+
+
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
 	vector<DATA *> result;
@@ -172,7 +185,7 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 		for(uint i(0);i<superkmer.size();++i){
 			superkmer[i].minimizer_idx+=(params.m-params.m_small)/2;
 		}
-		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
+		uint32_t mutex_idx = ((bfc_hash_64_nomask(small_minimizer))%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 		result=this->menu->insert_kmer_vector(superkmer,newly_inserted);
 		// for (kmer_full & kmer : superkmer) {
