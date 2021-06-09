@@ -46,6 +46,17 @@ kmer_full::kmer_full(kmer_full&& kmer) :
 }
 
 
+kmer_full::kmer_full(const kmer_full&& kmer) :
+	kmer_s(kmer.kmer_s),
+	minimizer(kmer.minimizer),
+	minimizer_idx(kmer.minimizer_idx),
+	multi_mini(kmer.multi_mini),
+	interleaved(kmer.interleaved)
+{
+	// cout << "move constructed" << endl;
+}
+
+
 
 kmer_full & kmer_full::operator=(kmer_full&& kmer) {
 	this->minimizer_idx = kmer.minimizer_idx;
@@ -312,8 +323,14 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
 	key = key ^ key >> 28;
 	key = (key + (key << 31)) & mask;
+	if(key<(mask>>5)){
+		key=mask;
+	}
 	return key;
 }
+
+
+
 
 
 
