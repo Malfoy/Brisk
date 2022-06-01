@@ -32,9 +32,11 @@ public:
 	DATA * find_kmer(kmer_full& kmer);
 	vector<DATA *> find_kmer_vector(vector<kmer_full>& kmers);
 
+	void init_enumerator();
 	void next_kmer(kmer_full & kmer, kint minimizer);
 	bool has_next_kmer();
 
+	void clear();
 	void print();
 
 private:
@@ -135,6 +137,15 @@ template <class DATA>
 Bucket<DATA>::~Bucket() {
 	free(this->nucleotides_reserved_memory);
 	free(this->data_reserved_memory);
+}
+
+
+template <class DATA>
+void Bucket<DATA>::clear() {
+	free(this->nucleotides_reserved_memory);
+	this->nucleotides_reserved_memory = nullptr;
+	free(this->data_reserved_memory);
+	this->data_reserved_memory = nullptr;
 }
 
 
@@ -654,6 +665,13 @@ vector<DATA *> Bucket<DATA>::find_kmer_vector(vector<kmer_full>& kmers) {
 		result = find_kmer_log_simple_vector(kmers);
 	}
 	return find_kmer_linear_vector(kmers,result,sorted_size,skml.size()-1);
+}
+
+
+template <class DATA>
+void Bucket<DATA>::init_enumerator() {
+	this->enumeration_skmer_idx = 0;
+	this->enumeration_kmer_idx = 0;
 }
 
 

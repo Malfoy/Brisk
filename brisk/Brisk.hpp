@@ -41,7 +41,7 @@ public:
 	~Brisk();
 
 
-	DATA * insert(kmer_full & kmer);
+	// DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer);
 	
 	vector<DATA *> insert_superkmer( vector<kmer_full>& v, vector<bool>& newly_inserted);
@@ -200,25 +200,25 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 
 
 
-template <class DATA>
-DATA * Brisk<DATA>::insert(kmer_full & kmer) {
-	#ifdef TIME_ANALYSIS
-	#pragma omp critical
-	{
-		nb_insert += 1;
+// template <class DATA>
+// DATA * Brisk<DATA>::insert(kmer_full & kmer) {
+// 	#ifdef TIME_ANALYSIS
+// 	#pragma omp critical
+// 	{
+// 		nb_insert += 1;
 
-		if (nb_get + nb_insert == 1000000) {
-			auto current_time = std::chrono::system_clock::now();
-			chrono::duration<double> elapsed_seconds = current_time - previous_time;
-			cout << "1 000 000 ops: " << elapsed_seconds.count() << endl;
+// 		if (nb_get + nb_insert == 1000000) {
+// 			auto current_time = std::chrono::system_clock::now();
+// 			chrono::duration<double> elapsed_seconds = current_time - previous_time;
+// 			cout << "1 000 000 ops: " << elapsed_seconds.count() << endl;
 			
-			previous_time = current_time;
-			nb_get = nb_insert = 0;
-		}
-	}
-	#endif
-	return this->menu->insert_kmer(kmer);
-}
+// 			previous_time = current_time;
+// 			nb_get = nb_insert = 0;
+// 		}
+// 	}
+// 	#endif
+// 	return this->menu->insert_kmer(kmer);
+// }
 
 
 template <class DATA>
