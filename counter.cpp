@@ -312,7 +312,6 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	vector<kmer_full> superkmer;
 
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-	uint64_t id(0);
 	kint minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		counter.protect_data(superkmer[0]);
