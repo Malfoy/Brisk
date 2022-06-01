@@ -156,7 +156,7 @@ void Bucket<DATA>::print() {
 template <class DATA>
 void Bucket<DATA>::data_space_update() {
 	if (this->next_data == this->data_reserved_number) {
-		auto factor = this->data_reserved_number > 500 ? 0.2 : 0.5;
+		auto factor = this->data_reserved_number > 500 ? 1 : 2;
 		size_t to_reserve = (int)(factor * this->data_reserved_number);
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
@@ -198,7 +198,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>10 and skml.size()-sorted_size>sorted_size*0.03){
+	if(skml.size()-sorted_size>1000 and skml.size()-sorted_size>sorted_size*1){
 		this->insert_buffer();
 	}
 
