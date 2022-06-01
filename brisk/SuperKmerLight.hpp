@@ -239,7 +239,7 @@ atomic<int64_t> kmer_comp_call(0);
 
 inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
 	inferior=equal=superior=false;
-	bool can_be_superior(true),can_be_inferior(true);
+	bool can_be_superior(true);
 	
 	// cout<<"kmer_comparison"<<endl;
 	// if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth

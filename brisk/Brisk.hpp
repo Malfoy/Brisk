@@ -47,7 +47,7 @@ public:
 	vector<DATA *> insert_superkmer( vector<kmer_full>& v, vector<bool>& newly_inserted);
 	vector<DATA *> get_superkmer( vector<kmer_full>& v);
 
-	vector<DATA *> insert_sequence(const string& str);
+	vector<DATA *> insert_sequence(const string& str, vector<bool>& newly_inserted);
 	vector<DATA *> get_sequence(const string& str);
 
 	void protect_data(const kmer_full & kmer);
@@ -113,10 +113,8 @@ vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
 	enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		// Add the values
-		for (kmer_full & kmer : superkmer) {
-			result.push_back(this->menu->get_kmer(kmer));
-		}
-
+		auto vec=get_superkmer(superkmer);
+		result.insert(result.end(),vec.begin(),vec.end());
 	}
 	return result;
 }
@@ -138,7 +136,7 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 
 template<class DATA>
-vector<DATA *> Brisk<DATA>::insert_sequence(const string& str) {
+vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
 	vector<DATA *> result;
 	// Line too short
 	if (str.size() < this.params.k){
@@ -147,16 +145,13 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str) {
 	vector<kmer_full> superkmer;
 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
 	enumerator.next(superkmer);
-	while (superkmer.size() > 0) {
+	while (superkmer.size() > 0){
 		// Add the values
-		uint64_t small_minimizer = (uint32_t)(superkmer[0].minimizer & this->menu->mini_reduc_mask);
-		uint32_t mutex_idx = (small_minimizer%this->menu->mutex_number);
-		omp_set_lock(this->menu->MutexBucket[mutex_idx]);
-		for (kmer_full & kmer : superkmer) {
-			result.push_back(this->menu->insert_kmer_no_mutex(kmer));
-		}
-		omp_unset_lock(this->menu->MutexBucket[mutex_idx]);
-
+		vector<bool> newly_inserted_local;
+		vector<uint8_t*> vec(insert_superkmer(superkmer,newly_inserted));
+		superkmer.clear();
+		result.insert(result.end(),vec.begin(),vec.end());
+		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
 	}
 	return result;
 }
