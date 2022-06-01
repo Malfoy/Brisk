@@ -15,7 +15,7 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD (1 << 14)
+#define GROGRO_THREASHOLD ((uint64_t)1 << 4)
 
 
 template <class DATA>
@@ -156,7 +156,7 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	bucket.clear();
 }
 
-
+//NON c'est NON
 template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	DATA * prev_val = this->get_kmer(kmer);
@@ -192,6 +192,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		cursed_kmers[kmer.kmer_s] = DATA();
 		bucketMatrix[mutex_idx][idx-1].nb_kmers += 1;
 		omp_unset_lock(&multi_lock);
+		omp_unset_lock(&MutexBucket[mutex_idx]);
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 
@@ -382,9 +383,9 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 	}
 
 	// Looks into the bucket for the right kmer
-	omp_set_lock(&MutexBucket[mutex_idx]);
+	// omp_set_lock(&MutexBucket[mutex_idx]);
 	result = bucketMatrix[mutex_idx][idx-1].find_kmer_vector(kmers);
-	omp_unset_lock(&MutexBucket[mutex_idx]);
+	// omp_unset_lock(&MutexBucket[mutex_idx]);
 
 	return result;
 }
