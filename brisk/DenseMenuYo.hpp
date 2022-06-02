@@ -146,12 +146,14 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	DATA * data;
 
 	// Enumerate and save all values
+	omp_set_lock(&multi_lock);
 	bucket.init_enumerator();
 	while (bucket.has_next_kmer()) {
 		bucket.next_kmer(kmer, minimizer);
 		data = bucket.find_kmer(kmer);
 		this->cursed_kmers[kmer.kmer_s] = *data;
 	}
+	omp_unset_lock(&multi_lock);
 
 	// Free some memory from the bucket
 	bucket.clear();
