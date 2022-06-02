@@ -19,6 +19,7 @@ public:
 	uint32_t sorted_size;
 
 	uint nb_kmers;
+	bool cleared;
 
 	Bucket(Parameters * params);
 	Bucket(const Bucket<DATA> &) = delete;
@@ -85,6 +86,7 @@ Bucket<DATA>::Bucket(Parameters * params) {
 	this->buffered_skmer = (SKL *)NULL;
 	this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	this->buffered_data = 0;
+	this->cleared = false;
 
 	this->params = params;
 
@@ -108,6 +110,7 @@ Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 : skml( std::move(bucket.skml) )
 , sorted_size( bucket.sorted_size )
 , nb_kmers( bucket.nb_kmers )
+, cleared( bucket.cleared )
 , params( bucket.params )
 , buffered_skmer( bucket.buffered_skmer )
 , buffered_get( ((kint)1) << (sizeof(kint) * 8 - 1) )
@@ -146,6 +149,7 @@ void Bucket<DATA>::clear() {
 	this->nucleotides_reserved_memory = nullptr;
 	free(this->data_reserved_memory);
 	this->data_reserved_memory = nullptr;
+	this->cleared = true;
 }
 
 
