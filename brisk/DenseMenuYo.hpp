@@ -15,7 +15,7 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD (1 << 14)
+#define GROGRO_THREASHOLD (1 << 24)
 
 
 template <class DATA>
@@ -131,6 +131,7 @@ DenseMenuYo<DATA>::~DenseMenuYo() {
 
 template <class DATA>
 void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
+	cout << "bucket_to_map " << small_minimizer << endl;
 	// Get the bucket
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 	uint32_t column_idx = get_column(small_minimizer);
@@ -192,6 +193,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		cursed_kmers[kmer.kmer_s] = DATA();
 		bucketMatrix[mutex_idx][idx-1].nb_kmers += 1;
 		omp_unset_lock(&multi_lock);
+		omp_unset_lock(&MutexBucket[mutex_idx]);
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 
@@ -216,40 +218,56 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,vector<bool>& newly_inserted) {
+	// cout << "insert_kmer_vector" << endl;
 	vector<DATA *> result = this->get_kmer_vector(kmers);
+
+	// for (const DATA * res : result)
+	// 	cout << (uint64_t *)res << " ";
+	// cout << endl;
 
 	for(uint i(0);i<kmers.size(); ++i){
 		if(result[i]==NULL){
 			newly_inserted.push_back(true);
-			bool dog;
+			bool newly_inserted = false;
 			// cout<<"insert"<<endl;
-			insert_kmer_no_mutex(kmers[i],dog,true);
+			insert_kmer_no_mutex(kmers[i],newly_inserted,true);
+			// cout << (uint64_t *)kmers
 			// cout<<"insert done"<<endl;
 		}else{
 			newly_inserted.push_back(false);
 		}
 	}
 
+	if (kmers[0].multi_mini)
+		return this->get_kmer_vector(kmers);
+
 	uint64_t small_minimizer = (((uint32_t)(kmers[0].minimizer & mini_reduc_mask))>>(params.m-params.m_small));
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
+
+	// cout << "minimizer " << small_minimizer << endl;
+	// cout << "mutex_idx " << mutex_idx << " column_idx " << column_idx << " matrix_idx " << matrix_idx << " idx " << idx << endl;
+
 	// Bucket now too big to hold
 	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
 		this->bucket_to_map(small_minimizer);
-		result = this->get_kmer_vector(kmers);
 	}
+	result = this->get_kmer_vector(kmers);
+	// cout << "/insert_kmer_vector" << endl;
 	return result;
 }
 
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inserted, bool already_checked) {
+	// cout << "insert_kmer_no_mutex" << endl;
 	if(not already_checked){
 		DATA * prev_val = this->get_kmer_no_mutex(kmer);
 		if (prev_val != NULL) {
 			newly_inserted=false;
+			// cout << "PASNULL DU COUP NUL !" << endl;
 			return prev_val;
 		}
 	}
@@ -260,6 +278,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 		cursed_kmers[kmer.kmer_s] = DATA();
 		omp_unset_lock(&multi_lock);
 		// return &debug_value;
+		// cout << "CURSED" << endl;
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 	// Transform the super minimizer to the used minimizer
@@ -271,18 +290,22 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 	// Works because m - reduc <= 16
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
-
-	
 	uint32_t idx = bucket_indexes[matrix_idx];
+
+	// cout << "minimizer " << small_minimizer << endl;
+	// cout << "mutex_idx " << mutex_idx << " column_idx " << column_idx << " matrix_idx " << matrix_idx << " idx " << idx << endl;
+	
 	// Create the bucket if not already existing
 	if (idx == 0) {
 		bucketMatrix[mutex_idx].emplace_back(&params);
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
 	}
+	// cout << "insert idx " << mutex_idx << " " << idx << endl;
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
-
+	// cout << "data address " << (uint64_t *)value << endl;
+	// cout << "insert_kmer_no_mutex" << endl;
 	return value;
 }
 
