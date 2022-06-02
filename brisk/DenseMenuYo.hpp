@@ -15,7 +15,7 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD (1 << 24)
+#define GROGRO_THREASHOLD (1 << 4)
 
 
 template <class DATA>
@@ -188,7 +188,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 
 	// GROGRO bucket check
-	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		bucketMatrix[mutex_idx][idx-1].nb_kmers += 1;
@@ -206,8 +206,8 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
 	// Bucket now too big to hold
-	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
-		bucket_to_map(small_minimizer);
+	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+		this->bucket_to_map(small_minimizer);
 	}
 	omp_unset_lock(&MutexBucket[mutex_idx]);
 
@@ -251,7 +251,7 @@ vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,v
 	// cout << "mutex_idx " << mutex_idx << " column_idx " << column_idx << " matrix_idx " << matrix_idx << " idx " << idx << endl;
 
 	// Bucket now too big to hold
-	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
 		this->bucket_to_map(small_minimizer);
 	}
 	result = this->get_kmer_vector(kmers);
@@ -291,9 +291,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
-
-	// cout << "minimizer " << small_minimizer << endl;
-	// cout << "mutex_idx " << mutex_idx << " column_idx " << column_idx << " matrix_idx " << matrix_idx << " idx " << idx << endl;
 	
 	// Create the bucket if not already existing
 	if (idx == 0) {
@@ -301,6 +298,15 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
 	}
+
+	// Grogro kmer
+	if (bucketMatrix[mutex_idx][idx-1].cleared) {
+		omp_set_lock(&multi_lock);
+		cursed_kmers[kmer.kmer_s] = DATA();
+		omp_unset_lock(&multi_lock);
+		return &(cursed_kmers[kmer.kmer_s]);
+	}
+
 	// cout << "insert idx " << mutex_idx << " " << idx << endl;
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
@@ -342,7 +348,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	}
 
 	// GROGRO bucket check
-	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_unset_lock(&MutexBucket[mutex_idx]);
 		omp_set_lock(&multi_lock);
 		if (cursed_kmers.count(kmer.kmer_s) != 0) {
@@ -393,7 +399,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 		return result;
 	}
 
-	if (bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&multi_lock);
 		for(uint i(0);i<kmers.size();++i){
 			if (cursed_kmers.count(kmers[i].kmer_s) != 0) {
@@ -519,7 +525,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		idx = bucket_indexes[matrix_idx];
 
 		// Already enumerated kmers
-		if (idx != 0 and bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) // Maybe a bug here
+		if (idx != 0 and bucketMatrix[mutex_idx][idx-1].cleared) // Maybe a bug here
 			idx = 0;
 	}
 
