@@ -93,7 +93,7 @@ template <class DATA>
 DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	// If m - reduc > 16, not enougth space for bucket idxs ! (because of uint32_t)
 	mini_reduc_mask = ((kint)1 << (2 * params.m_small)) - 1;
-	cout<<params.m-params.m_small<<endl;
+	// cout<<params.m-params.m_small<<endl;
 	// cin.get();
 	mini_reduc_mask<<=((params.m-params.m_small));
 
@@ -140,6 +140,7 @@ DenseMenuYo<DATA>::~DenseMenuYo() {
 
 template <class DATA>
 void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
+	// cout << "bucket_to_map " << small_minimizer << endl;
 	// Get the bucket
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 	uint32_t column_idx = get_column(small_minimizer);
@@ -229,7 +230,6 @@ template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,vector<bool>& newly_inserted) {
 	vector<DATA *> result = this->get_kmer_vector(kmers);
 
-
 	for(uint i(0);i<kmers.size(); ++i){
 		if(result[i]==NULL){
 			newly_inserted.push_back(true);
@@ -240,8 +240,9 @@ vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,v
 		}
 	}
 
-	if (kmers[0].multi_mini)
+	if (kmers[0].multi_mini) {
 		return this->get_kmer_vector(kmers);
+	}
 
 	uint64_t small_minimizer = (((uint32_t)(kmers[0].minimizer & mini_reduc_mask))>>(params.m-params.m_small));
 	uint32_t mutex_idx = get_mutex(small_minimizer);
@@ -312,7 +313,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
 	// cout << "data address " << (uint64_t *)value << endl;
-	// cout << "insert_kmer_no_mutex" << endl;
+	// cout << "/insert_kmer_no_mutex" << endl;
 	return value;
 }
 
@@ -365,7 +366,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	// Looks into the bucket for the right kmer
 	DATA * value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
 
-	omp_unset_lock(&MutexBucket[mutex_idx]);	
+	omp_unset_lock(&MutexBucket[mutex_idx]);
 	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
 }
@@ -373,16 +374,21 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 
 template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
+	// cout << "get_kmer_vector" << endl;
 	vector<DATA *> result(kmers.size(),NULL);
 	//WE ASSUME HERE THAT ALL KMERS are equally cursed
 	if (kmers[0].multi_mini) {
+		// cout << "get before multi mini lock" << endl;
 		omp_set_lock(&multi_lock);
+		// cout << "get after multi mini lock" << endl;
 		for(uint i(0);i<kmers.size();++i){
 			if (cursed_kmers.count(kmers[i].kmer_s) != 0) {
 				result[i] =&cursed_kmers[kmers[i].kmer_s];
 			}
 		}
 		omp_unset_lock(&multi_lock);
+		// cout << "get release multi mini lock" << endl;
+		// cout << "/get_kmer_vector" << endl;
 		return result;
 	}
 	
@@ -397,6 +403,8 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// No bucket
 	if (idx == 0) {
+		// cout << "bucket 0" << endl;
+		// cout << "/get_kmer_vector" << endl;
 		return result;
 	}
 
@@ -414,6 +422,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 	// Looks into the bucket for the right kmer
 	result = bucketMatrix[mutex_idx][idx-1].find_kmer_vector(kmers);
 
+	// cout << "/get_kmer_vector" << endl;
 	return result;
 }
 
@@ -512,17 +521,14 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	while(current_overload<bucket_overload){	
 		if(overload_iter!=overload_kmers[current_overload].end()){
 			kmer.kmer_s = overload_iter->first;
-			cout<<"GO"<<endl;
 			overload_iter=std::next(overload_iter);
 			return true;
 		}
-		cout<<"THE END of"<<current_overload<<endl;
 		current_overload++;
 		if(current_overload<bucket_overload){
 			overload_iter=overload_kmers[current_overload].begin();
 		}
 	}
-	cout<<"FINITTO"<<endl;
 	
 	uint32_t mutex_idx = get_mutex(current_minimizer);
 	uint32_t column_idx = get_column(current_minimizer);
