@@ -172,7 +172,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	// Count 
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {
-			cout << "pas dans verif weird"<<endl;cin.get();
+			cout << "pas dans verif weird"<<endl;
 			verif[kmer.kmer_s] = 0;
 		}else{
 			
@@ -325,14 +325,6 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					}
 					verif[kmer.kmer_s] += 1;
 					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
-					// if(kmer.suffix_size()>22 and kmer.prefix_size(counter.params.k,counter.params.m)>22){
-					// 	nice_kmer<<">"+to_string(id++)+"\n";
-					// 	nice_kmer<<kmer2str(kmer.kmer_s,counter.params.k)<<"\n";
-					// }
-					// if(kmer.suffix_size()==0){
-					// 	no_suffix<<">"+to_string(id++)+"\n";
-					// 	no_suffix<<kmer2str(kmer.kmer_s,counter.params.k)<<"\n";
-					// }
 				}
 			}
 		}
@@ -349,9 +341,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 		counter.unprotect_data(superkmer[0]);
 		// Next superkmer
 		superkmer.clear();
-		// cout<<"go enumeraztor"<<endl;
 		minimizer = enumerator.next(superkmer);
-		// cout<<"end enumeraztor"<<endl;
 		if(minimizer==0){
 			return;
 		}

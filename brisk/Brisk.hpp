@@ -97,7 +97,7 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) {
 		}
 	}
 	#endif
-	return this->menu->get_kmer_no_mutex(kmer);
+	return this->menu->get_kmer(kmer);
 }
 
 

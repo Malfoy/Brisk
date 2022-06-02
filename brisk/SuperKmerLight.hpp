@@ -240,12 +240,7 @@ atomic<int64_t> kmer_comp_call(0);
 inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
 	inferior=equal=superior=false;
 	bool can_be_superior(true);
-	
-	// cout<<"kmer_comparison"<<endl;
-	// if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
-	// 		kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
-		// cout<<"kmer_comparison go"<<endl;
-		// kmer_comp_call++;	
+		
 		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
 		for(uint i(0);i<kmer_interleave.size(); ++i){
 			int nuckmer(kmer_interleave[i]);

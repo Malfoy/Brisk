@@ -15,7 +15,7 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD ((uint64_t)1 << 10)
+#define GROGRO_THREASHOLD ((uint64_t)1 << 12)
 #define bucket_overload ((uint64_t)1 << 6)
 
 
@@ -227,21 +227,14 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,vector<bool>& newly_inserted) {
-	// cout << "insert_kmer_vector" << endl;
 	vector<DATA *> result = this->get_kmer_vector(kmers);
 
-	// for (const DATA * res : result)
-	// 	cout << (uint64_t *)res << " ";
-	// cout << endl;
 
 	for(uint i(0);i<kmers.size(); ++i){
 		if(result[i]==NULL){
 			newly_inserted.push_back(true);
 			bool newly_inserted = false;
-			// cout<<"insert"<<endl;
 			insert_kmer_no_mutex(kmers[i],newly_inserted,true);
-			// cout << (uint64_t *)kmers
-			// cout<<"insert done"<<endl;
 		}else{
 			newly_inserted.push_back(false);
 		}
@@ -395,7 +388,6 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 	
 	//WE ASSUME HERE THAT ALL KMER HAVE THE SAME MINIMIZER
 	uint64_t small_minimizer = (((uint32_t)(kmers[0].minimizer & mini_reduc_mask))>>(params.m-params.m_small));
-	// cout<<"go kmer vector"<<endl;
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Normal kmer
@@ -505,18 +497,32 @@ template<class DATA>
 bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	if (not enumeration_started) {
 		cursed_iter = cursed_kmers.begin();
-		overload_iter=overload_kmers[0].begin();
+		current_overload=0;
+		overload_iter=overload_kmers[current_overload].begin();
 		enumeration_started = true;
 	}
 	// Cursed kmers
 	if (cursed_iter != cursed_kmers.end()) {
 		kmer.kmer_s = cursed_iter->first;
 		kmer.multi_mini = true;
-
-		cursed_iter = std::next(cursed_iter);
+		cursed_iter=std::next(cursed_iter);
 		return true;
 	}
 	kmer.multi_mini =false;
+	while(current_overload<bucket_overload){	
+		if(overload_iter!=overload_kmers[current_overload].end()){
+			kmer.kmer_s = overload_iter->first;
+			cout<<"GO"<<endl;
+			overload_iter=std::next(overload_iter);
+			return true;
+		}
+		cout<<"THE END of"<<current_overload<<endl;
+		current_overload++;
+		if(current_overload<bucket_overload){
+			overload_iter=overload_kmers[current_overload].begin();
+		}
+	}
+	cout<<"FINITTO"<<endl;
 	
 	uint32_t mutex_idx = get_mutex(current_minimizer);
 	uint32_t column_idx = get_column(current_minimizer);
