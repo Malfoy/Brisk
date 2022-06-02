@@ -15,7 +15,8 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD (1 << 4)
+#define GROGRO_THREASHOLD ((uint64_t)1 << 10)
+#define bucket_overload ((uint64_t)1 << 6)
 
 
 template <class DATA>
@@ -44,6 +45,8 @@ public:
 
 	// Cursed kmer buckets
 	robin_hood::unordered_map<kint, DATA> cursed_kmers;
+	robin_hood::unordered_map<kint, DATA> overload_kmers[bucket_overload];
+	omp_lock_t lock_overload[bucket_overload];
 
 	DATA debug_value;
 
@@ -80,6 +83,8 @@ private:
 	// uint64_t getMemorySelfMaxUsed();
 	bool enumeration_started;
 	typename robin_hood::unordered_map<kint, DATA>::iterator cursed_iter;
+	typename robin_hood::unordered_map<kint, DATA>::iterator overload_iter;
+	uint32_t current_overload;
 	uint32_t current_minimizer;
 };
 
@@ -87,7 +92,6 @@ private:
 template <class DATA>
 DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	// If m - reduc > 16, not enougth space for bucket idxs ! (because of uint32_t)
-	assert(params.m_small <= 16);
 	mini_reduc_mask = ((kint)1 << (2 * params.m_small)) - 1;
 	cout<<params.m-params.m_small<<endl;
 	// cin.get();
@@ -104,6 +108,9 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 		omp_init_lock(&MutexBucket[i]);
 	}
 	omp_init_lock(&multi_lock);
+	for (uint64_t i(0); i < 32; ++i) {
+		omp_init_lock(&lock_overload[i]);
+	}
 
 	bucket_number=1<<(2*params.m_small);
 	matrix_column_number = bucket_number / mutex_number;
@@ -114,6 +121,8 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	enumeration_started = false;
 	cursed_iter = cursed_kmers.begin();
 	current_minimizer = 0;
+	current_overload=0;
+	overload_iter=overload_kmers[current_overload].begin();
 }
 
 
@@ -131,7 +140,6 @@ DenseMenuYo<DATA>::~DenseMenuYo() {
 
 template <class DATA>
 void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
-	cout << "bucket_to_map " << small_minimizer << endl;
 	// Get the bucket
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 	uint32_t column_idx = get_column(small_minimizer);
@@ -146,14 +154,14 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	DATA * data;
 
 	// Enumerate and save all values
-	omp_set_lock(&multi_lock);
+	omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 	bucket.init_enumerator();
 	while (bucket.has_next_kmer()) {
 		bucket.next_kmer(kmer, minimizer);
 		data = bucket.find_kmer(kmer);
-		this->cursed_kmers[kmer.kmer_s] = *data;
+		this->overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]=*data;
 	}
-	omp_unset_lock(&multi_lock);
+	omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 
 	// Free some memory from the bucket
 	bucket.clear();
@@ -172,7 +180,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		omp_unset_lock(&multi_lock);
-		// return &debug_value;
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 
@@ -191,12 +198,12 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 
 	// GROGRO bucket check
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
-		omp_set_lock(&multi_lock);
-		cursed_kmers[kmer.kmer_s] = DATA();
+		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
+		overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s] = DATA();
 		bucketMatrix[mutex_idx][idx-1].nb_kmers += 1;
-		omp_unset_lock(&multi_lock);
+		omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 		omp_unset_lock(&MutexBucket[mutex_idx]);
-		return &(cursed_kmers[kmer.kmer_s]);
+		return &(overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]);
 	}
 
 	// Create the bucket if not already existing
@@ -279,8 +286,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		omp_unset_lock(&multi_lock);
-		// return &debug_value;
-		// cout << "CURSED" << endl;
+
 		return &(cursed_kmers[kmer.kmer_s]);
 	}
 	// Transform the super minimizer to the used minimizer
@@ -303,10 +309,10 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 
 	// Grogro kmer
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
-		omp_set_lock(&multi_lock);
-		cursed_kmers[kmer.kmer_s] = DATA();
-		omp_unset_lock(&multi_lock);
-		return &(cursed_kmers[kmer.kmer_s]);
+		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
+		overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s] = DATA();
+		omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
+		return &(overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]);
 	}
 
 	// cout << "insert idx " << mutex_idx << " " << idx << endl;
@@ -351,13 +357,14 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 
 	// GROGRO bucket check
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
+
 		omp_unset_lock(&MutexBucket[mutex_idx]);
-		omp_set_lock(&multi_lock);
-		if (cursed_kmers.count(kmer.kmer_s) != 0) {
-			omp_unset_lock(&multi_lock);
-			return &(cursed_kmers[kmer.kmer_s]);
+		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
+		if (overload_kmers[small_minimizer%bucket_overload].count(kmer.kmer_s) != 0) {
+			omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
+			return &(overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]);
 		} else {
-			omp_unset_lock(&multi_lock);
+			omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 			return (DATA *)NULL;
 		}
 	}
@@ -402,20 +409,18 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 	}
 
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
-		omp_set_lock(&multi_lock);
+		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 		for(uint i(0);i<kmers.size();++i){
-			if (cursed_kmers.count(kmers[i].kmer_s) != 0) {
-				result[i] =&cursed_kmers[kmers[i].kmer_s];
+			if (overload_kmers[small_minimizer%bucket_overload].count(kmers[i].kmer_s) != 0) {
+				result[i] =&overload_kmers[small_minimizer%bucket_overload][kmers[i].kmer_s];
 			}
 		}
-		omp_unset_lock(&multi_lock);
+		omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 		return result;
 	}
 
 	// Looks into the bucket for the right kmer
-	// omp_set_lock(&MutexBucket[mutex_idx]);
 	result = bucketMatrix[mutex_idx][idx-1].find_kmer_vector(kmers);
-	// omp_unset_lock(&MutexBucket[mutex_idx]);
 
 	return result;
 }
@@ -424,9 +429,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(kmer_full & kmer) {
 	
-	// Cursed kmers
 	if (kmer.multi_mini) {
-		// cout<<"cursed"<<endl;
 		omp_set_lock(&multi_lock);
 		if (cursed_kmers.count(kmer.kmer_s) != 0) {
 			omp_unset_lock(&multi_lock);
@@ -502,6 +505,7 @@ template<class DATA>
 bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	if (not enumeration_started) {
 		cursed_iter = cursed_kmers.begin();
+		overload_iter=overload_kmers[0].begin();
 		enumeration_started = true;
 	}
 	// Cursed kmers
