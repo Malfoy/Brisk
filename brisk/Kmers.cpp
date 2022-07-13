@@ -153,7 +153,7 @@ bool kmer_full::contains_multi_minimizer() const {
 }
 
 
-void kmer_full::hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){
+void kmer_full::hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
 	//return;
 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
 	kint suffix = kmer_s & mask;
@@ -203,7 +203,7 @@ void kmer_full::initocc2mer_entropy(int k){
 
 
 
-void kmer_full::unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer){
+void kmer_full::unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
 	kint suffix = kmer_s & mask;
 	kmer_s >>=(2*minimizer_idx);
@@ -242,7 +242,6 @@ string kmer2str(__uint128_t num, uint k) {
 		if (nuc >= 4) {
 			cout << "WTF kmer2str" << endl;
 			cout<<kmer2str(num,k)<<endl;
-			// cout<<(uint6)anc.value()<<endl;
 			cout<<nuc<<endl;
 			return "";
 		}
@@ -401,12 +400,9 @@ uint64_t hash64shift(uint64_t key) {
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple) {
 	// Init with the first possible minimizer
 	uint64_t mini, mmer;
-	uint64_t fwd_mini = seq % (1 << (m*2));
+	uint64_t fwd_mini = seq % ((uint64_t)1 << (m*2));
 	mini = mmer = canonize(fwd_mini, m);
-	uint64_t hash_mini = bfc_hash_64(mmer,((1<<(2*m))-1));
-	// print_kmer(mini, m); 	cout << endl;
-	// cout << hash_mini << endl;
-
+	uint64_t hash_mini = bfc_hash_64(mmer,(((uint64_t)1<<(2*m))-1));
 	// Update values regarding the minimizer
 	reversed=(mini!=fwd_mini);
 	min_position = 0;
@@ -415,11 +411,9 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	// Search in all possible position (from 1) the minimizer
 	for (uint8_t i=1; i <= k - m; i++) {
 		seq >>= 2;
-		fwd_mini = seq % (1 << (m*2));
+		fwd_mini = seq % ((uint64_t)1 << (m*2));
 		mmer = canonize(fwd_mini, m);
-		uint64_t hash = bfc_hash_64(mmer,((1<<(2*m))-1));
-		// print_kmer(mmer, m); 	cout << endl;
-		// cout << (uint)i << " " << hash << endl;
+		uint64_t hash = bfc_hash_64(mmer,(((uint64_t)1<<(2*m))-1));
 
 		if (hash_mini > hash) {
 			min_position = i;
@@ -530,7 +524,7 @@ void init_kmer(const string & seq, uint64_t & seq_idx, kint & kmer_seq, kint & r
 
 
 
-void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const 								kint k_mask) {
+void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uint8_t k, const kint k_mask) {
 	auto nuc = nuc2int(nucl);
 	updateK(kmer_seq, nuc, k_mask);
 	nuc = nuc ^ 2;

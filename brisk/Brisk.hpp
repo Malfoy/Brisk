@@ -125,9 +125,6 @@ template<class DATA>
 vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		// for (kmer_full & kmer : superkmer) {
-		// 	result.push_back(this->menu->get_kmer(kmer));
-		// }
 		return this->menu->get_kmer_vector(superkmer);
 
 	}
@@ -175,13 +172,11 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		// Add the values
-		// uint64_t minimizer(superkmer[0].minimizer);
-		uint64_t small_minimizer = (((uint32_t)(superkmer[0].minimizer & this->menu->mini_reduc_mask))>>(params.m-params.m_small));
+        uint64_t small_minimizer =  hash_64(((superkmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small),((uint64_t)1<<(2*params.m_small))-1);
 		for(uint i(0);i<superkmer.size();++i){
 			superkmer[i].minimizer_idx+=(params.m-params.m_small)/2;
 		}
-		// cout<<bfc_hash_64_nomask(0)<<endl;cin.get();
-		uint32_t mutex_idx = ((bfc_hash_64_nomask(small_minimizer))%this->menu->mutex_number);
+		uint32_t mutex_idx = (((small_minimizer))%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 		result=this->menu->insert_kmer_vector(superkmer,newly_inserted);
 		result=this->menu->get_kmer_vector(superkmer);
@@ -190,30 +185,6 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 	return result;
 }
 
-
-
-
-
-
-// template <class DATA>
-// DATA * Brisk<DATA>::insert(kmer_full & kmer) {
-// 	#ifdef TIME_ANALYSIS
-// 	#pragma omp critical
-// 	{
-// 		nb_insert += 1;
-
-// 		if (nb_get + nb_insert == 1000000) {
-// 			auto current_time = std::chrono::system_clock::now();
-// 			chrono::duration<double> elapsed_seconds = current_time - previous_time;
-// 			cout << "1 000 000 ops: " << elapsed_seconds.count() << endl;
-			
-// 			previous_time = current_time;
-// 			nb_get = nb_insert = 0;
-// 		}
-// 	}
-// 	#endif
-// 	return this->menu->insert_kmer(kmer);
-// }
 
 
 template <class DATA>

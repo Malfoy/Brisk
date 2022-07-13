@@ -31,17 +31,12 @@ public:
 	bool kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const;
 	bool kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const;
 
-	// uint32_t interleaved_value(uint8_t * nucleotides, const Parameters & params)const;
-	// uint32_t interleaved_value_max(uint8_t * nucleotides, uint max_fix_idx, const Parameters & params)const;
-
 	uint suffix_size()const;
 	uint prefix_size(const Parameters & params)const;
 	kint get_prefix(const uint8_t * nucleotides, const Parameters & params)const;
 	kint get_suffix(const uint8_t * nucleotides, const Parameters & params)const;
 
 	void get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer, const Parameters & params)const;
-	// kint get_skmer(const uint8_t * nucleotides, const kint & mini)const;
-	// kint get_compacted(const uint8_t * nucleotides)const;
 
 	bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
 	bool inf_max (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const;
@@ -53,7 +48,6 @@ public:
 
 private:
 	kint get_right_overlap(uint8_t * nucleotides, const Parameters & params)const;
-	// uint32_t param_interleaved_value(uint8_t * nucleotides, uint8_t baseval, const Parameters & params)const;
 
 	kint get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params)const;
 	/**
@@ -345,20 +339,14 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_i
 
 kint SKL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	kint result = 0;
-	// cout<<"wat1"<<endl;
 	// Copy the compacted value
 	int start = byte_index(kmer_idx + params.compacted_size - 1, params);
-	// cout<<"wat2"<<endl;
 	int length_to_read = byte_index(kmer_idx, params) - start + 1;
-	// cout<<"wat3"<<endl;
-	// cout<<start<<" "<<length_to_read<<endl;
 	memcpy(&result, &nucleotides[start], length_to_read);
-	// cout<<"wat4"<<endl;
 	// Align the compacted value
 	int offset = (4 - ((params.compacted_size + kmer_idx) % 4)) % 4;
 	result = result >> (2 * offset);
 	result = result & (((kint)1 << (2 * params.compacted_size)) - 1);
-	// cout<<"wat"<<endl;
 	return result;
 }
 
@@ -514,7 +502,6 @@ const int lookup[4][256] = {
 
 int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	if (nucl_idx == 255) {
-		cout << "PASGLOP" << endl;
 		exit(1);
 	}
 	uint8_t side_idx = nucl_idx / 2;
@@ -536,9 +523,7 @@ int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucle
 
 	// Get the right bytes
 	uint8_t byte = nucleotides[byte_index(skmer_nucl_idx, params)];
-	// int8_t old_val = (byte >> (2 * (3 - (skmer_nucl_idx % 4))))	 & 0b11;
 	int8_t val = lookup[skmer_nucl_idx % 4][byte];
-	// cout << (uint)old_val << " " << (uint)val << endl;
 
 	return val;
 }

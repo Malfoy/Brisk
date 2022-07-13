@@ -110,28 +110,7 @@ int main(int argc, char** argv) {
 	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
 	cout << endl;
 
-	// kmer_comp_call=0;
-	// fasta="nosuffix.fa";
-	// cout << "\n\n\nI count " << fasta << endl;
-	// start = std::chrono::system_clock::now();
-	// count_fasta(counter, fasta, threads);
-	// end = std::chrono::system_clock::now();
-	// elapsed_seconds = end - start;
-	// cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
-	// cout << endl;
 	cout<<"kmer comparison calls: " << pretty_int(kmer_comp_call)<<endl;
-
-	// kmer_comp_call=0;
-	// fasta="nicekmer.fa";
-	// cout << "\n\n\nI count " << fasta << endl;
-	// start = std::chrono::system_clock::now();
-	// count_fasta(counter, fasta, threads);	
-	// end = std::chrono::system_clock::now();
-	// elapsed_seconds = end - start;
-	// cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
-	// cout << endl;
-	// cout<<pretty_int(kmer_comp_call)<<endl;
-	// counter.menu->print_bigest_bucket();
 
 	if (check)
 		verif_counts(counter);
@@ -166,8 +145,6 @@ int main(int argc, char** argv) {
 
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
-	// cout<<verif.size() <<endl;
-	// kint mini_mask = (1 << (2 * counter.m)) - 1;
 	kmer_full kmer(0,0, counter.params.m, false);
 	// Count 
 	while (counter.next(kmer)) {
@@ -185,7 +162,6 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
 			cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
-			// cin.get();
 		}else{
 			verif[kmer.kmer_s] -= *count;
 		}
@@ -268,7 +244,6 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	zstr::ifstream in(filename);
 	vector<string>  buffer;
 
-	// uint idx = 0;
 	#pragma omp parallel num_threads(threads)
 	{
 		while (in.good() or not buffer.empty()) {
@@ -300,8 +275,6 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 }
 
 
-// ofstream no_suffix("nosuffix.fasta");
-// ofstream nice_kmer("nicekmer.fasta");
 
 void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	// Line too short
@@ -346,5 +319,4 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			return;
 		}
 	}
-	// cout<<"done"<<endl;
 }

@@ -70,8 +70,8 @@ public:
 	uint8_t suffix_size() const;
 	vector<int> compute_interleaved(const uint8_t k, const uint8_t m) const;
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
-	void hash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
-	void unhash_kmer_body(uint8_t m, uint32_t mask_large_minimizer);
+	void hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
+	void unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
 	double bimer_entropy(int k );
 	void initocc2mer_entropy(int k);
 };

@@ -213,7 +213,7 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>1000 and skml.size()-sorted_size>sorted_size*1){
+	if(skml.size()-sorted_size>100 and skml.size()-sorted_size>sorted_size*1){
 		this->insert_buffer();
 	}
 
@@ -333,10 +333,7 @@ DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
 
 	uint64_t bottom(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
 	discard_last_kmer();
-	// bottom=0;
-	// kmer.minimizer_idx+=params->m-params->m_small;
 	DATA* search=(find_kmer_linear_sorted_stop(kmer,bottom,sorted_size-1));
-	// kmer.minimizer_idx-=params->m-params->m_small;
 	return search;
 }
 
@@ -358,7 +355,6 @@ vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kme
 		insert_kmer_buffer(kmers[i]);
 		begins[i]=(lower_bound(skml.begin(), skml.begin()+sorted_size,skml[skml.size()-1] ,comp_function)-skml.begin());
 		discard_last_kmer();
-		// cout<<(double)begins[i]*100/sorted_size<<endl;
 	}
 	return find_kmer_linear_sorted_stop_vector(kmers,begins,sorted_size-1);
 }
@@ -367,20 +363,8 @@ vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kme
 
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
-	// DEBUG PRINT
-	// for (SKL & skmer : skml) {
-	// 	skmer.print(nucleotides_reserved_memory + params->allocated_bytes * skmer.idx, (kint)1, *params); cout << endl;
-	// }
-	// cout << endl;
-	// Prepare the kmer to search
-	// cout << "find log" << endl;
-	// kmer.print(params->k, params->m_small);
 
 	vector<int> kmer_interleved = kmer.compute_interleaved(params->k, params->m_small);
-	// for (auto val : kmer_interleved) {
-	// 	cout << (int)val << "\t";
-	// }
-	// cout << endl;
 
 	vector<int> current_interleved(kmer_interleved);
 
@@ -398,14 +382,12 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 		// cout << "new loop " << begin << "\t" << end << endl;
 		// Base case - not found, restore previous search from heap
 		if (begin > end) {
-			// cout << "Restore ctx" << endl;
 			uint interleaved_idx = heap.back(); heap.pop_back();
 			end = heap.back(); heap.pop_back();
 			begin = heap.back(); heap.pop_back();
 
 			// First time modified
 			if (current_interleved[interleaved_idx] == -2) {
-				// cout << "All -1" << endl;
 				// Set all unknown values to -1
 				for (uint idx=interleaved_idx ; idx<interleaved_size ; idx += 2)
 					current_interleved[idx] = -1;
@@ -419,7 +401,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 			}
 			// In other cases, change the value of the interleaved
 			else {
-				// cout << "increase current" << endl;
 				current_interleved[interleaved_idx] += 1;
 				for (uint idx=interleaved_idx+2 ; idx<interleaved_size ; idx += 2)
 					if (kmer_interleved[idx] == -2)
@@ -431,16 +412,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 				heap.push_back(begin); heap.push_back(end); heap.push_back(interleaved_idx);
 			}
 
-			// cout << "boundaries " << begin << "\t" << end << endl;
-			// cout << "current interleaved" << endl;
-			// for (auto val : current_interleved) {
-			// 	cout << (int)val << "\t";
-			// }
-			// cout << endl;
-			// cout << "Heap" << endl;
-			// for (uint idx=0 ; idx<heap.size() ; idx += 3)
-			// 	cout << heap[idx] << "\t" << heap[idx+1] << "\t" << heap[idx+2] << endl;
-			// cout << endl;
 		}
 
 		// Log case - get the middle superkmer
@@ -451,19 +422,12 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 			prev_middle = middle;
 		}
 
-		// cout << "middle:" << endl;
-		// mid_skmer.print(nucleotides_reserved_memory + params->allocated_bytes * mid_skmer.idx, (kint)1, *params); cout << endl;
-		// for (auto val : middle_interleved) {
-		// 	cout << (int)val << "\t";
-		// }
-		// cout << endl << endl;
 
 		// Compare middle superkmer and searched superkmer
 		bool found = true;
 		for (uint idx=0 ; idx<interleaved_size ; idx++) {
 			// Undefined current nucleotide
 			if (current_interleved[idx] == -2) {
-				// cout << "Unknown interleved idx " << idx << endl;
 				// Save context for restoration
 				heap.push_back(begin); heap.push_back(end); heap.push_back((int)idx);
 				// Nothing to do here
@@ -530,7 +494,6 @@ DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, cons
 		debug_count += 1;
 
 		if (is_present) {
-			// cout<<"found in pos:	"<<i<<endl;
 			uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer.minimizer_idx) - 1;
 			buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			return this->data_reserved_memory + skml[i].data_idx + kmer_position;
@@ -586,13 +549,8 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 	vector<vector<int>> kmer_interleaves(kmers.size());
 	vector<int> superkmer_interleave_buffer(2* params->k,-3);
 	vector<DATA*> result(kmers.size(),NULL);
-	// cout<<"find_kmer_linear_sorted_stop_vector"<<endl;
 	for(uint64_t i(0);i<kmers.size(); ++i){
 		kmer_interleaves[i]=(kmers[i].compute_interleaved(params->k,params->m_small));
-		// for(uint j(0);j<kmer_interleaves.size(); ++j){
-		// 	cout<<kmer_interleaves[i][j]<<" ";
-		// }
-		// cout<<endl;
 	}
 	uint64_t min_value(*min_element(begins.begin(),begins.end()));
 	uint64_t min_kmer_indice(0);
