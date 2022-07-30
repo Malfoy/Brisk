@@ -24,7 +24,7 @@ int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t 
   file_opt->required();
   app.add_option("-k", k, "Kmer size");
   app.add_option("-m", m, "Minimizer size");
-  app.add_option("-b", buckets, "Bucket order of magnitude. 4^b minimizer per bucket");
+  app.add_option("-b", buckets, "Bucket number. 4^b  buckets");
   app.add_option("-t", threads, "Thread number");
   app.add_option("-o", outfile, "Output file (kff format https://github.com/yoann-dufresne/kmer_file_format)");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
@@ -72,7 +72,8 @@ string pretty_int(uint64_t n){
 	return result;
 }
 
-static robin_hood::unordered_map<kint, int16_t> verif;
+// static robin_hood::unordered_map<kint, int16_t> verif;
+static tsl::sparse_map<kint, int16_t> verif;
 static bool check;
 static uint64_t number_kmer_count(0);
 uint64_t low_complexity_kmer(0);
@@ -283,6 +284,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	}
 
 	vector<kmer_full> superkmer;
+	vector<bool> newly_inserted;
+	vector<uint8_t*> vec;
 
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 	kint minimizer = enumerator.next(superkmer);
@@ -301,10 +304,12 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 		}
-		vector<bool> newly_inserted;
-		vector<uint8_t*> vec(counter.insert_superkmer(superkmer,newly_inserted));
+		newly_inserted.clear();
+		vec=(counter.insert_superkmer(superkmer,newly_inserted));
 		for(uint i(0); i < vec.size();++i){
 			uint8_t * data_pointer(vec[i]);
+			if(data_pointer==0){
+			}
 			if(newly_inserted[i]){
 				(*data_pointer)=1;
 			}else{

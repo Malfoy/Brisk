@@ -48,9 +48,9 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	DenseMenuYo<DATA> * menu = index.menu;
 	uint8_t big_endian[32];
 	uint8_t biggest_usefull_byte = index.params.k % 4 == 0 ? index.params.k / 4 : index.params.k / 4 + 1;
-	for (auto & it : menu->cursed_kmers) {
-		kint kmer = it.first;
-		DATA & data = it.second;
+	for (auto it = menu->cursed_kmers.begin(); it != menu->cursed_kmers.end(); ++it) {
+		kint kmer = it->first;
+		DATA & data = it.value();
 		little_to_big_endian((uint8_t *)(&kmer), big_endian, biggest_usefull_byte);
 		sr.write_compacted_sequence(big_endian, index.params.k, &data);
 		nb_kmers += 1;

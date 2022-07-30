@@ -5,9 +5,9 @@
 #include <vector>
 #include <utility>
 #include "robin_hood.h"
-
-
-
+#include "sparse_growth_policy.h"
+#include "sparse_hash.h"
+#include "sparse_map.h"
 
 using namespace std;
 
@@ -37,9 +37,8 @@ namespace robin_hood {
   {
     size_t operator()(const kint & x) const
     {
-		//~ cout<<"uo"<<endl;
       // your code here, e.g. "return hash<int>()(x.value);" 
-      return ((hash64shift(x)) + hash64shift(x>>64));
+      return ((hash64shift(x)) ^ hash64shift(x>>64));
     }
   };
 }
