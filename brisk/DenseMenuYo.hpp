@@ -15,7 +15,7 @@
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD ((uint64_t)1 << 10)
+#define GROGRO_THREASHOLD ((uint64_t)1 << 3)
 #define bucket_overload ((uint64_t)1 << 12)
 
 
@@ -79,6 +79,8 @@ public:
 	vector<Bucket<DATA> > * bucketMatrix;
 	// /!\ The number of bucket is the number of distinct minimizer / 4
 	uint64_t bucket_number;
+	uint64_t total_number_kmers;
+	uint64_t active_buckets;
 	uint64_t matrix_column_number;
 	// Usefull variables
 	kint mini_reduc_mask;
@@ -95,10 +97,10 @@ public:
 	omp_lock_t multi_lock;
 
 	// Cursed kmer buckets
-	// robin_hood::unordered_map<kint, DATA> cursed_kmers;
-	// robin_hood::unordered_map<kint, DATA> overload_kmers[bucket_overload];
-	tsl::sparse_map<kint, DATA> cursed_kmers;
-	tsl::sparse_map<kint, DATA> overload_kmers[bucket_overload];
+	robin_hood::unordered_node_map<kint, DATA> cursed_kmers;
+	robin_hood::unordered_node_map<kint, DATA> overload_kmers[bucket_overload];
+	// tsl::sparse_map<kint, DATA> cursed_kmers;
+	// tsl::sparse_map<kint, DATA> overload_kmers[bucket_overload];
 	omp_lock_t lock_overload[bucket_overload];
 
 	DATA debug_value;
@@ -135,10 +137,10 @@ private:
 	
 	// uint64_t getMemorySelfMaxUsed();
 	bool enumeration_started;
-	// typename robin_hood::unordered_map<kint, DATA>::iterator cursed_iter;
-	// typename robin_hood::unordered_map<kint, DATA>::iterator overload_iter;
-	typename tsl::sparse_map<kint, DATA>::iterator cursed_iter;
-	typename tsl::sparse_map<kint, DATA>::iterator overload_iter;
+	typename robin_hood::unordered_node_map<kint, DATA>::iterator cursed_iter;
+	typename robin_hood::unordered_node_map<kint, DATA>::iterator overload_iter;
+	// typename tsl::sparse_map<kint, DATA>::iterator cursed_iter;
+	// typename tsl::sparse_map<kint, DATA>::iterator overload_iter;
 	uint32_t current_overload;
 	uint64_t current_minimizer;
 };
@@ -164,6 +166,8 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	for (uint64_t i(0); i < 32; ++i) {
 		omp_init_lock(&lock_overload[i]);
 	}
+	total_number_kmers=0;
+	active_buckets=0;
 
 	bucket_number=(uint64_t)1<<(2*params.m_small);
 	matrix_column_number = bucket_number / mutex_number;
@@ -198,6 +202,7 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
+	uint64_t kmer_id(0);
 
 	Bucket<DATA> &bucket = bucketMatrix[mutex_idx][idx-1];
 
@@ -211,8 +216,10 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	bucket.init_enumerator();
 	while (bucket.has_next_kmer()) {
 		bucket.next_kmer(kmer, minimizer);
-		data = bucket.find_kmer(kmer);
+		// data = bucket.find_kmer(kmer);//TODO WE DO NOT NEED A FIND HERE WE ARE ENUMERATION THE KMER IN THE ORDER OF THE VALUE VECTOR
+		data=bucket.data_reserved_memory+kmer_id*sizeof(DATA);
 		this->overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]=*data;
+		kmer_id++;
 	}
 	omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 
@@ -223,7 +230,6 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 //NON c'est NON
 template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
-	cout<<"insert kmer"<<endl;
 	DATA * prev_val = this->get_kmer(kmer);
 	if (prev_val != NULL) {
 		return prev_val;
@@ -265,11 +271,13 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		bucketMatrix[mutex_idx].emplace_back(&params);
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
+		active_buckets++;
 	}
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+
 	// Bucket now too big to hold
-	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers>100 and bucketMatrix[mutex_idx][idx-1].nb_kmers*bucket_number/(total_number_kmers) >= GROGRO_THREASHOLD) {
 		this->bucket_to_map(small_minimizer);
 	}
 	// omp_unset_lock(&MutexBucket[mutex_idx]);
@@ -304,8 +312,9 @@ void DenseMenuYo<DATA>::insert_kmer_vector(vector<kmer_full> & kmers,vector<bool
 
 
 	// Bucket now too big to hold
-	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers >= GROGRO_THREASHOLD) {
+	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers>100 and bucketMatrix[mutex_idx][idx-1].nb_kmers*active_buckets/(total_number_kmers) >= GROGRO_THREASHOLD) {
 		this->bucket_to_map(small_minimizer);
+		// cout<<"BTM"<<endl;
 	}
 	return;
 }
@@ -345,6 +354,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 		bucketMatrix[mutex_idx].emplace_back(&params);
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
+		active_buckets++;
 	}
 
 	// Grogro kmer
@@ -358,6 +368,8 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+	total_number_kmers++;
+
 	return value;
 }
 
@@ -374,6 +386,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 			return el;
 		} else {
 			omp_unset_lock(&multi_lock);
+			cout<<"PASTROUVE"<<endl;cin.get();
 			return (DATA *)NULL;
 		}
 	}
@@ -390,6 +403,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// No bucket
 	if (idx == 0) {
+		cout<<"NO BUCKET WHY"<<endl;
 		// omp_unset_lock(&MutexBucket[mutex_idx]);
 		// kmer.minimizer_idx -= params.m_reduc;
 		return (DATA *)NULL;
@@ -397,16 +411,15 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 
 	// GROGRO bucket check
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
-
-		
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 		if (overload_kmers[small_minimizer%bucket_overload].count(kmer.kmer_s) != 0) {
-			DATA* el=&overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s];
+			DATA* el=&(overload_kmers[small_minimizer%bucket_overload][kmer.kmer_s]);
 			omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
 			// omp_unset_lock(&MutexBucket[mutex_idx]);
 			return el;
 		} else {
 			omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
+			cout<<"PASTROUVE"<<endl;cin.get();
 			// omp_unset_lock(&MutexBucket[mutex_idx]);
 			return (DATA *)NULL;
 		}
@@ -480,6 +493,7 @@ DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(kmer_full & kmer) {
 			return el;
 		} else {
 			omp_unset_lock(&multi_lock);
+			cout<<"R1NULL"<<endl;
 			return (DATA *)NULL;
 		}
 	}
@@ -497,13 +511,16 @@ DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(kmer_full & kmer) {
 	// No bucket
 	if (idx == 0) {
 		// kmer.minimizer_idx -= params.m_reduc;
-		// cout<<"PAS DE BUCKET SALLE DE BAIN"<<endl;cin.get();
+		cout<<"R2NULL"<<endl;
 		return (DATA *)NULL;
 	}
 
 	DATA * value;
 	// Looks into the bucket for the right kmer
 	value = bucketMatrix[mutex_idx][idx-1].find_kmer(kmer);
+	if(value==NULL){
+		cout<<"R3NULL"<<endl;
+	}
 	// kmer.minimizer_idx -= params.m_reduc;
 	return value;
 }

@@ -40,7 +40,6 @@ public:
 	void clear();
 	void print();
 
-private:
 	friend class BriskWriter;
 
 	Parameters * params;

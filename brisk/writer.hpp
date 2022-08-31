@@ -50,7 +50,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	uint8_t biggest_usefull_byte = index.params.k % 4 == 0 ? index.params.k / 4 : index.params.k / 4 + 1;
 	for (auto it = menu->cursed_kmers.begin(); it != menu->cursed_kmers.end(); ++it) {
 		kint kmer = it->first;
-		DATA & data = it.value();
+		// DATA & data = it.value();
+		DATA & data = it->second;
 		little_to_big_endian((uint8_t *)(&kmer), big_endian, biggest_usefull_byte);
 		sr.write_compacted_sequence(big_endian, index.params.k, &data);
 		nb_kmers += 1;

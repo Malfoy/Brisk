@@ -84,7 +84,7 @@ public:
 
 private:
 	// Sequence and position in it
-	string seq;
+	string& seq;
 	uint64_t seq_idx;
 
 	// kmer size and minimizer size

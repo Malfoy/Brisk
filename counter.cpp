@@ -151,6 +151,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	while (counter.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
+			cin.get();
 			verif[kmer.kmer_s] = 0;
 		}else{
 			
@@ -163,6 +164,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
 			cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
+			verif[kmer.kmer_s] = 0;
 		}else{
 			verif[kmer.kmer_s] -= *count;
 		}
@@ -177,9 +179,10 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			errors += 1;
 			if (it.second > 0) {
 				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
+				// cin.get();
 			} else {
 				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
-				// cout << (uint)it.first << endl;
+				cin.get();
 			}
 		}
 	}
@@ -243,29 +246,18 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// Read file line by line
 	cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
-	vector<string>  buffer;
-
-	#pragma omp parallel num_threads(threads)
+	omp_set_nested(2);
+	#pragma omp parallel
 	{
-		while (in.good() or not buffer.empty()) {
+		while (in.good()) {
 			string line;
 			#pragma omp critical
 			{
-				if(not buffer.empty()){
-					line=buffer[buffer.size()-1];
-					buffer.pop_back();
-				}else{
 					if (in.good()) {
 						line = getLineFasta(&in);
 					} else{
 						line = "";
 					}
-				}
-				if(line.size()>1000000000){
-					buffer.push_back(line.substr(0,line.size()/2));
-					buffer.push_back(line.substr(line.size()/2-counter.params.k+1));
-					line="";
-				}
 			}
 
 			if (line != "") {
@@ -282,46 +274,55 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	if (sequence.size() < counter.params.k){
 		return;
 	}
-
-	vector<kmer_full> superkmer;
-	vector<bool> newly_inserted;
-	vector<uint8_t*> vec;
-
+	omp_lock_t local_mutex;
+	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-	kint minimizer = enumerator.next(superkmer);
-	while (superkmer.size() > 0) {
-		counter.protect_data(superkmer[0]);
-		// Add the values
-		if (check) {
-			for (kmer_full & kmer : superkmer) {
-				#pragma omp critical
-				{
-					if (verif.count(kmer.kmer_s) == 0){
-						verif[kmer.kmer_s] = 0;
+	#pragma omp parallel
+	{
+		vector<kmer_full> superkmer;
+		vector<bool> newly_inserted;
+		vector<uint8_t*> vec;
+
+		omp_set_lock(&local_mutex);
+		kint minimizer = enumerator.next(superkmer);
+		omp_unset_lock(&local_mutex);
+		while (superkmer.size() > 0) {
+			counter.protect_data(superkmer[0]);
+			// Add the values
+			if (check) {
+				for (kmer_full & kmer : superkmer) {
+					#pragma omp critical
+					{
+						if (verif.count(kmer.kmer_s) == 0){
+							verif[kmer.kmer_s] = 0;
+						}
+						verif[kmer.kmer_s] += 1;
+						verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 					}
-					verif[kmer.kmer_s] += 1;
-					verif[kmer.kmer_s] = verif[kmer.kmer_s] % 256;
 				}
 			}
-		}
-		newly_inserted.clear();
-		vec=(counter.insert_superkmer(superkmer,newly_inserted));
-		for(uint i(0); i < vec.size();++i){
-			uint8_t * data_pointer(vec[i]);
-			if(data_pointer==0){
+			newly_inserted.clear();
+			vec=(counter.insert_superkmer(superkmer,newly_inserted));
+			for(uint i(0); i < vec.size();++i){
+				uint8_t * data_pointer(vec[i]);
+				if(data_pointer==0){
+				}
+				if(newly_inserted[i]){
+					(*data_pointer)=1;
+				}else{
+					(*data_pointer)++;
+				}
 			}
-			if(newly_inserted[i]){
-				(*data_pointer)=1;
-			}else{
-				(*data_pointer)++;
+			counter.unprotect_data(superkmer[0]);
+			// Next superkmer
+			superkmer.clear();
+			omp_set_lock(&local_mutex);
+			minimizer = enumerator.next(superkmer);
+			omp_unset_lock(&local_mutex);
+
+			if(minimizer==0){
+				break;
 			}
-		}
-		counter.unprotect_data(superkmer[0]);
-		// Next superkmer
-		superkmer.clear();
-		minimizer = enumerator.next(superkmer);
-		if(minimizer==0){
-			return;
 		}
 	}
 }
