@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 
 # set the project name
 project(Brisk)
@@ -22,6 +22,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 # declare libraries
 add_subdirectory(brisk)
 link_directories(brisk)
+add_subdirectory(apps)
 
 set(SRCS
     counter.cpp

@@ -36,3 +36,7 @@ add_subdirectory(lib/kff)
 target_link_libraries(kff)
 
 add_library(brisk ${SRCS} ${HEADERS})
+target_include_directories(brisk
+    PUBLIC
+    ./
+)

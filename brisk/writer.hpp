@@ -37,7 +37,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	Section_GV sgv(current_file);
 	sgv.write_var("k", index.params.k);
 	sgv.write_var("m", index.params.m_small);
-	sgv.write_var("data_size", 1);
+	sgv.write_var("data_size", sizeof(DATA));
 	sgv.write_var("max", 1);
 	sgv.close();
 
@@ -53,7 +53,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 		// DATA & data = it.value();
 		DATA & data = it->second;
 		little_to_big_endian((uint8_t *)(&kmer), big_endian, biggest_usefull_byte);
-		sr.write_compacted_sequence(big_endian, index.params.k, &data);
+		sr.write_compacted_sequence(big_endian, index.params.k, (uint8_t *)&data);
 		nb_kmers += 1;
 	}
 	sr.close();
@@ -86,7 +86,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				nb_kmers += skmer.size;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
-				uint8_t * data_ptr = b.data_reserved_memory + skmer.data_idx;
+				// TODO: Maybe a bug here
+				DATA * data_ptr = b.data_reserved_memory + skmer.data_idx;
 
 				// Little endian to big endian
 				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m_small;
@@ -107,7 +108,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 						big_endian_nucleotides,
 						real_seq_size,
 						skmer.prefix_size(index.params),
-						data_ptr
+						data_ptr // TODO: Little/big endian
 				);
 			}
 
