@@ -86,13 +86,11 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				nb_kmers += skmer.size;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
-				// TODO: Maybe a bug here
 				DATA * data_ptr = b.data_reserved_memory + skmer.data_idx;
 
 				// Little endian to big endian
 				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m_small;
 				size_t real_seq_bytes = real_seq_size % 4 == 0 ? real_seq_size / 4 : real_seq_size / 4 + 1;
-				// cout << real_seq_size << " " << real_seq_bytes << endl;
 
 				// Copy the superkmer
 				for (uint i=0 ; i<real_seq_bytes ; i++) {
@@ -108,7 +106,9 @@ void BriskWriter::write(Brisk<DATA> & index) {
 						big_endian_nucleotides,
 						real_seq_size,
 						skmer.prefix_size(index.params),
-						data_ptr // TODO: Little/big endian
+						// /!\ WARNING: This piece of code car trigger problems of little/big endian
+						// We have to report it in the documentation
+						(uint8_t *)data_ptr
 				);
 			}
 
