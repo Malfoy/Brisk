@@ -341,8 +341,14 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 	}
 	// Transform the super minimizer to the used minimizer
 
+	cout << kmer2str(kmer.kmer_s, params.k) << endl;
+	cout << (uint64_t)mini_reduc_mask << endl;
 	uint64_t small_minimizer = (((kmer.minimizer & mini_reduc_mask))>>(params.m-params.m_small));
+	cout << kmer2str(kmer.minimizer, params.m) << endl;
+	cout << kmer2str(small_minimizer, params.m_small) << endl;
+
 	uint32_t mutex_idx = get_mutex(small_minimizer);
+	cout << endl;
 
 	// Works because m - reduc <= 16
 	uint32_t column_idx = get_column(small_minimizer);
@@ -448,6 +454,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(vector<kmer_full> & kmers) {
 		omp_unset_lock(&multi_lock);
 		return result;
 	}
+
 	
 	//WE ASSUME HERE THAT ALL KMER HAVE THE SAME MINIMIZER
     uint64_t small_minimizer = (((kmers[0].minimizer & mini_reduc_mask))>>(params.m-params.m_small));

@@ -16,7 +16,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Ofast")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 
 # declare libraries

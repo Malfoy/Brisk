@@ -31,6 +31,19 @@ void little_to_big_endian(uint8_t * little, uint8_t * big, size_t bytes_to_conve
 	}
 }
 
+
+static void rightshift8(uint8_t * bitarray, size_t length, size_t bitshift) {
+	assert(bitshift < 8);
+
+	if (length > 0) {
+		for (uint64_t i=length-1 ; i>0 ; i--) {
+			bitarray[i] = (bitarray[i-1] << (8-bitshift)) | (bitarray[i] >> bitshift);
+		}
+		bitarray[0] >>= bitshift;
+	}
+}
+
+
 template <class DATA>
 void BriskWriter::write(Brisk<DATA> & index) {
 	// Set global variables
@@ -60,6 +73,9 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 	// Prepare max value for super kmer size
 	sgv = Section_GV(current_file);
+	sgv.write_var("k", index.params.k);
+	sgv.write_var("m", index.params.m_small);
+	sgv.write_var("data_size", sizeof(DATA));
 	sgv.write_var("max", 2 * (index.params.k - index.params.m_small));
 	sgv.close();
 
@@ -76,6 +92,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
+			cout << minimizer << endl;
 			Section_Minimizer sm(current_file);
 			little_to_big_endian((uint8_t *)(&minimizer), mini_seq, bytes_mini);
 			sm.write_minimizer(mini_seq);

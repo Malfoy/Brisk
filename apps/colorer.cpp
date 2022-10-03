@@ -189,11 +189,11 @@ void add_color_from_fasta(Brisk<uint64_t> & colors, string & filename, const uin
 	vector<string>  buffer;
 
 	// uint idx = 0;
-	#pragma omp parallel num_threads(threads)
+	//#pragma omp parallel num_threads(threads)
 	{
 		while (in.good() or not buffer.empty()) {
 			string line;
-			#pragma omp critical
+			//#pragma omp critical
 			{
 				if(not buffer.empty()){
 					line=buffer[buffer.size()-1];
@@ -217,6 +217,8 @@ void add_color_from_fasta(Brisk<uint64_t> & colors, string & filename, const uin
 			}
 		}
 	}
+
+	init.clean_occ2mer_entropy();
 }
 
 

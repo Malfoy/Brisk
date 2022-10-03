@@ -202,6 +202,11 @@ void kmer_full::initocc2mer_entropy(int k){
 }
 
 
+void kmer_full::clean_occ2mer_entropy() {
+	delete[] occ2mer_entropy;
+}
+
+
 
 void kmer_full::unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;

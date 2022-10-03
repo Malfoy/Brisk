@@ -73,6 +73,7 @@ public:
 	void unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
 	double bimer_entropy(int k );
 	void initocc2mer_entropy(int k);
+	void clean_occ2mer_entropy();
 };
 
 
