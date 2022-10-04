@@ -342,7 +342,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(kmer_full & kmer,bool& newly_inse
 	// Transform the super minimizer to the used minimizer
 
 	cout << kmer2str(kmer.kmer_s, params.k) << endl;
-	cout << (uint64_t)mini_reduc_mask << endl;
+	cout << ((uint64_t *)(&mini_reduc_mask))[0] << " " << ((uint64_t *)(&mini_reduc_mask))[1] << endl;
 	uint64_t small_minimizer = (((kmer.minimizer & mini_reduc_mask))>>(params.m-params.m_small));
 	cout << kmer2str(kmer.minimizer, params.m) << endl;
 	cout << kmer2str(small_minimizer, params.m_small) << endl;
