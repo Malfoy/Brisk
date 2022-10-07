@@ -655,8 +655,9 @@ bool Bucket<DATA>::has_next_kmer() {
 template <class DATA>
 void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 	// Nothing to do here
-	if (not has_next_kmer())
+	if (not has_next_kmer()){
 		return;
+	}
 
 	SKL & skmer = skml[enumeration_skmer_idx];
 	skmer.get_kmer(

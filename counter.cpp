@@ -5,6 +5,7 @@
 #include "CLI11.hpp"
 #include "zstr.hpp"
 #include "brisk/Brisk.hpp"
+#include "brisk/Kmers.hpp"
 #include "brisk/writer.hpp"
 
 
@@ -149,13 +150,14 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	kmer_full kmer(0,0, counter.params.m, false);
 	// Count 
 	while (counter.next(kmer)) {
+		
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
-			cin.get();
-			verif[kmer.kmer_s] = 0;
-		}else{
-			
+
+			// cin.get();
 		}
+
+
 
 
 		uint8_t * count = counter.get(kmer);
@@ -164,7 +166,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
 			cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
-			verif[kmer.kmer_s] = 0;
+			// verif[kmer.kmer_s] = 0;
 		}else{
 			verif[kmer.kmer_s] -= *count;
 		}
@@ -182,7 +184,53 @@ void verif_counts(Brisk<uint8_t> & counter) {
 				// cin.get();
 			} else {
 				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
-				cin.get();
+				// cin.get();
+			}
+		}
+	}
+
+	if (errors == 0){
+		cout << "All counts are correct !" << endl;
+	}else{
+		cout<<errors << " errors" << endl;
+	}
+
+	cout << endl;
+}
+
+
+void verif_counts2(Brisk<uint8_t> & counter) {
+	cout << "--- Start counting verification ---" << endl;
+	kmer_full kmer(0,0, counter.params.m, false);
+	bool reversed;
+	// Count 
+	for (auto it = verif.begin(); it != verif.end(); it++){
+		kmer.kmer_s=it->first;
+		kmer.minimizer=get_minimizer(kmer.kmer_s,counter.params.k,kmer.minimizer_idx,counter.params.m,reversed,kmer.multi_mini,counter.params.mask_large_minimizer);
+		uint8_t * count = counter.get(kmer);
+		if (count == NULL) {
+			cout<<"NULL COUNT"<<endl;
+			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
+			cout << (uint)kmer.minimizer << endl;
+			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
+			// verif[kmer.kmer_s] = 0;
+		}else{
+			verif[kmer.kmer_s] -= *count;
+		}
+	}
+		
+
+	// Summary print
+	uint errors = 0;
+	for (auto & it : verif) {
+		if (it.second != 0) {
+			errors += 1;
+			if (it.second > 0) {
+				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
+				// cin.get();
+			} else {
+				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
+				// cin.get();
 			}
 		}
 	}
@@ -247,7 +295,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	omp_set_nested(2);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		while (in.good()) {
 			string line;
@@ -277,17 +325,19 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
 		vector<uint8_t*> vec;
 
 		omp_set_lock(&local_mutex);
-		kint minimizer = enumerator.next(superkmer);
+		kint minimizer = enumerator.next(superkmer,true);
 		omp_unset_lock(&local_mutex);
 		while (superkmer.size() > 0) {
-			counter.protect_data(superkmer[0]);
+			kmer_full local;
+			local.copy(superkmer[0]);
+			counter.protect_data(local);
 			// Add the values
 			if (check) {
 				for (kmer_full & kmer : superkmer) {
@@ -302,22 +352,28 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			newly_inserted.clear();
+			// cout<<"BEGIN SKM"<<endl;
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
+			// cout<<"END SKM"<<endl;
 			for(uint i(0); i < vec.size();++i){
 				uint8_t * data_pointer(vec[i]);
-				if(data_pointer==0){
-				}
-				if(newly_inserted[i]){
-					(*data_pointer)=1;
+				if(data_pointer==NULL){
+					cout<<"NULL PTR"<<endl;
+					cin.get();
 				}else{
-					(*data_pointer)++;
+					if(newly_inserted[i]){
+						(*data_pointer)=1;
+					}else{
+						(*data_pointer)++;
+					}
 				}
 			}
-			counter.unprotect_data(superkmer[0]);
+			// cout<<"END DATA"<<endl;
+			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
 			omp_set_lock(&local_mutex);
-			minimizer = enumerator.next(superkmer);
+			minimizer = enumerator.next(superkmer,true);
 			omp_unset_lock(&local_mutex);
 
 			if(minimizer==0){
