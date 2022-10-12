@@ -24,6 +24,7 @@ typedef __uint128_t skint;
 //~ typedef uint64_t kint;
 
 
+
 uint64_t hash64shift(uint64_t key);
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
 uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
@@ -71,7 +72,7 @@ public:
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 	void hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
 	void unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
-	kint get_unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer)const;
+	kint get_unhash_kmer_body(uint8_t m, uint8_t ms, uint64_t mask_large_minimizer)const;
 	double bimer_entropy(int k );
 	void initocc2mer_entropy(int k);
 	void copy(const kmer_full& kmer);
@@ -81,7 +82,7 @@ public:
 
 class SuperKmerEnumerator {
 public:
-	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,const uint8_t m_small);
 	kint next(vector<kmer_full> & kmers,bool hash=true);
 
 private:
@@ -92,7 +93,7 @@ private:
 	// kmer size and minimizer size
 	uint8_t k;
 	kint k_mask;
-	uint8_t m;
+	uint8_t m,m_small;
 	kint m_mask;
 
 	// Previous kmer read
@@ -115,7 +116,6 @@ private:
 
 
 // ----- Usefull binary kmer functions -----
-
 template<typename T>
 void print_kmer(T num, uint8_t n){
 	num &= ((T)1 << (2*n)) - 1;
@@ -144,8 +144,8 @@ void print_kmer(T num, uint8_t n){
 }
 
 
- inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask)
-{
+
+inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask){
 	
 	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
 	key = key ^ key >> 24;
@@ -159,9 +159,7 @@ void print_kmer(T num, uint8_t n){
 
 
 
-
- inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask)
-{
+inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
 	uint64_t tmp;
  
 	// Invert key = key + (key << 31)
@@ -206,7 +204,6 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 string getCanonical(const string& str);
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
 kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
-
 
 
 

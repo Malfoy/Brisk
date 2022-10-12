@@ -58,6 +58,8 @@ private:
 	uint byte_index(uint position, const Parameters & params)const;
 };
 
+
+
 /** Construct a superkmer from one kmer and the minimizer position.
 	* @param kmer The unsigned int used to represent the binary kmer. The minimizer is not present
 	* @param mini_idx The minimizer position in the kmer (equivalent to suffix size).
@@ -92,6 +94,8 @@ SKL::SKL(const SKL & otto) {
 	this->minimizer_idx = otto.minimizer_idx;
 	this->data_idx = otto.data_idx;
 }
+
+
 
 SKL& SKL::operator=(const SKL& rhs) {
 	this->idx = rhs.idx;
@@ -139,6 +143,7 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 }
 
 
+
 void SKL::add_nuc(int nuc,uint8_t * nucleotides, const Parameters & params){
 	int byte_to_update = byte_index(params.compacted_size + size - 1, params);
 	int padding = (4 - ((params.compacted_size + size) % 4)) % 4;
@@ -148,14 +153,17 @@ void SKL::add_nuc(int nuc,uint8_t * nucleotides, const Parameters & params){
 }
 
 
+
 uint SKL::suffix_size() const{
 	return this->minimizer_idx;
 }
 
 
+
 uint SKL::prefix_size(const Parameters & params) const{
 	return (this->size + params.compacted_size - 1 - this->minimizer_idx);
 }
+
 
 
 kint SKL::get_prefix(const uint8_t * nucleotides, const Parameters & params) const {
@@ -173,6 +181,7 @@ kint SKL::get_prefix(const uint8_t * nucleotides, const Parameters & params) con
 
 	return result;
 }
+
 
 
 kint SKL::get_suffix(const uint8_t * nucleotides, const Parameters & params)const {
@@ -202,6 +211,7 @@ kint SKL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) co
 }
 
 
+
 /**
   * Return the byte index corresponding to the nucletide position.
   * Position 0 is the first nucleotide of the prefix.
@@ -218,6 +228,7 @@ uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 }
 
 
+
 uint64_t comparaisons(0);
 
 bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{	
@@ -229,13 +240,17 @@ bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Pa
 		return false;
 }
 
+
+
 atomic<int64_t> kmer_comp_call(0);
+
+
+
 
 inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
 	inferior=equal=superior=false;
 	bool can_be_superior(true);
 		
-		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
 		for(uint i(0);i<kmer_interleave.size(); ++i){
 			int nuckmer(kmer_interleave[i]);
 			int nuc=superkmer_interleave[i];
@@ -264,25 +279,6 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_i
 		}
 		equal=true;
 		return true;
-		// cout<<"GO GET COMPACTED"<< endl;
-		auto kmer_comp(kmer.get_compacted(params.m_small));
-		// cout<<"KMER OK GO GET COMPACTED"<< endl;
-		auto submer(get_compacted_kmer(kmer_idx, nucleotides, params));
-		// cout<<"EQUAL go"<<endl;
-		equal=(submer==kmer_comp);
-		if(not equal){
-			cout<<"WOW"<<endl;
-			print_kmer(kmer_comp,63);
-			cout<<endl;
-			print_kmer(submer,63);
-			cin.get();
-		}
-		return true;
-	// } else{
-	// 	// cout<<"kmer_comparison go"<<endl;
-	// 	return false;
-	// }
-		return false;
 }
 
 
@@ -292,16 +288,12 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_i
 	bool can_be_superior(true);
 	// kmer_comp_call++;	
 
-	// cout<<"kmer_comparison"<<endl;
 	if (kmer.minimizer_idx <= this->minimizer_idx and // Suffix long enougth
 			kmer.minimizer_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
-			// cout<<"kmer_comparison go"<<endl;
 		int kmer_idx = size - (this->minimizer_idx - kmer.minimizer_idx) - 1;
 		for(uint i(0);i<kmer_interleave.size(); ++i){
 			int nuckmer(kmer_interleave[i]);
 			int nuc=interleaved_nucleotide(i, nucleotides, params);
-			// int nuc(interleaved_nucleotide(i, nucleotides, params));
-			// cout<<nuckmer<<" "<<nuc<<endl;
 			if(nuckmer<-1){
 				if(nuc==3){continue;}
 				can_be_superior=false;
@@ -311,28 +303,22 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_i
 				if(can_be_superior){
 					superior=true;
 				}	
-				// cout<<"SUPERIOR go"<<endl;
 				return true;
 			}else if(nuc<nuckmer){
-				// cout<<"INFERIOR go"<<endl;
 				inferior=true;
 				return true;
 			}
 		}
 		equal=true;
 		return true;
-		// cout<<"GO GET COMPACTED"<< endl;
 		auto kmer_comp(kmer.get_compacted(params.m_small));
-		// cout<<"KMER OK GO GET COMPACTED"<< endl;
 		auto submer(get_compacted_kmer(kmer_idx, nucleotides, params));
-		// cout<<"EQUAL go"<<endl;
 		equal=(submer==kmer_comp);
 		return true;
 	} else{
-		// cout<<"kmer_comparison go"<<endl;
 		return false;
 	}
-		return false;
+	return false;
 }
 
 
@@ -349,6 +335,7 @@ kint SKL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides
 	result = result & (((kint)1 << (2 * params.compacted_size)) - 1);
 	return result;
 }
+
 
 
 void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer, const Parameters & params) const {
@@ -375,6 +362,7 @@ void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const ki
 
 	kmer.interleaved.clear();
 }
+
 
 
 bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params) const {
@@ -500,6 +488,8 @@ const int lookup[4][256] = {
 	{0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}
 };
 
+
+
 int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucleotides, const Parameters & params) const {
 	if (nucl_idx == 255) {
 		exit(1);
@@ -529,6 +519,7 @@ int8_t SKL::interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t * nucle
 }
 
 
+
 void SKL::compute_interleaved(vector<int> & interleaved, const uint8_t * nucleotides, const Parameters & params) const {
 
 	uint suff_size = this->suffix_size();
@@ -538,10 +529,8 @@ void SKL::compute_interleaved(vector<int> & interleaved, const uint8_t * nucleot
 	// Compute suffix interleved
 	for (uint offset=0 ; offset<min(suff_size, inter_size/2) ; offset++) {
 		uint nucl_idx = pref_size + offset;
-		// uint byte_idx = byte_index(nucl_idx, params);
 		uint byte = nucleotides[byte_index(nucl_idx, params)];
 		interleaved[2*offset] = lookup[nucl_idx & 0b11][byte];
-		// interleaved[2*offset] = (byte >> ((3 - (nucl_idx % 4))*2)) & 0b11;
 	}
 	for (uint idx=suff_size ; idx<inter_size/2 ; idx++)
 		interleaved[2*idx] = -1;
@@ -551,7 +540,6 @@ void SKL::compute_interleaved(vector<int> & interleaved, const uint8_t * nucleot
 		uint nucl_idx = pref_size - 1 - offset;
 		uint byte = nucleotides[byte_index(nucl_idx, params)];
 		interleaved[2*offset+1] = lookup[nucl_idx%4][byte];
-		// interleaved[2*offset+1] = (byte >> ((3 - (nucl_idx % 4))*2)) & 0b11;
 	}
 	for (uint idx=pref_size ; idx<inter_size/2 ; idx++)
 		interleaved[2*idx+1] = -1;
@@ -568,6 +556,7 @@ void SKL::print(const uint8_t * nucleotides, const kint & mini, const Parameters
 	print_kmer(suffix, suffix_size());
 	cout << " " << (uint)minimizer_idx;
 }
+
 
 
 #endif

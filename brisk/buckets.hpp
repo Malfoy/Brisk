@@ -12,6 +12,7 @@
 #define BUCKETS_H
 
 
+
 template <class DATA>
 class Bucket{
 public:
@@ -29,9 +30,9 @@ public:
 	Bucket<DATA> & operator=(const Bucket<DATA>&) = delete;
 	Bucket<DATA> & operator=(Bucket<DATA>&& bucket);
 
-	DATA * insert_kmer(kmer_full & kmer);
-	DATA * find_kmer(kmer_full& kmer);
-	vector<DATA *> find_kmer_vector(vector<kmer_full>& kmers);
+	DATA * insert_kmer(const kmer_full & kmer);
+	DATA * find_kmer(const kmer_full& kmer);
+	vector<DATA *> find_kmer_vector(const vector<kmer_full>& kmers);
 
 	void init_enumerator();
 	void next_kmer(kmer_full & kmer, kint minimizer);
@@ -61,22 +62,21 @@ public:
 
 	bool debug;
 
-	DATA * find_kmer_unsorted(kmer_full& kmer);
+	DATA * find_kmer_unsorted(const kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
-	DATA * find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end);
-	vector<DATA *> find_kmer_linear_vector(vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end);
-	DATA * find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end);
+	DATA * find_kmer_linear(const kmer_full& kmer, const int64_t begin, const int64_t end);
+	vector<DATA *> find_kmer_linear_vector(const vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end);
+	DATA * find_kmer_linear_sorted_stop(const kmer_full& kmer, const int64_t begin, const int64_t end);
 	vector<DATA*>  find_kmer_linear_sorted_stop_vector(const vector<kmer_full>& kmers,  vector<uint64_t>& begins, const uint64_t end);
-	DATA * find_kmer_log(kmer_full & kmer);
-	DATA * find_kmer_log_simple(kmer_full & kmer);
-	vector<DATA *> find_kmer_log_simple_vector(vector<kmer_full> & kmers);
-	// DATA * find_kmer_log(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
-	// inline DATA * find_recur_log_split(kmer_full & kmer, const int64_t begin, const int64_t end, const uint8_t nucleotide_idx);
-	DATA * insert_kmer_buffer(kmer_full & kmer);
+	DATA * find_kmer_log(const kmer_full & kmer);
+	DATA * find_kmer_log_simple(const kmer_full & kmer);
+	vector<DATA *> find_kmer_log_simple_vector(const vector<kmer_full> & kmers);
+	DATA * insert_kmer_buffer(const kmer_full & kmer);
 	void discard_last_kmer();
 	void insert_buffer();
 	void data_space_update();
 };
+
 
 
 template <class DATA>
@@ -104,6 +104,8 @@ Bucket<DATA>::Bucket(Parameters * params) {
 	this->debug = false;
 }
 
+
+
 template <class DATA>
 Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 : skml( std::move(bucket.skml) )
@@ -129,10 +131,13 @@ Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 	bucket.data_reserved_memory = NULL;
 }
 
+
+
 template <class DATA>
 Bucket<DATA> & Bucket<DATA>::operator=(Bucket<DATA>&& bucket) {
 	cout << "move assign !!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 }
+
 
 
 template <class DATA>
@@ -140,6 +145,7 @@ Bucket<DATA>::~Bucket() {
 	free(this->nucleotides_reserved_memory);
 	free(this->data_reserved_memory);
 }
+
 
 
 template <class DATA>
@@ -150,6 +156,7 @@ void Bucket<DATA>::clear() {
 	this->data_reserved_memory = nullptr;
 	this->cleared = true;
 }
+
 
 
 template <class DATA>
@@ -167,6 +174,7 @@ void Bucket<DATA>::print() {
 }
 
 
+
 template <class DATA>
 void Bucket<DATA>::data_space_update() {
 	if (this->next_data == this->data_reserved_number) {
@@ -181,8 +189,9 @@ void Bucket<DATA>::data_space_update() {
 }
 
 
+
 template <class DATA>
-DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
+DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 	// 0 - Update space for DATA if needed
 	this->data_space_update();
 	// 1 - Try to compact with the last kmer
@@ -219,8 +228,9 @@ DATA * Bucket<DATA>::insert_kmer(kmer_full & kmer) {
 	return value;
 }
 
-// bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params)
 
+
+// bool inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t * sk_nucleotides, const Parameters & params)
 template <class DATA>
 void Bucket<DATA>::insert_buffer(){
 	Parameters * params = this->params;
@@ -233,7 +243,6 @@ void Bucket<DATA>::insert_buffer(){
 				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
 				*params
 		);
-		// cout << val << endl;
 		return val;
 	};
 sort(
@@ -247,8 +256,9 @@ sort(
 }
 
 
+
 template <class DATA>
-DATA * Bucket<DATA>::insert_kmer_buffer(kmer_full & kmer){
+DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	DATA * value_pointer = NULL;
 	this->data_space_update();
 	
@@ -315,8 +325,9 @@ public:
 };
 
 
+
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
+DATA * Bucket<DATA>::find_kmer_log_simple(const kmer_full & kmer) {
 	// return (find_kmer_linear_sorted_stop(kmer,0,sorted_size-1));
 	// kmer.minimizer_idx+=params->m-params->m_small;
 	insert_kmer_buffer(kmer);
@@ -337,8 +348,9 @@ DATA * Bucket<DATA>::find_kmer_log_simple(kmer_full & kmer) {
 }
 
 
+
 template<class DATA>
-vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kmers) {
+vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(const vector<kmer_full> & kmers) {
 	auto comp_function = [&](const SKL & a, const SKL & b) {
 		bool val = a.inf(
 				nucleotides_reserved_memory + a.idx * params->allocated_bytes,
@@ -361,7 +373,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(vector<kmer_full> & kme
 
 
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
+DATA * Bucket<DATA>::find_kmer_log(const kmer_full & kmer) {
 
 	vector<int> kmer_interleved = kmer.compute_interleaved(params->k, params->m_small);
 
@@ -378,7 +390,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 
 	// Log search
 	while (begin <= end or heap.size() > 0) {
-		// cout << "new loop " << begin << "\t" << end << endl;
 		// Base case - not found, restore previous search from heap
 		if (begin > end) {
 			uint interleaved_idx = heap.back(); heap.pop_back();
@@ -393,7 +404,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 			}
 			// Restore the unknown following -2 and increment the current interleave
 			else if (current_interleved[interleaved_idx] == -1) {
-				// cout << "restore -2" << endl;
 				current_interleved[interleaved_idx] = 0;
 				for (uint idx=interleaved_idx+2 ; idx<interleaved_size ; idx += 2)
 					current_interleved[idx] = -2;
@@ -434,11 +444,6 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 				found = false;
 				break;
 			}
-			// --- Version 3 ---
-			// found = current_interleved[idx] == middle_interleved[idx];
-			// begin = current_interleved[idx] > middle_interleved[idx] ? middle+1 : begin;
-			// end = current_interleved[idx] < middle_interleved[idx] ? middle-1 : end;
-			// --- Version 2 ---
 			else if (current_interleved[idx] != middle_interleved[idx]) {
 				found = false;
 				if (current_interleved[idx] < middle_interleved[idx])
@@ -447,34 +452,13 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 					begin = middle + 1;
 				break;
 			}
-			// --- Version 1 ---
-			// // Before middle
-			// else if (current_interleved[idx] < middle_interleved[idx]) {
-			// 	// cout << "before middle " << idx << endl;
-			// 	end = middle - 1;
-			// 	found = false;
-			// }
-			// // After middle
-			// else if (current_interleved[idx] > middle_interleved[idx]) {
-			// 	// cout << "after middle " << idx << endl;
-			// 	begin = middle + 1;
-			// 	found = false;
-			// }
+
 		}
-		// cout << endl;
 
 		if (found) {
-			// cout << "FOUND §§" << endl;
 			uint kmer_position = skml[middle].prefix_size(*params) - kmer.prefix_size(params->k, params->m_small);
-			// cout << (uint *)(this->data_reserved_memory + mid_skmer.data_idx + kmer_position) << endl;
-			// delete[] middle_interleved;
 			return this->data_reserved_memory + skml[middle].data_idx + kmer_position;
 		}
-
-		// cout << "Heap" << endl;
-		// for (uint idx=0 ; idx<heap.size() ; idx += 3)
-		// 	cout << heap[idx] << "\t" << heap[idx+1] << "\t" << heap[idx+2] << endl;
-		// cout << endl;
 	}
 
 	return NULL;
@@ -483,7 +467,7 @@ DATA * Bucket<DATA>::find_kmer_log(kmer_full & kmer) {
 
 
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, const int64_t end) {
+DATA * Bucket<DATA>::find_kmer_linear(const kmer_full& kmer, const int64_t begin, const int64_t end) {
 	for (int i=begin ; i<=end ; i++) {
 		bool is_present = skml[i].is_kmer_present(
 				kmer,
@@ -504,7 +488,7 @@ DATA * Bucket<DATA>::find_kmer_linear(kmer_full& kmer, const int64_t begin, cons
 
 
 template<class DATA>
-vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end) {
+vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(const vector<kmer_full>& kmers,vector<DATA *>& result, const uint64_t begin, const uint64_t end) {
 	for (uint64_t i=begin ; i<=end ; i++) {
 		for(uint64_t j(0);j<kmers.size(); ++j){
 			if(result[j]==NULL){
@@ -524,8 +508,9 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(vector<kmer_full>& kmers,ve
 }
 
 
+
 template<class DATA>
-DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t begin, const int64_t end) {
+DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(const kmer_full& kmer, const int64_t begin, const int64_t end) {
 	vector<int> kmer_interleave=kmer.compute_interleaved(params->k,params->m_small);
 	for (int i=begin ; i<=end ; i++) {
 		bool inferior,superior,equal;
@@ -541,6 +526,7 @@ DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(kmer_full& kmer, const int64_t
 	}
 	return NULL;
 }
+
 
 
 template<class DATA>
@@ -595,32 +581,28 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 
 
 template <class DATA>
-DATA * Bucket<DATA>::find_kmer_unsorted(kmer_full& kmer) {
+DATA * Bucket<DATA>::find_kmer_unsorted(const kmer_full& kmer) {
 	return find_kmer_linear(kmer, sorted_size, skml.size()-1);
 }
 
 
+
 template <class DATA>
-DATA * Bucket<DATA>::find_kmer(kmer_full& kmer) {
+DATA * Bucket<DATA>::find_kmer(const kmer_full& kmer) {
 	if (sorted_size > 0) {
-		// DATA * ptr = find_kmer_log(kmer);
 		DATA * ptr = find_kmer_log_simple(kmer);
 		if (ptr != NULL) {
 			return ptr;
-		}else{			
-			// ptr = find_kmer_linear(kmer,0,skml.size()-1);
-			// if(ptr != NULL){
-			// 	cout<<"ON AURAIT DU LE TROUVER"<<endl;
-			// 	return ptr;
-			// }
+		}else{	
 		}
 	}
 	return find_kmer_unsorted(kmer);
 }
 
 
+
 template <class DATA>
-vector<DATA *> Bucket<DATA>::find_kmer_vector(vector<kmer_full>& kmers) {
+vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
 	vector<DATA *> result(kmers.size(),NULL);
 	if(sorted_size > 0){
 		result = find_kmer_log_simple_vector(kmers);
@@ -629,11 +611,13 @@ vector<DATA *> Bucket<DATA>::find_kmer_vector(vector<kmer_full>& kmers) {
 }
 
 
+
 template <class DATA>
 void Bucket<DATA>::init_enumerator() {
 	this->enumeration_skmer_idx = 0;
 	this->enumeration_kmer_idx = 0;
 }
+
 
 
 template <class DATA>
@@ -650,6 +634,7 @@ bool Bucket<DATA>::has_next_kmer() {
 
 	return true;
 }
+
 
 
 template <class DATA>
@@ -670,6 +655,7 @@ void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 	
 	enumeration_kmer_idx += 1;
 }
+
 
 
 #endif

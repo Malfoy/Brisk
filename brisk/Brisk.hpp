@@ -44,7 +44,7 @@ public:
 	// DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer);
 	
-	vector<DATA *> insert_superkmer( vector<kmer_full>& v, vector<bool>& newly_inserted);
+	vector<DATA *> insert_superkmer(const  vector<kmer_full>& v, vector<bool>& newly_inserted);
 	vector<DATA *> get_superkmer( vector<kmer_full>& v);
 
 	vector<DATA *> insert_sequence(const string& str, vector<bool>& newly_inserted);
@@ -74,10 +74,12 @@ Brisk<DATA>::Brisk(Parameters & parameters): params( parameters ) {
 }
 
 
+
 template<class DATA>
 Brisk<DATA>::~Brisk() {
 	delete this->menu;
 }
+
 
 
 template<class DATA>
@@ -99,6 +101,7 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) {
 	#endif
 	return this->menu->get_kmer(kmer);
 }
+
 
 
 template<class DATA>
@@ -132,6 +135,7 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 }
 
 
+
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
 	vector<DATA *> result;
@@ -145,36 +149,29 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newl
 	while (superkmer.size() > 0){
 		// Add the values
 		vector<bool> newly_inserted_local;
-		vector<uint8_t*> vec(insert_superkmer(superkmer,newly_inserted));
+		vector<DATA*> vec(insert_superkmer(superkmer,newly_inserted));
 		superkmer.clear();
 		result.insert(result.end(),vec.begin(),vec.end());
 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
-	}
+	}//TODO MISSING A NEXT HERE
 	return result;
 }
 
 
 
-
-
 template<class DATA>
-vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
+vector<DATA *> Brisk<DATA>::insert_superkmer(const vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		// Add the values
         uint64_t small_minimizer =  (((superkmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small));
-		for(uint i(0);i<superkmer.size();++i){
-			superkmer[i].minimizer_idx+=(params.m-params.m_small)/2;
-		}
+
 		uint32_t mutex_idx = (((small_minimizer))%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
 		this->menu->insert_kmer_vector(superkmer,newly_inserted);
 		result=this->menu->get_kmer_vector(superkmer);
-		// cout<<"WTF"<<endl;
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
-		// cout<<"WTF2"<<endl;
 	}
-	// cout<<"WTF3"<<endl;
 	return result;
 }
 
@@ -186,10 +183,12 @@ void Brisk<DATA>::protect_data(const kmer_full & kmer) {
 }
 
 
+
 template <class DATA>
 void Brisk<DATA>::unprotect_data(const kmer_full & kmer) {
 	this->menu->unprotect_data(kmer);
 }
+
 
 
 template<class DATA>
@@ -198,10 +197,13 @@ bool Brisk<DATA>::next(kmer_full & kmer) {
 }
 
 
+
 template<class DATA>
 void Brisk<DATA>::restart_kmer_enumeration() {
 	this->menu->restart_kmer_enumeration();
 }
+
+
 
 template<class DATA>
 uint64_t Brisk<DATA>::getMemorySelfMaxUsed () const{
@@ -210,6 +212,8 @@ uint64_t Brisk<DATA>::getMemorySelfMaxUsed () const{
 	if (getrusage(RUSAGE_SELF, &usage)==0)  {  result = usage.ru_maxrss;  }
 	return result;
 }
+
+
 
 template<class DATA>
 void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage, uint64_t & largest_bucket) const {

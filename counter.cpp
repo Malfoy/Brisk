@@ -9,12 +9,16 @@
 #include "brisk/writer.hpp"
 
 
+
 using namespace std;
+
+
 
 // --- Useful functions to count kmers ---
 void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads);
 void count_sequence(Brisk<uint8_t> & counter, string & sequence);
 void verif_counts(Brisk<uint8_t> & counter);
+
 
 
 int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint8_t & m, uint8_t & buckets,
@@ -34,6 +38,7 @@ int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t 
 
   return 0;
 }
+
 
 
 string pretty_int(uint64_t n){
@@ -73,11 +78,14 @@ string pretty_int(uint64_t n){
 	return result;
 }
 
+
+
 // static robin_hood::unordered_map<kint, int16_t> verif;
 static tsl::sparse_map<kint, int16_t> verif;
 static bool check;
 static uint64_t number_kmer_count(0);
 uint64_t low_complexity_kmer(0);
+
 
 
 int main(int argc, char** argv) {
@@ -145,6 +153,7 @@ int main(int argc, char** argv) {
 }
 
 
+
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
 	kmer_full kmer(0,0, counter.params.m, false);
@@ -154,7 +163,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
 
-			// cin.get();
+			cin.get();
 		}
 
 
@@ -166,7 +175,6 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
 			cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
-			// verif[kmer.kmer_s] = 0;
 		}else{
 			verif[kmer.kmer_s] -= *count;
 		}
@@ -181,10 +189,8 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			errors += 1;
 			if (it.second > 0) {
 				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
-				// cin.get();
 			} else {
 				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
-				// cin.get();
 			}
 		}
 	}
@@ -198,51 +204,6 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	cout << endl;
 }
 
-
-void verif_counts2(Brisk<uint8_t> & counter) {
-	cout << "--- Start counting verification ---" << endl;
-	kmer_full kmer(0,0, counter.params.m, false);
-	bool reversed;
-	// Count 
-	for (auto it = verif.begin(); it != verif.end(); it++){
-		kmer.kmer_s=it->first;
-		kmer.minimizer=get_minimizer(kmer.kmer_s,counter.params.k,kmer.minimizer_idx,counter.params.m,reversed,kmer.multi_mini,counter.params.mask_large_minimizer);
-		uint8_t * count = counter.get(kmer);
-		if (count == NULL) {
-			cout<<"NULL COUNT"<<endl;
-			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
-			cout << (uint)kmer.minimizer << endl;
-			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
-			// verif[kmer.kmer_s] = 0;
-		}else{
-			verif[kmer.kmer_s] -= *count;
-		}
-	}
-		
-
-	// Summary print
-	uint errors = 0;
-	for (auto & it : verif) {
-		if (it.second != 0) {
-			errors += 1;
-			if (it.second > 0) {
-				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
-				// cin.get();
-			} else {
-				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
-				// cin.get();
-			}
-		}
-	}
-
-	if (errors == 0){
-		cout << "All counts are correct !" << endl;
-	}else{
-		cout<<errors << " errors" << endl;
-	}
-
-	cout << endl;
-}
 
 
 void clean_dna(string& str){
@@ -264,6 +225,8 @@ void clean_dna(string& str){
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
 }
 
+
+
 string getLineFasta(zstr::ifstream* in) {
 	string line, result;
 	getline(*in, line);
@@ -276,6 +239,8 @@ string getLineFasta(zstr::ifstream* in) {
 	clean_dna(result);
 	return result;
 }
+
+
 
 /** Counter function.
   * Read a complete fasta file line by line and store the counts into the Brisk datastructure.
@@ -295,7 +260,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	omp_set_nested(2);
-	// #pragma omp parallel
+	#pragma omp parallel
 	{
 		while (in.good()) {
 			string line;
@@ -324,8 +289,8 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	}
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
-	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-	// #pragma omp parallel
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.m_small);
+	#pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
@@ -352,23 +317,16 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			newly_inserted.clear();
-			// cout<<"BEGIN SKM"<<endl;
+			
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
-			// cout<<"END SKM"<<endl;
 			for(uint i(0); i < vec.size();++i){
 				uint8_t * data_pointer(vec[i]);
-				if(data_pointer==NULL){
-					cout<<"NULL PTR"<<endl;
-					cin.get();
+				if(newly_inserted[i]){
+					(*data_pointer)=1;
 				}else{
-					if(newly_inserted[i]){
-						(*data_pointer)=1;
-					}else{
-						(*data_pointer)++;
-					}
+					(*data_pointer)++;
 				}
 			}
-			// cout<<"END DATA"<<endl;
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
