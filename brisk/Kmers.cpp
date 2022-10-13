@@ -6,7 +6,6 @@
 
 
 
-
 using namespace std;
 
 
@@ -42,8 +41,8 @@ kmer_full::kmer_full(kmer_full&& kmer) :
 	multi_mini(kmer.multi_mini),
 	interleaved(move(interleaved))
 {
-	// cout << "move constructed" << endl;
 }
+
 
 
 kmer_full::kmer_full(const kmer_full&& kmer) :
@@ -53,7 +52,16 @@ kmer_full::kmer_full(const kmer_full&& kmer) :
 	multi_mini(kmer.multi_mini),
 	interleaved(kmer.interleaved)
 {
-	// cout << "move constructed" << endl;
+}
+
+
+
+void kmer_full::copy(const kmer_full& kmer){
+	kmer_s=(kmer.kmer_s);
+	minimizer=(kmer.minimizer);
+	minimizer_idx=(kmer.minimizer_idx);
+	multi_mini=(kmer.multi_mini);
+	interleaved=(kmer.interleaved);
 }
 
 
@@ -64,7 +72,6 @@ kmer_full & kmer_full::operator=(kmer_full&& kmer) {
 	this->minimizer = kmer.minimizer;
 	this->multi_mini = kmer.multi_mini;
 	this->interleaved = move(kmer.interleaved);
-	// cout << "move assigned" << endl;
 	return *this;
 }
 
@@ -134,6 +141,7 @@ uint8_t kmer_full::prefix_size(const uint8_t k, const uint8_t m) const {
 }
 
 
+
 // SUFFIX IS AT RIGHT!!!!!!DO NOT CHANGE THIS
 kint kmer_full::get_compacted(uint8_t m) const {
 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
@@ -153,24 +161,8 @@ bool kmer_full::contains_multi_minimizer() const {
 }
 
 
-void kmer_full::hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
-	//return;
-	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
-	kint suffix = kmer_s & mask;
-	kmer_s >>=(2*minimizer_idx);
-	mask=(((kint)1) << (m * 2 )) - 1;
-	kint new_minimizer=kmer_s & mask;
-	kmer_s >>=(2*m);
-	kint prefix =kmer_s;
-	new_minimizer=bfc_hash_64(minimizer,mask_large_minimizer);
-	kmer_s=suffix+(new_minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
-	minimizer=new_minimizer;
-}
-
-
 
 double kmer_full::bimer_entropy(int k){
-	//cout<<"bimer_entropy"<<endl;
 	double entropy(0);
 	kint kmer=kmer_s;
 	uint8_t counts[16] = {0};
@@ -180,25 +172,38 @@ double kmer_full::bimer_entropy(int k){
     }
 	for(int i(0); i <16;++i){
 		entropy+=occ2mer_entropy[counts[i]];
-		//cout<<occ2mer_entropy[counts[i]]<<" "<<entropy/precision2bit<<endl;
 	}
-	//cin.get();
 	return entropy/precision2bit;
 }
 
+
+
 uint16_t* kmer_full::occ2mer_entropy;
 
+
+
 void kmer_full::initocc2mer_entropy(int k){
-	//cout<<"init"<<endl;
 	occ2mer_entropy=new uint16_t[k];
 	occ2mer_entropy[0]=0;
 	occ2mer_entropy[k-1]=0;
 	for(int i(1);i<k-1;++i){
 		double p = i / double(k);
 		occ2mer_entropy[i]=uint16_t(-log2(p)*p*precision2bit);
-		//cout<<i<<" "<<occ2mer_entropy[i]<<endl;
 	}
-	//cin.get();
+}
+
+
+
+void kmer_full::hash_kmer_body(uint8_t m, uint64_t novel_min){
+	if(multi_mini){return;}
+	minimizer=novel_min;
+	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
+	kint suffix = kmer_s & mask;
+	kmer_s >>=(2*minimizer_idx);
+	mask=(((kint)1) << (m * 2 )) - 1;
+	kmer_s >>=(2*m);
+	kint prefix =kmer_s;
+	kmer_s=suffix+(minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
 }
 
 
@@ -209,15 +214,34 @@ void kmer_full::clean_occ2mer_entropy() {
 
 
 void kmer_full::unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
+	if(multi_mini){return;}
 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
 	kint suffix = kmer_s & mask;
 	kmer_s >>=(2*minimizer_idx);
 	mask=(((kint)1) << (m * 2 )) - 1;
-	kint minimizer=kmer_s & mask;
+	kint new_minimizer=kmer_s & mask;
 	kmer_s >>=(2*m);
 	kint prefix =kmer_s;
-	minimizer=bfc_hash_64_inv(minimizer,mask_large_minimizer);
-	kmer_s=suffix+(minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
+	new_minimizer=bfc_hash_64_inv(new_minimizer,mask_large_minimizer);
+	kmer_s=suffix+(new_minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
+}
+
+
+
+kint kmer_full::get_unhash_kmer_body(uint8_t m,uint8_t m_small, uint64_t mask_large_minimizer)const {
+	if(multi_mini){return kmer_s;}
+	kint real_minimizer_idx=minimizer_idx-(m-m_small)/2;
+	kint mask = (((kint)1) << (real_minimizer_idx * 2)) - 1;
+	kint suffix = kmer_s & mask;
+	kint result=kmer_s;
+	result >>=(2*real_minimizer_idx);
+	mask=(((kint)1) << (m * 2 )) - 1;
+	kint new_minimizer=result & mask;
+	result >>=(2*m);
+	kint prefix =result;
+	new_minimizer=bfc_hash_64_inv(new_minimizer,mask_large_minimizer);
+	result=suffix+(new_minimizer<<(2*real_minimizer_idx))+(prefix<<(2*(real_minimizer_idx+m)));
+	return result;
 }
 
 
@@ -256,6 +280,7 @@ string kmer2str(__uint128_t num, uint k) {
 }
 
 
+
 kint str2num(const string& str) {
 	kint res(0);
 	for (uint64_t i(0); i < str.size(); i++) {
@@ -273,7 +298,7 @@ kmer_full * str2kmer(const std::string & str, const uint8_t m) {
 	uint8_t min_pos;
 	bool reversed, multiple;
 	
-	get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple);
+	get_minimizer(km_val, str.size(), min_pos, m, reversed, multiple,((kint)1<<(2*m))-1);
 
 	kmer_full * kmer;
 
@@ -294,6 +319,7 @@ kint str2num2(const string& str) {
 	}
 	return res;
 }
+
 
 
 uint64_t rcbc(uint64_t in, uint64_t n) {
@@ -318,66 +344,7 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 
 
 
- inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask)
-{
-	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
-	key = key ^ key >> 24;
-	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
-	key = key ^ key >> 14;
-	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
-	key = key ^ key >> 28;
-	key = (key + (key << 31)) & mask;
-	if(key<(mask>>10)){
-		key=hash64shift(key);
-	}
-	return key;
-}
-
-
-
- inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask)
-{
-	uint64_t tmp;
- 
-	// Invert key = key + (key << 31)
-	tmp = (key - (key << 31));
-	key = (key - (tmp << 31)) & mask;
- 
-	// Invert key = key ^ (key >> 28)
-	tmp = key ^ key >> 28;
-	key = key ^ tmp >> 28;
- 
-	// Invert key *= 21
-	key = (key * 14933078535860113213ull) & mask;
- 
-	// Invert key = key ^ (key >> 14)
-	tmp = key ^ key >> 14;
-	tmp = key ^ tmp >> 14;
-	tmp = key ^ tmp >> 14;
-	key = key ^ tmp >> 14;
- 
-	// Invert key *= 265
-	key = (key * 15244667743933553977ull) & mask;
- 
-	// Invert key = key ^ (key >> 24)
-	tmp = key ^ key >> 24;
-	key = key ^ tmp >> 24;
- 
-	// Invert key = (~key) + (key << 21)
-	tmp = ~key;
-	tmp = ~(key - (tmp << 21));
-	tmp = ~(key - (tmp << 21));
-	key = ~(key - (tmp << 21)) & mask;
- 
-	return key;
-}
-
-
-
 uint64_t hash64shift(uint64_t key) {
-	// uint64_t ab=abundance_mini[key];
-	// uint64_t ab=0;
-	// ab<<=32;
 	key = (~key) + (key << 21); // key = (key << 21) - key - 1;
 	key = key ^ (key >> 24);
 	key = (key + (key << 3)) + (key << 8); // key * 265
@@ -387,8 +354,6 @@ uint64_t hash64shift(uint64_t key) {
 	key = key + (key << 31);
 	return (uint64_t)key;
 }
-
-
 
 
 
@@ -402,12 +367,12 @@ uint64_t hash64shift(uint64_t key) {
 	*
 	* @return The minimizer value. Negative number if the minimizer is on the reverse complement.
   */
-uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple) {
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t m_mask) {
 	// Init with the first possible minimizer
 	uint64_t mini, mmer;
-	uint64_t fwd_mini = seq % ((uint64_t)1 << (m*2));
+	uint64_t fwd_mini = seq & m_mask;
 	mini = mmer = canonize(fwd_mini, m);
-	uint64_t hash_mini = bfc_hash_64(mmer,(((uint64_t)1<<(2*m))-1));
+	uint64_t hash_mini = bfc_hash_64(mmer,m_mask);
 	// Update values regarding the minimizer
 	reversed=(mini!=fwd_mini);
 	min_position = 0;
@@ -416,9 +381,9 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	// Search in all possible position (from 1) the minimizer
 	for (uint8_t i=1; i <= k - m; i++) {
 		seq >>= 2;
-		fwd_mini = seq % ((uint64_t)1 << (m*2));
+		fwd_mini = seq & m_mask;
 		mmer = canonize(fwd_mini, m);
-		uint64_t hash = bfc_hash_64(mmer,(((uint64_t)1<<(2*m))-1));
+		uint64_t hash = bfc_hash_64(mmer,m_mask);
 
 		if (hash_mini > hash) {
 			min_position = i;
@@ -433,9 +398,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 			multiple = true;
 		}
 	}
-
-	//return hash_mini;
-	return mini;
+	return hash_mini;
 }
 
 
@@ -538,10 +501,10 @@ void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uin
 
 
 
-SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m)
+SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,const uint8_t m_small)
 : seq( s ), seq_idx( 0 )
 , k( k ), k_mask( ((kint)1 << (2*k)) - 1 )
-, m( m ), m_mask( ((kint)1 << (2*m)) - 1 )
+, m( m ),m_small(m_small), m_mask( ((kint)1 << (2*m)) - 1 )
 , saved( false ), saved_kmer( kmer_full((kint)0,(uint8_t)0, (uint8_t)0, false) )
 , current_kmer( 0 ), current_rc_kmer( 0 )
 , mini_candidate( 0 ), rc_mini_candidate( 0 )
@@ -550,7 +513,7 @@ SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint
 
 
 
-kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
+kint SuperKmerEnumerator::next(vector<kmer_full> & kmers,bool hash) {
 	bool to_return = false;
 	uint64_t return_val;
 
@@ -563,13 +526,16 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		init_kmer(seq.substr(k-m-1, m), start, mini_candidate, rc_mini_candidate, m, m_mask);
 
 		// Init real minimizer
-		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple);
-		min_hash = bfc_hash_64(mini,m_mask);
+		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, multiple,m_mask);
 	} 
 
 	if (saved) {
 		saved = false;
-		saved_kmer.hash_kmer_body(m,m_mask);
+		if(hash){
+				saved_kmer.hash_kmer_body(m,mini);
+				saved_kmer.minimizer_idx+=(m-m_small)/2;
+			}
+		
 		kmers.push_back(move(saved_kmer));
 	}
 
@@ -592,39 +558,37 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 				reverse(kmers.begin(), kmers.end());
 			}
 			to_return = true;
-			return_val = min_hash;
+			return_val = mini;
 
 			// Prepare new minimizer
-			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple);
-			min_hash = bfc_hash_64(mini,m_mask);
+			mini = get_minimizer(current_kmer, k, mini_pos, m, reversed, multiple,m_mask);
 		}
 		// New minimizer
-		else if (current_hash < min_hash) {
+		else if (current_hash < mini) {
 			// Save previous kmers from superkmer
 			if (reversed){
 				reverse(kmers.begin(), kmers.end());
 			}
 				
 			to_return = true;
-			return_val = min_hash;
+			return_val = mini;
 
 			// Update for the new minimizer value
-			mini = candidate_canon;
+			mini = current_hash;
 			mini_pos = 0;
-			min_hash = bfc_hash_64(mini,m_mask);
 		
-			reversed = mini == rc_mini_candidate;
+			reversed = (candidate_canon == rc_mini_candidate);
 			multiple = false;
 		}
 		// Equal minimizer
-		else if (current_hash == min_hash) {
+		else if (current_hash == mini) {
 			// Save previous kmers from superkmer
 			if (reversed){
 				reverse(kmers.begin(), kmers.end());
 			}
 				
 			to_return = true;
-			return_val = min_hash;
+			return_val = mini;
 
 			multiple = true;
 		}
@@ -642,6 +606,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple);
 		} else {
 			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple);
+			saved_kmer.minimizer=mini;
 		}
 
 		if (to_return and seq_idx > 0) {
@@ -652,7 +617,12 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			if (seq_idx == 0){
 				to_return = false;
 			}
-			saved_kmer.hash_kmer_body(m,m_mask);
+			if(hash){
+			
+				kint localkmer=saved_kmer.kmer_s;
+				saved_kmer.hash_kmer_body(m,mini);
+				saved_kmer.minimizer_idx+=(m-m_small)/2;
+			}
 			kmers.push_back(move(saved_kmer));
 		}
 	}
@@ -661,10 +631,15 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		if (reversed){
 			reverse(kmers.begin(), kmers.end());
 		}
+		if(multiple){
+			for(uint i(0);i<kmers.size();++i){
+				kmers[i].multi_mini=true;
+			}
+		}
 		
-		return min_hash;
 		return mini;
 	}
+
 	return (kint)0;
 }
 

@@ -24,6 +24,7 @@ typedef __uint128_t skint;
 //~ typedef uint64_t kint;
 
 
+
 uint64_t hash64shift(uint64_t key);
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
 uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
@@ -50,7 +51,7 @@ class kmer_full {
 public:
 	kint kmer_s;
 	kint minimizer;
-	int8_t minimizer_idx;
+	uint8_t minimizer_idx;
 	bool multi_mini;
 	vector<int8_t> interleaved;
 	static uint16_t* occ2mer_entropy;
@@ -71,17 +72,19 @@ public:
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 	void hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
 	void unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
+	kint get_unhash_kmer_body(uint8_t m, uint8_t ms, uint64_t mask_large_minimizer)const;
 	double bimer_entropy(int k );
 	void initocc2mer_entropy(int k);
 	void clean_occ2mer_entropy();
+	void copy(const kmer_full& kmer);
 };
 
 
 
 class SuperKmerEnumerator {
 public:
-	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
-	kint next(vector<kmer_full> & kmers);
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,const uint8_t m_small);
+	kint next(vector<kmer_full> & kmers,bool hash=true);
 
 private:
 	// Sequence and position in it
@@ -91,7 +94,7 @@ private:
 	// kmer size and minimizer size
 	uint8_t k;
 	kint k_mask;
-	uint8_t m;
+	uint8_t m,m_small;
 	kint m_mask;
 
 	// Previous kmer read
@@ -109,13 +112,11 @@ private:
 	bool multiple;
 	uint8_t mini_pos;
 	uint64_t mini;
-	uint64_t min_hash;
 };
 
 
 
 // ----- Usefull binary kmer functions -----
-
 template<typename T>
 void print_kmer(T num, uint8_t n){
 	num &= ((T)1 << (2*n)) - 1;
@@ -145,15 +146,65 @@ void print_kmer(T num, uint8_t n){
 
 
 
+inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask){
+	
+	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
+	key = key ^ key >> 24;
+	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
+	key = key ^ key >> 14;
+	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
+	key = key ^ key >> 28;
+	key = (key + (key << 31)) & mask;
+	return key;
+}
+
+
+
+inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
+	uint64_t tmp;
+ 
+	// Invert key = key + (key << 31)
+	tmp = (key - (key << 31));
+	key = (key - (tmp << 31)) & mask;
+ 
+	// Invert key = key ^ (key >> 28)
+	tmp = key ^ key >> 28;
+	key = key ^ tmp >> 28;
+ 
+	// Invert key *= 21
+	key = (key * 14933078535860113213ull) & mask;
+ 
+	// Invert key = key ^ (key >> 14)
+	tmp = key ^ key >> 14;
+	tmp = key ^ tmp >> 14;
+	tmp = key ^ tmp >> 14;
+	key = key ^ tmp >> 14;
+ 
+	// Invert key *= 265
+	key = (key * 15244667743933553977ull) & mask;
+ 
+	// Invert key = key ^ (key >> 24)
+	tmp = key ^ key >> 24;
+	key = key ^ tmp >> 24;
+ 
+	// Invert key = (~key) + (key << 21)
+	tmp = ~key;
+	tmp = ~(key - (tmp << 21));
+	tmp = ~(key - (tmp << 21));
+	key = ~(key - (tmp << 21)) & mask;
+ 
+	return key;
+}
+
+
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 kmer_full * str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
-uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple);
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t);
 string getCanonical(const string& str);
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
 kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);
-
 
 
 
