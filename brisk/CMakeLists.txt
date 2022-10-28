@@ -13,11 +13,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 
 # Crée des variables avec les fichiers à compiler
 set(SRCS
+    hashing.cpp
     Kmers.cpp
     )
     
 set(HEADERS
     Brisk.hpp
+    hashing.hpp
     buckets.hpp
     common.hpp
     DenseMenuYo.hpp

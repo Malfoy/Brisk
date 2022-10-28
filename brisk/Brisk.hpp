@@ -161,8 +161,19 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newl
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(const vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
+
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
+		// Extract the minimizer and hash it
+		kint minimizer = superkmer[0].kmer_s >> (2 * superkmer[0].minimizer_idx);
+		kint minimizer_mask = (((kint)1) << (2 * this.params.m)) - 1;
+		minimizer &= minimizer_mask;
+		uint64_t hash = bfc_hash_64((uint64_t)minimizer, (uint64_t)minimizer_mask);
+
+		// Replace all the minimizers in the kmers
+		for (kmer_full & kmer : superkmer)
+			kmer.replace_slice(hash, kmer.minimizer_idx, m);
+
 		// Add the values
         uint64_t small_minimizer =  (((superkmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small));
 

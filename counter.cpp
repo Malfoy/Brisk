@@ -247,7 +247,6 @@ string getLineFasta(zstr::ifstream* in) {
   */
 void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads) {
 	kmer_full init;
-	init.initocc2mer_entropy(counter.params.k);
 	// Test file existance
 	struct stat exist_buffer;
   bool file_existance = (stat (filename.c_str(), &exist_buffer) == 0);
@@ -289,7 +288,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	}
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
-	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.m_small);
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
 	#pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
@@ -297,7 +296,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 		vector<uint8_t*> vec;
 
 		omp_set_lock(&local_mutex);
-		kint minimizer = enumerator.next(superkmer,true);
+		kint minimizer = enumerator.next(superkmer);
 		omp_unset_lock(&local_mutex);
 		while (superkmer.size() > 0) {
 			kmer_full local;
@@ -331,7 +330,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			// Next superkmer
 			superkmer.clear();
 			omp_set_lock(&local_mutex);
-			minimizer = enumerator.next(superkmer,true);
+			minimizer = enumerator.next(superkmer);
 			omp_unset_lock(&local_mutex);
 
 			if(minimizer==0){

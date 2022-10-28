@@ -25,24 +25,24 @@ typedef __uint128_t skint;
 
 
 
-uint64_t hash64shift(uint64_t key);
+// uint64_t hash64shift(uint64_t key);
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
-uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
-static constexpr double precision2bit = std::numeric_limits<uint16_t>::max() * 1.88416938536372; // * log(2)/exp(-1)
+// uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
+// static constexpr double precision2bit = std::numeric_limits<uint16_t>::max() * 1.88416938536372; // * log(2)/exp(-1)
 
 
 
 // Hash function for kint in robin_hood
-namespace robin_hood {
- template <> struct hash<kint>
-  {
-    size_t operator()(const kint & x) const
-    {
-      // your code here, e.g. "return hash<int>()(x.value);" 
-      return ((hash64shift(x)) ^ hash64shift(x>>64));
-    }
-  };
-}
+// namespace robin_hood {
+//  template <> struct hash<kint>
+//   {
+//     size_t operator()(const kint & x) const
+//     {
+//       // your code here, e.g. "return hash<int>()(x.value);" 
+//       return ((hash64shift(x)) ^ hash64shift(x>>64));
+//     }
+//   };
+// }
 
 
 
@@ -70,12 +70,10 @@ public:
 	uint8_t suffix_size() const;
 	vector<int> compute_interleaved(const uint8_t k, const uint8_t m) const;
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
-	void hash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
-	void unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer);
-	kint get_unhash_kmer_body(uint8_t m, uint8_t ms, uint64_t mask_large_minimizer)const;
-	double bimer_entropy(int k );
-	void initocc2mer_entropy(int k);
-	void clean_occ2mer_entropy();
+	void replace_slice(kint replacement, size_t position, size_t length);
+	// double bimer_entropy(int k );
+	// void initocc2mer_entropy(int k);
+	// void clean_occ2mer_entropy();
 	void copy(const kmer_full& kmer);
 };
 
@@ -83,8 +81,8 @@ public:
 
 class SuperKmerEnumerator {
 public:
-	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,const uint8_t m_small);
-	kint next(vector<kmer_full> & kmers,bool hash=true);
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
+	kint next(vector<kmer_full> & kmers);
 
 private:
 	// Sequence and position in it
@@ -94,7 +92,7 @@ private:
 	// kmer size and minimizer size
 	uint8_t k;
 	kint k_mask;
-	uint8_t m,m_small;
+	uint8_t m;
 	kint m_mask;
 
 	// Previous kmer read
@@ -145,56 +143,41 @@ void print_kmer(T num, uint8_t n){
 }
 
 
-
-inline uint64_t bfc_hash_64(uint64_t key, uint64_t mask){
-	
-	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
-	key = key ^ key >> 24;
-	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
-	key = key ^ key >> 14;
-	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
-	key = key ^ key >> 28;
-	key = (key + (key << 31)) & mask;
-	return key;
-}
-
-
-
-inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
-	uint64_t tmp;
+// inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
+// 	uint64_t tmp;
  
-	// Invert key = key + (key << 31)
-	tmp = (key - (key << 31));
-	key = (key - (tmp << 31)) & mask;
+// 	// Invert key = key + (key << 31)
+// 	tmp = (key - (key << 31));
+// 	key = (key - (tmp << 31)) & mask;
  
-	// Invert key = key ^ (key >> 28)
-	tmp = key ^ key >> 28;
-	key = key ^ tmp >> 28;
+// 	// Invert key = key ^ (key >> 28)
+// 	tmp = key ^ key >> 28;
+// 	key = key ^ tmp >> 28;
  
-	// Invert key *= 21
-	key = (key * 14933078535860113213ull) & mask;
+// 	// Invert key *= 21
+// 	key = (key * 14933078535860113213ull) & mask;
  
-	// Invert key = key ^ (key >> 14)
-	tmp = key ^ key >> 14;
-	tmp = key ^ tmp >> 14;
-	tmp = key ^ tmp >> 14;
-	key = key ^ tmp >> 14;
+// 	// Invert key = key ^ (key >> 14)
+// 	tmp = key ^ key >> 14;
+// 	tmp = key ^ tmp >> 14;
+// 	tmp = key ^ tmp >> 14;
+// 	key = key ^ tmp >> 14;
  
-	// Invert key *= 265
-	key = (key * 15244667743933553977ull) & mask;
+// 	// Invert key *= 265
+// 	key = (key * 15244667743933553977ull) & mask;
  
-	// Invert key = key ^ (key >> 24)
-	tmp = key ^ key >> 24;
-	key = key ^ tmp >> 24;
+// 	// Invert key = key ^ (key >> 24)
+// 	tmp = key ^ key >> 24;
+// 	key = key ^ tmp >> 24;
  
-	// Invert key = (~key) + (key << 21)
-	tmp = ~key;
-	tmp = ~(key - (tmp << 21));
-	tmp = ~(key - (tmp << 21));
-	key = ~(key - (tmp << 21)) & mask;
+// 	// Invert key = (~key) + (key << 21)
+// 	tmp = ~key;
+// 	tmp = ~(key - (tmp << 21));
+// 	tmp = ~(key - (tmp << 21));
+// 	key = ~(key - (tmp << 21)) & mask;
  
-	return key;
-}
+// 	return key;
+// }
 
 
 string kmer2str(kint num, uint k);
