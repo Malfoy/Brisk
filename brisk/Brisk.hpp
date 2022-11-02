@@ -28,6 +28,9 @@ class Brisk {
 private:
 
 	uint64_t getMemorySelfMaxUsed() const;
+	// TODO: Debug before pushing them public. See insert in the code for more details.
+	vector<DATA *> insert_sequence(const string& str, vector<bool>& newly_inserted);
+	vector<DATA *> get_sequence(const string& str);
 public:
 	DenseMenuYo<DATA> * menu;
 #ifdef TIME_ANALYSIS
@@ -45,10 +48,8 @@ public:
 	DATA * get(kmer_full & kmer);
 	
 	vector<DATA *> insert_superkmer(const  vector<kmer_full>& v, vector<bool>& newly_inserted);
-	vector<DATA *> get_superkmer( vector<kmer_full>& v);
+	vector<DATA *> get_superkmer(const vector<kmer_full>& v);
 
-	vector<DATA *> insert_sequence(const string& str, vector<bool>& newly_inserted);
-	vector<DATA *> get_sequence(const string& str);
 
 	void protect_data(const kmer_full & kmer);
 	void unprotect_data(const kmer_full & kmer);
@@ -81,7 +82,7 @@ Brisk<DATA>::~Brisk() {
 }
 
 
-
+// TODO: hash kmer minimizer
 template<class DATA>
 DATA * Brisk<DATA>::get(kmer_full & kmer) {
 	#ifdef TIME_ANALYSIS
@@ -125,11 +126,16 @@ vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
 
 
 template<class DATA>
-vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
+vector<DATA *> Brisk<DATA>::get_superkmer(const vector<kmer_full>& superkmer) {
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		return this->menu->get_kmer_vector(superkmer);
+		// Replace all the minimizers in the kmers by their hash values
+		vector<kmer_full> hashed_skmer;
+		for (const kmer_full & kmer : superkmer) {
+			hashed_skmer.emplace_back(kmer.hash_kmer_minimizer_copy(this->params.m));
+		}
 
+		return this->menu->get_kmer_vector(hashed_skmer);
 	}
 	return result;
 }
@@ -137,6 +143,7 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 
 template<class DATA>
+// TODO: This function has a bug if multiple skmers share the same minimizer and if there is a reallocation of a bucket for the second add. In this case, the DATA * from the first skmer are not relevant anymore.
 vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
 	vector<DATA *> result;
 	// Line too short
@@ -149,7 +156,7 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newl
 	while (superkmer.size() > 0){
 		// Add the values
 		vector<bool> newly_inserted_local;
-		vector<DATA*> vec(insert_superkmer(superkmer,newly_inserted));
+		vector<DATA*> vec(this->insert_superkmer(superkmer,newly_inserted));
 		superkmer.clear();
 		result.insert(result.end(),vec.begin(),vec.end());
 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
@@ -164,23 +171,20 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(const vector<kmer_full>& superkmer,
 
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		// Extract the minimizer and hash it
-		kint minimizer = superkmer[0].kmer_s >> (2 * superkmer[0].minimizer_idx);
-		kint minimizer_mask = (((kint)1) << (2 * this.params.m)) - 1;
-		minimizer &= minimizer_mask;
-		uint64_t hash = bfc_hash_64((uint64_t)minimizer, (uint64_t)minimizer_mask);
+		// Replace all the minimizers in the kmers by their hash values
+		vector<kmer_full> hashed_skmer;
+		for (const kmer_full & kmer : superkmer) {
+			hashed_skmer.emplace_back(kmer.hash_kmer_minimizer_copy(this->params.m));
+		}
 
-		// Replace all the minimizers in the kmers
-		for (kmer_full & kmer : superkmer)
-			kmer.replace_slice(hash, kmer.minimizer_idx, m);
+		// TODO: seems like a shifting bug (odd numbers hell)
+        uint64_t small_minimizer =  (((hashed_skmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small));
 
 		// Add the values
-        uint64_t small_minimizer =  (((superkmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small));
-
 		uint32_t mutex_idx = (((small_minimizer))%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
-		this->menu->insert_kmer_vector(superkmer,newly_inserted);
-		result=this->menu->get_kmer_vector(superkmer);
+		this->menu->insert_kmer_vector(hashed_skmer,newly_inserted);
+		result=this->menu->get_kmer_vector(hashed_skmer);
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
 	}
 	return result;

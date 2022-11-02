@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include "hashing.hpp"
 #include "robin_hood.h"
 #include "sparse_growth_policy.h"
 #include "sparse_hash.h"
@@ -26,8 +27,6 @@ typedef __uint128_t skint;
 
 
 // uint64_t hash64shift(uint64_t key);
-uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
-// uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
 // static constexpr double precision2bit = std::numeric_limits<uint16_t>::max() * 1.88416938536372; // * log(2)/exp(-1)
 
 
@@ -70,11 +69,13 @@ public:
 	uint8_t suffix_size() const;
 	vector<int> compute_interleaved(const uint8_t k, const uint8_t m) const;
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
-	void replace_slice(kint replacement, size_t position, size_t length);
-	// double bimer_entropy(int k );
-	// void initocc2mer_entropy(int k);
-	// void clean_occ2mer_entropy();
+	kint get_unhash_kmer_value(uint8_t m) const;
+	kmer_full hash_kmer_minimizer_copy(uint8_t m) const;
+	void hash_kmer_minimizer_inplace(uint8_t m);
+	void unhash_kmer_minimizer(uint8_t m);
 	void copy(const kmer_full& kmer);
+private:
+	void replace_slice(kint replacement, size_t position, size_t length);
 };
 
 
@@ -141,43 +142,6 @@ void print_kmer(T num, uint8_t n){
 		anc>>=2;
 	}
 }
-
-
-// inline uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
-// 	uint64_t tmp;
- 
-// 	// Invert key = key + (key << 31)
-// 	tmp = (key - (key << 31));
-// 	key = (key - (tmp << 31)) & mask;
- 
-// 	// Invert key = key ^ (key >> 28)
-// 	tmp = key ^ key >> 28;
-// 	key = key ^ tmp >> 28;
- 
-// 	// Invert key *= 21
-// 	key = (key * 14933078535860113213ull) & mask;
- 
-// 	// Invert key = key ^ (key >> 14)
-// 	tmp = key ^ key >> 14;
-// 	tmp = key ^ tmp >> 14;
-// 	tmp = key ^ tmp >> 14;
-// 	key = key ^ tmp >> 14;
- 
-// 	// Invert key *= 265
-// 	key = (key * 15244667743933553977ull) & mask;
- 
-// 	// Invert key = key ^ (key >> 24)
-// 	tmp = key ^ key >> 24;
-// 	key = key ^ tmp >> 24;
- 
-// 	// Invert key = (~key) + (key << 21)
-// 	tmp = ~key;
-// 	tmp = ~(key - (tmp << 21));
-// 	tmp = ~(key - (tmp << 21));
-// 	key = ~(key - (tmp << 21)) & mask;
- 
-// 	return key;
-// }
 
 
 string kmer2str(kint num, uint k);

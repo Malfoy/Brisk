@@ -142,35 +142,6 @@ bool kmer_full::contains_multi_minimizer() const {
 }
 
 
-// double kmer_full::bimer_entropy(int k){
-// 	double entropy(0);
-// 	kint kmer=kmer_s;
-// 	uint8_t counts[16] = {0};
-// 	for(int i = 0; i < k-1; i++) {
-// 		counts[kmer & kint(15u)]++;
-// 		kmer >>= 2;
-//     }
-// 	for(int i(0); i <16;++i){
-// 		entropy+=occ2mer_entropy[counts[i]];
-// 	}
-// 	return entropy/precision2bit;
-// }
-
-
-// uint16_t* kmer_full::occ2mer_entropy;
-
-
-// void kmer_full::initocc2mer_entropy(int k){
-// 	occ2mer_entropy=new uint16_t[k];
-// 	occ2mer_entropy[0]=0;
-// 	occ2mer_entropy[k-1]=0;
-// 	for(int i(1);i<k-1;++i){
-// 		double p = i / double(k);
-// 		occ2mer_entropy[i]=uint16_t(-log2(p)*p*precision2bit);
-// 	}
-// }
-
-
 void kmer_full::replace_slice(kint replacement, size_t position, size_t length){
 	// Create a mask for the slice position
 	kint mask = (((kint)1) << (2 * length)) - 1;
@@ -186,40 +157,58 @@ void kmer_full::replace_slice(kint replacement, size_t position, size_t length){
 }
 
 
-// void kmer_full::clean_occ2mer_entropy() {
-// 	delete[] occ2mer_entropy;
-// }
 
+kint kmer_full::get_unhash_kmer_value(uint8_t m) const {
+	// Extract hashed minimizer
+	kint minimizer = this->kmer_s >> (this->minimizer_idx * 2);
+	kint mask = (((kint)1) << (m * 2)) - 1;
+	minimizer &= mask;
 
-// void kmer_full::unhash_kmer_body(uint8_t m, uint64_t mask_large_minimizer){
-// 	if(multi_mini){return;}
-// 	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
-// 	kint suffix = kmer_s & mask;
-// 	kmer_s >>=(2*minimizer_idx);
-// 	mask=(((kint)1) << (m * 2 )) - 1;
-// 	kint new_minimizer=kmer_s & mask;
-// 	kmer_s >>=(2*m);
-// 	kint prefix =kmer_s;
-// 	new_minimizer=bfc_hash_64_inv(new_minimizer,mask_large_minimizer);
-// 	kmer_s=suffix+(new_minimizer<<(2*minimizer_idx))+(prefix<<(2*(minimizer_idx+m)));
-// }
+	// Unhash mini
+	minimizer = bfc_hash_64_inv(minimizer, mask);
+	
+	// Recompose value
+	mask <<= 2 * this->minimizer_idx;
+	minimizer <<= 2 * this->minimizer_idx;
+	return (this->kmer_s & ~mask) + minimizer;
+}
 
+void kmer_full::unhash_kmer_minimizer(uint8_t m){
+	// No hash when multiple minimizers
+	if(multi_mini){return;}
 
-// kint kmer_full::get_unhash_kmer_body(uint8_t m,uint8_t m_small, uint64_t mask_large_minimizer)const {
-// 	if(multi_mini){return kmer_s;}
-// 	kint real_minimizer_idx=minimizer_idx-(m-m_small)/2;
-// 	kint mask = (((kint)1) << (real_minimizer_idx * 2)) - 1;
-// 	kint suffix = kmer_s & mask;
-// 	kint result=kmer_s;
-// 	result >>=(2*real_minimizer_idx);
-// 	mask=(((kint)1) << (m * 2 )) - 1;
-// 	kint new_minimizer=result & mask;
-// 	result >>=(2*m);
-// 	kint prefix =result;
-// 	new_minimizer=bfc_hash_64_inv(new_minimizer,mask_large_minimizer);
-// 	result=suffix+(new_minimizer<<(2*real_minimizer_idx))+(prefix<<(2*(real_minimizer_idx+m)));
-// 	return result;
-// }
+	// Extract hashed minimizer
+	kint minimizer = this->kmer_s >> (this->minimizer_idx * 2);
+	kint mask = (((kint)1) << (m * 2)) - 1;
+	minimizer &= mask;
+
+	// Unhash mini
+	minimizer = bfc_hash_64_inv(minimizer, mask);
+	this->minimizer = minimizer;
+	this->replace_slice(minimizer, this->minimizer_idx, m);
+}
+
+void kmer_full::hash_kmer_minimizer_inplace(uint8_t m){
+	// No hash when multiple minimizers
+	if(multi_mini){return;}
+
+	// Extract hashed minimizer
+	kint minimizer = this->kmer_s >> (this->minimizer_idx * 2);
+	kint mask = (((kint)1) << (m * 2)) - 1;
+	minimizer &= mask;
+
+	// Unhash mini
+	minimizer = bfc_hash_64(minimizer, mask);
+	this->minimizer = minimizer;
+	this->replace_slice(minimizer, this->minimizer_idx, m);
+}
+
+kmer_full kmer_full::hash_kmer_minimizer_copy(uint8_t m) const {
+	kmer_full copy;
+	copy.copy(*this);
+	copy.hash_kmer_minimizer_inplace(m);
+	return copy;
+}
 
 
 // ----- Useful binary kmer functions -----

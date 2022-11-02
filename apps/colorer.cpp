@@ -174,7 +174,6 @@ int main(int argc, char** argv) {
   */
 void add_color_from_fasta(Brisk<uint64_t> & colors, string & filename, const uint threads, uint64_t color) {
 	kmer_full init;
-	init.initocc2mer_entropy(colors.params.k);
 	// Test file existance
 	struct stat exist_buffer;
   bool file_existance = (stat (filename.c_str(), &exist_buffer) == 0);
@@ -217,8 +216,6 @@ void add_color_from_fasta(Brisk<uint64_t> & colors, string & filename, const uin
 			}
 		}
 	}
-
-	init.clean_occ2mer_entropy();
 }
 
 

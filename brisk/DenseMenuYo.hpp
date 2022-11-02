@@ -7,6 +7,7 @@
 
 #include <sys/resource.h>
 
+#include "hashing.hpp"
 #include "Kmers.hpp"
 #include "buckets.hpp"
 #include "SuperKmerLight.hpp"
@@ -22,45 +23,6 @@
 
 // uint64_t hash_64(uint64_t key, uint64_t mask)
 // Replaced by bfc_hash_64 from hashing.hpp
-
-
-// // The inversion of hash_64(). Modified from <https://naml.us/blog/tag/invertible>
-// uint64_t hash_64i(uint64_t key, uint64_t mask)
-// {
-// 	uint64_t tmp;
-
-// 	// Invert key = key + (key << 31)
-// 	tmp = (key - (key << 31));
-// 	key = (key - (tmp << 31)) & mask;
-
-// 	// Invert key = key ^ (key >> 28)
-// 	tmp = key ^ key >> 28;
-// 	key = key ^ tmp >> 28;
-
-// 	// Invert key *= 21
-// 	key = (key * 14933078535860113213ull) & mask;
-
-// 	// Invert key = key ^ (key >> 14)
-// 	tmp = key ^ key >> 14;
-// 	tmp = key ^ tmp >> 14;
-// 	tmp = key ^ tmp >> 14;
-// 	key = key ^ tmp >> 14;
-
-// 	// Invert key *= 265
-// 	key = (key * 15244667743933553977ull) & mask;
-
-// 	// Invert key = key ^ (key >> 24)
-// 	tmp = key ^ key >> 24;
-// 	key = key ^ tmp >> 24;
-
-// 	// Invert key = (~key) + (key << 21)
-// 	tmp = ~key;
-// 	tmp = ~(key - (tmp << 21));
-// 	tmp = ~(key - (tmp << 21));
-// 	key = ~(key - (tmp << 21)) & mask;
-
-// 	return key;
-// }
 
 
 
@@ -214,8 +176,9 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	bucket.init_enumerator();
 	while (bucket.has_next_kmer()) {
 		bucket.next_kmer(kmer, small_minimizer);
-		data=bucket.data_reserved_memory+kmer_id*sizeof(DATA);
-		kint local_kmer=kmer.get_unhash_kmer_body(params.m,params.m_small,m_mask);
+		data = bucket.data_reserved_memory+kmer_id*sizeof(DATA);
+		kmer.unhash_kmer_minimizer(params.m);
+		kint local_kmer = kmer.kmer_s;
 		this->overload_kmers[small_minimizer%bucket_overload][local_kmer]=*data;
 		kmer_id++;
 	}
@@ -258,7 +221,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 	// GROGRO bucket check
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
-		kint local_kmer=kmer.get_unhash_kmer_body(params.m,params.m_small,m_mask);
+		kint local_kmer = kmer.get_unhash_kmer_value(params.m);
 		overload_kmers[small_minimizer%bucket_overload][local_kmer] = DATA();
 		DATA* el=&overload_kmers[small_minimizer%bucket_overload][local_kmer];
 		bucketMatrix[mutex_idx][idx-1].nb_kmers += 1;
@@ -363,7 +326,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	// Grogro kmer
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
-		kint local_kmer=kmer.get_unhash_kmer_body(params.m,params.m_small,m_mask);
+		kint local_kmer = kmer.get_unhash_kmer_value(params.m);
 		overload_kmers[small_minimizer%bucket_overload][local_kmer] = DATA();
 		DATA* el=&overload_kmers[small_minimizer%bucket_overload][local_kmer];
 		omp_unset_lock(&lock_overload[small_minimizer%bucket_overload]);
@@ -411,7 +374,7 @@ DATA * DenseMenuYo<DATA>::get_kmer(kmer_full & kmer) {
 
 	// GROGRO bucket check
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
-		kint local_kmer=kmer.get_unhash_kmer_body(params.m,params.m_small,m_mask);
+		kint local_kmer = kmer.get_unhash_kmer_value(params.m);
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 		if (overload_kmers[small_minimizer%bucket_overload].count(local_kmer) != 0) {
 			DATA* el=&(overload_kmers[small_minimizer%bucket_overload][local_kmer]);
@@ -464,7 +427,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmer
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 		for(uint i(0);i<kmers.size();++i){
-			kint local_kmer=kmers[i].get_unhash_kmer_body(params.m,params.m_small,m_mask);
+			kint local_kmer=kmers[i].get_unhash_kmer_value(params.m);
 			if (overload_kmers[small_minimizer%bucket_overload].count(local_kmer) != 0) {
 				result[i] =&overload_kmers[small_minimizer%bucket_overload][local_kmer];
 			}else{
@@ -577,7 +540,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 			
 			bool reversed;
 			kmer.minimizer=get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer);
-			kmer.hash_kmer_body(params.m,kmer.minimizer);
+			kmer.hash_kmer_minimizer_inplace(params.m);
 			overload_iter=std::next(overload_iter);
 			return true;
 		}
