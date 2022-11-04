@@ -62,7 +62,7 @@ public:
 	kmer_full & operator=(kmer_full&& kmer);	
 	void compute_mini(uint8_t mini_size);
 	void print(uint8_t k, uint8_t m) const;
-	kint get_compacted(uint8_t m)const ;
+	kint get_compacted(uint8_t m, uint8_t mini_idx)const ;
 	// uint64_t get_minimizer() const;
 	bool contains_multi_minimizer() const;
 	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;

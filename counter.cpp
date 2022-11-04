@@ -160,6 +160,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	// Count 
 	while (counter.next(kmer)) {
 		
+		cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
 

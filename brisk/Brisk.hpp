@@ -45,7 +45,7 @@ public:
 
 
 	// DATA * insert(kmer_full & kmer);
-	DATA * get(kmer_full & kmer);
+	DATA * get(kmer_full & kmer) const;
 	
 	vector<DATA *> insert_superkmer(const  vector<kmer_full>& v, vector<bool>& newly_inserted);
 	vector<DATA *> get_superkmer(const vector<kmer_full>& v);
@@ -82,9 +82,8 @@ Brisk<DATA>::~Brisk() {
 }
 
 
-// TODO: hash kmer minimizer
 template<class DATA>
-DATA * Brisk<DATA>::get(kmer_full & kmer) {
+DATA * Brisk<DATA>::get(kmer_full & kmer) const {
 	#ifdef TIME_ANALYSIS
 	#pragma omp critical
 	{
@@ -100,7 +99,10 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) {
 		}
 	}
 	#endif
-	return this->menu->get_kmer(kmer);
+	kmer.hash_kmer_minimizer_inplace(this->params.m);
+	DATA * val = this->menu->get_kmer(kmer);
+	kmer.unhash_kmer_minimizer(this->params.m);
+	return val;
 }
 
 
@@ -176,9 +178,11 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(const vector<kmer_full>& superkmer,
 		for (const kmer_full & kmer : superkmer) {
 			hashed_skmer.emplace_back(kmer.hash_kmer_minimizer_copy(this->params.m));
 		}
-
-		// TODO: seems like a shifting bug (odd numbers hell)
-        uint64_t small_minimizer =  (((hashed_skmer[0].minimizer& this->menu->mini_reduc_mask))>>(params.m-params.m_small));
+		
+		// Remove the minimizer suffix
+		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
+		// Remove the minimizer prefix
+		small_minimizer &= (((kint)1) << (this->params.m_small * 2)) - 1;
 
 		// Add the values
 		uint32_t mutex_idx = (((small_minimizer))%this->menu->mutex_number);
@@ -208,7 +212,10 @@ void Brisk<DATA>::unprotect_data(const kmer_full & kmer) {
 
 template<class DATA>
 bool Brisk<DATA>::next(kmer_full & kmer) {
-	return this->menu->next(kmer);
+	bool has_next = this->menu->next(kmer);
+	if (has_next)
+		kmer.unhash_kmer_minimizer(this->params.m);
+	return has_next;
 }
 
 

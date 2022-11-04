@@ -196,6 +196,7 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 	this->data_space_update();
 	// 1 - Try to compact with the last kmer
 	if (buffered_skmer != NULL) {
+		// TODO: small minimizer idx ok ?
 		bool is_compacted = buffered_skmer->compact_right(
 				kmer,
 				this->nucleotides_reserved_memory + this->params->allocated_bytes * buffered_skmer->idx,
@@ -283,8 +284,9 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 
 	// Create a new superkmer
 	skml.emplace_back(
-		kmer.get_compacted(params->m_small),
-		(int)kmer.minimizer_idx,
+		kmer.get_compacted(params->m_small,
+						   kmer.minimizer_idx + (this->params->m_reduc + 1) / 2),
+		(int)kmer.minimizer_idx + (this->params->m_reduc + 1) / 2,
 		skml.size(),
 		this->nucleotides_reserved_memory + (this->skml.size() * params->allocated_bytes),
 		this->next_data,
@@ -292,7 +294,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	);
 	buffered_skmer = &(skml[skml.size()-1]);
 	value_pointer = this->data_reserved_memory + this->next_data;
-
+	
 	return value_pointer;
 }
 
@@ -477,7 +479,9 @@ DATA * Bucket<DATA>::find_kmer_linear(const kmer_full& kmer, const int64_t begin
 		debug_count += 1;
 
 		if (is_present) {
-			uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer.minimizer_idx) - 1;
+			uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
+			uint64_t kmer_mini_idx = kmer.minimizer_idx + mini_reduc_offset;
+			uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
 			buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			return this->data_reserved_memory + skml[i].data_idx + kmer_position;
 		}
@@ -493,11 +497,13 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(const vector<kmer_full>& km
 		for(uint64_t j(0);j<kmers.size(); ++j){
 			if(result[j]==NULL){
 				bool is_present = skml[i].is_kmer_present(
-				kmers[j],
-				this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,
-				*params);
+					kmers[j],
+					this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,
+					*params);
 				if (is_present) {
-					uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmers[j].minimizer_idx) - 1;
+					uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
+					uint64_t kmer_mini_idx = kmers[j].minimizer_idx + mini_reduc_offset;
+					uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
 					buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 					result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
 				}
@@ -516,7 +522,9 @@ DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(const kmer_full& kmer, const i
 		bool inferior,superior,equal;
 		if(skml[i].kmer_comparison(kmer,kmer_interleave,this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
 			if(equal){
-				uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer.minimizer_idx) - 1;
+				uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
+				uint64_t kmer_mini_idx = kmer.minimizer_idx + mini_reduc_offset;
+				uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
 				buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 				return this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			}else if(superior){
@@ -548,7 +556,9 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 				bool inferior,superior,equal;
 				if(skml[i].kmer_comparison(kmers[j],superkmer_interleave_buffer,kmer_interleaves[j],this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,*params,superior,inferior,equal)){
 					if(equal){
-						uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmers[j].minimizer_idx) - 1;
+						uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
+						uint64_t kmer_mini_idx = kmers[j].minimizer_idx + mini_reduc_offset;
+						uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
 						buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 						result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
 						if(min_kmer_indice==j){

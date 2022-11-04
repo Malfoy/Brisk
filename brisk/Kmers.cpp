@@ -125,8 +125,8 @@ uint8_t kmer_full::prefix_size(const uint8_t k, const uint8_t m) const {
 
 
 // SUFFIX IS AT RIGHT!!!!!!DO NOT CHANGE THIS
-kint kmer_full::get_compacted(uint8_t m) const {
-	kint mask = (((kint)1) << (minimizer_idx * 2)) - 1;
+kint kmer_full::get_compacted(uint8_t m, uint8_t mini_idx) const {
+	kint mask = (((kint)1) << (mini_idx * 2)) - 1;
 	kint suffix = kmer_s & mask;
 
 	mask = ~mask;
