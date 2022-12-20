@@ -1,7 +1,7 @@
 #include "hashing.hpp"
 
 
-uint64_t bfc_hash_64(uint64_t key, uint64_t mask){
+uint64_t bfc_hash_64(uint64_t key, uint64_t mask) {
 	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
 	key = key ^ key >> 24;
 	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265

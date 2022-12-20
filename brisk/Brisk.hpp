@@ -47,9 +47,11 @@ public:
 	// DATA * insert(kmer_full & kmer);
 	DATA * get(kmer_full & kmer) const;
 	
-	vector<DATA *> insert_superkmer(const  vector<kmer_full>& v, vector<bool>& newly_inserted);
-	vector<DATA *> get_superkmer(const vector<kmer_full>& v);
+	vector<DATA *> insert_superkmer(vector<kmer_full>& v, vector<bool>& newly_inserted);
+	vector<DATA *> get_superkmer(vector<kmer_full>& v);
 
+	// vector<DATA *> insert_sequence(const string& str, vector<bool>& newly_inserted);
+	// vector<DATA *> get_sequence(const string& str);
 
 	void protect_data(const kmer_full & kmer);
 	void unprotect_data(const kmer_full & kmer);
@@ -107,51 +109,76 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) const {
 
 
 
-template<class DATA>
-vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
-	vector<DATA *> result;
-	// Line too short
-	if (str.size() < this.params.k){
-		return result;
-	}
-	vector<kmer_full> superkmer;
-	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
-	enumerator.next(superkmer);
-	while (superkmer.size() > 0) {
-		// Add the values
-		auto vec=get_superkmer(superkmer);
-		result.insert(result.end(),vec.begin(),vec.end());
-	}
-	return result;
+// template<class DATA>
+// vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
+// 	vector<DATA *> result;
+// 	// Line too short
+// 	if (str.size() < this.params.k){
+// 		return result;
+// 	}
+// 	vector<kmer_full> superkmer;
+// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
+// 	enumerator.next(superkmer);
+// 	while (superkmer.size() > 0) {
+// 		// Add the values
+// 		auto vec=get_superkmer(superkmer);
+// 		result.insert(result.end(),vec.begin(),vec.end());
+// 	}
+// 	return result;
+// }
+
+
+// template<class DATA>
+// vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
+// 	vector<DATA *> result;
+// 	// Line too short
+// 	if (str.size() < this.params.k){
+// 		return result;
+// 	}
+// 	vector<kmer_full> superkmer;
+// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
+// 	enumerator.next(superkmer);
+// 	while (superkmer.size() > 0){
+// 		// Add the values
+// 		vector<bool> newly_inserted_local;
+// 		vector<DATA*> vec(insert_superkmer(superkmer,newly_inserted));
+// 		superkmer.clear();
+// 		result.insert(result.end(),vec.begin(),vec.end());
+// 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
+// 	}//TODO MISSING A NEXT HERE
+// 	return result;
+// }
+
+
+void hash_skmer(vector<kmer_full> & skmer, size_t m) {
+	// Replace all the minimizers in the kmers
+	for (kmer_full & kmer : skmer)
+		kmer.hash_kmer_minimizer_inplace(m);
 }
 
 
+void unhash_skmer(vector<kmer_full> & skmer, size_t m) {
+	// Replace all the minimizers in the kmers
+	for (kmer_full & kmer : skmer)
+		kmer.unhash_kmer_minimizer(m);
+}
+
 
 template<class DATA>
-vector<DATA *> Brisk<DATA>::get_superkmer(const vector<kmer_full>& superkmer) {
+vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		// Replace all the minimizers in the kmers by their hash values
-		vector<kmer_full> hashed_skmer;
-		for (const kmer_full & kmer : superkmer) {
-			hashed_skmer.emplace_back(kmer.hash_kmer_minimizer_copy(this->params.m));
-		}
-
-		return this->menu->get_kmer_vector(hashed_skmer);
+		hash_skmer(superkmer, this->params.m);
+		result = this->menu->get_kmer_vector(superkmer);
+		unhash_skmer(superkmer, this->params.m);
 	}
 	return result;
 }
 
-
-
-template<class DATA>
 // TODO: This function has a bug if multiple skmers share the same minimizer and if there is a reallocation of a bucket for the second add. In this case, the DATA * from the first skmer are not relevant anymore.
+template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
 	vector<DATA *> result;
-	// Line too short
-	if (str.size() < this.params.k){
-		return result;
-	}
 	vector<kmer_full> superkmer;
 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
 	enumerator.next(superkmer);
@@ -169,27 +196,25 @@ vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newl
 
 
 template<class DATA>
-vector<DATA *> Brisk<DATA>::insert_superkmer(const vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
+vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
 
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
-		// Replace all the minimizers in the kmers by their hash values
-		vector<kmer_full> hashed_skmer;
-		for (const kmer_full & kmer : superkmer) {
-			hashed_skmer.emplace_back(kmer.hash_kmer_minimizer_copy(this->params.m));
-		}
-		
+		hash_skmer(superkmer, this->params.m);
+
 		// Remove the minimizer suffix
 		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 		// Remove the minimizer prefix
 		small_minimizer &= (((kint)1) << (this->params.m_small * 2)) - 1;
 
 		// Add the values
-		uint32_t mutex_idx = (((small_minimizer))%this->menu->mutex_number);
+		uint32_t mutex_idx = ((small_minimizer)%this->menu->mutex_number);
 		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
-		this->menu->insert_kmer_vector(hashed_skmer,newly_inserted);
-		result=this->menu->get_kmer_vector(hashed_skmer);
+		this->menu->insert_kmer_vector(superkmer,newly_inserted);
+		result=this->menu->get_kmer_vector(superkmer);
 		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
+
+		unhash_skmer(superkmer, this->params.m);
 	}
 	return result;
 }

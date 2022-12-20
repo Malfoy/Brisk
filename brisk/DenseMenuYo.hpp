@@ -9,6 +9,7 @@
 
 #include "hashing.hpp"
 #include "Kmers.hpp"
+#include "hashing.hpp"
 #include "buckets.hpp"
 #include "SuperKmerLight.hpp"
 #include "parameters.hpp"
@@ -101,6 +102,24 @@ private:
 	uint64_t current_minimizer;
 };
 
+
+// kint get_unhash_kmer(const kmer_full & kmer, size_t m) {
+// 	kint val = kmer.kmer_s;
+
+// 	// Extract the minimizer and hash it
+// 	kint hash = val >> (2 * kmer.minimizer_idx);
+// 	kint minimizer_mask = (((kint)1) << (2 * m)) - 1;
+// 	hash &= minimizer_mask;
+// 	kint minimizer = (kint)bfc_hash_64_inv((uint64_t)minimizer, (uint64_t)minimizer_mask);
+
+// 	// Replace all the minimizer in the value
+// 	minimizer_mask <<= 2 * kmer.minimizer_idx;
+// 	val &= ~minimizer_mask;
+// 	minimizer <<= 2 * kmer.minimizer_idx;
+// 	val += minimizer;
+
+// 	return val;
+// }
 
 
 template <class DATA>
@@ -562,7 +581,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 			kmer.kmer_s = overload_iter->first;
 			
 			bool reversed;
-			kmer.minimizer=get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer);
+			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer);
 			kmer.hash_kmer_minimizer_inplace(params.m);
 			overload_iter=std::next(overload_iter);
 			return true;
@@ -600,7 +619,9 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	}
 	
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
-	kmer.minimizer_idx -= (params.m_reduc + 1)/2;
+	// kmer.minimizer_idx -= (params.m_reduc + 1)/2;
+	// TODO: Must unhash the kmers !!
+	kmer.minimizer_idx -= (params.m-params.m_small)/2;
 	kmer.compute_mini(params.m);
 
 	return true;
