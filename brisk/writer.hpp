@@ -32,19 +32,42 @@ void little_to_big_endian(uint8_t * little, uint8_t * big, size_t bytes_to_conve
 	}
 }
 
+
+/** Transform a pair of prefix suffix nucleotide uints into a big endian byte array.
+  * If the number of nucleotides is not a multiple of 4, the bigest empty bits are set to 0.
+ **/
 void to_big_endian_compact(uint8_t * big, kint prefix, size_t pref_size, kint suffix, size_t suff_size) {
 	uint64_t compact_size = pref_size + suff_size;
 	uint64_t compact_bytes = (compact_size + 3) / 4;
+	memset(big, 0, compact_bytes);
 
-	uint64_t current_byte = 0;
+	uint64_t current_nucleotide = compact_bytes * 4 - 1;
 	// Insert the suffix
-	for ( ; current_byte*4<suff_size ; current_byte++) {
-		big[compact_bytes - 1 - current_byte] = suffix & 0xFF;
-		suffix >>= 8; current_byte += 1;
+	for (size_t rev_suff_idx=0 ; rev_suff_idx<suff_size ; rev_suff_idx++, current_nucleotide-- ) {
+		size_t big_byte = current_nucleotide / 4;
+		size_t big_nucl_pos = 3 - (current_nucleotide % 4);
+
+		uint8_t nucl = suffix & 0b11;
+		big[big_byte] |= nucl << (2 * big_nucl_pos);
+
+		suffix >>= 2;
 	}
-	// Prepare the prefix
 	
 	// Insert the prefix
+	for (size_t rev_pref_idx=0 ; rev_pref_idx<pref_size ; rev_pref_idx++, current_nucleotide-- ) {
+		size_t big_byte = current_nucleotide / 4;
+		size_t big_nucl_pos = 3 - (current_nucleotide % 4);
+
+		uint8_t nucl = prefix & 0b11;
+		big[big_byte] |= nucl << (2 * big_nucl_pos);
+
+		prefix >>= 2;
+	}
+
+	cout << "compact ";
+	for (size_t i=0 ; i<compact_bytes ; i++)
+		cout << (uint64_t)big[i] << " ";
+	cout << endl;
 }
 
 
@@ -110,7 +133,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
-			Section_Minimizer sm(current_file);
+			Section_Minimizer * sm = nullptr;
+			uint64_t current_minimizer = 0xFFFFFFFFFFFFFFFFUL;
 
 			uint8_t * big_endian_nucleotides = new uint8_t[index.params.allocated_bytes];
 			Bucket<DATA> & b = menu->bucketMatrix[mutex_idx][idx-1];
@@ -155,30 +179,50 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				cout << " " << kmer2str(minimizer, index.params.m) << " ";
 				cout << kmer2str(suffix, skmer.suffix_size() - mini_suffix_size) << endl;
 
+				// // Create a new minimizer section while changing
+				// if (current_minimizer != minimizer) {
+				// 	// Init new section object
+				// 	if (sm != nullptr) {
+				// 		sm->close();
+				// 		delete sm;
+				// 	}
+				// 	sm = new Section_Minimizer(current_file);
+				// 	memset(mini_seq, 0, bytes_mini);
+
+				// 	// Create the minimizer in bigendian order
+				// 	size_t pos = index.params.m - 1;
+				// 	for (size_t nucl_idx=0 ; nucl_idx<index.params.m ; nucl_idx++, pos--) {
+				// 		size_t byte_idx = pos / 4;
+				// 		size_t byte_position = 3 - (pos % 4);
+				// 		uint8_t nucl = (minimizer >> (2 * nucl_idx)) & 0b11;
+				// 		mini_seq[byte_idx] |= nucl << (2 * byte_position);
+				// 	}
+
+				// 	// Write the minimizer inside of the section
+				// 	sm->write_minimizer(mini_seq);
+				// }
+
+				// Transform the superkmer into a compacted big endian byte array
 				to_big_endian_compact(big_endian_nucleotides,
 									  prefix, skmer.prefix_size(index.params) - mini_prefix_size,
 									  suffix, skmer.suffix_size() - mini_suffix_size);
 				exit(0);
 
-				// Create a new minimizer section if needed
-				// Big endian skmer creation
+				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m;
 				// register skmer
 
-				// Little endian to big endian
-				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m_small;
-				size_t real_seq_bytes = real_seq_size % 4 == 0 ? real_seq_size / 4 : real_seq_size / 4 + 1;
-
+				
 				// Copy the superkmer
-				for (uint i=0 ; i<real_seq_bytes ; i++) {
-					big_endian_nucleotides[i] = nucleotides_ptr[index.params.allocated_bytes-i-1];
-				}
-				// Align the skmer on the right
-				if (real_seq_size % 4 != 0) {
-					rightshift8(big_endian_nucleotides, real_seq_bytes, ((4 - (real_seq_size % 4)) % 4) * 2);
-				}
+				// for (uint i=0 ; i<real_seq_bytes ; i++) {
+				// 	big_endian_nucleotides[i] = nucleotides_ptr[index.params.allocated_bytes-i-1];
+				// }
+				// // Align the skmer on the right
+				// if (real_seq_size % 4 != 0) {
+				// 	rightshift8(big_endian_nucleotides, real_seq_bytes, ((4 - (real_seq_size % 4)) % 4) * 2);
+				// }
 
 				// Save the whole skmer at once
-				sm.write_compacted_sequence_without_mini(
+				sm->write_compacted_sequence_without_mini(
 						big_endian_nucleotides,
 						real_seq_size,
 						skmer.prefix_size(index.params),
@@ -188,7 +232,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				);
 			}
 
-			sm.close();
+			sm->close();
+			delete sm;
 			delete[] big_endian_nucleotides;
 		}
 	}
