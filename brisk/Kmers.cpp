@@ -215,6 +215,8 @@ kmer_full kmer_full::hash_kmer_minimizer_copy(uint8_t m) const {
 
 
 string kmer2str(__uint128_t num, uint k) {
+	if (k == 0)
+		return "";
 	string res;
 	Pow2<__uint128_t> anc(2 * (k - 1));
 	for (uint64_t i(0); i < k; ++i) {
