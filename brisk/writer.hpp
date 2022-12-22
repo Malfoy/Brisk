@@ -213,7 +213,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				sm->write_compacted_sequence_without_mini(
 						big_endian_nucleotides,
 						real_seq_size,
-						skmer.prefix_size(index.params),
+						skmer.prefix_size(index.params) - mini_prefix_size,
 						// /!\ WARNING: This piece of code car trigger problems of little/big endian
 						// We have to report it in the documentation
 						(uint8_t *)data_ptr
