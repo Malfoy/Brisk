@@ -333,7 +333,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	small_minimizer &= this->mini_reduc_mask;
 
 	uint32_t mutex_idx = get_mutex(small_minimizer);
-	// cout << endl;
 
 	// Works because m - reduc <= 16
 	uint32_t column_idx = get_column(small_minimizer);
@@ -348,7 +347,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 		active_buckets++;
 	}
 
-	// Grogro kmer
+	// Grogro kmer bucket
 	if (bucketMatrix[mutex_idx][idx-1].cleared) {
 		omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
 		kint local_kmer = kmer.get_unhash_kmer_value(params.m);

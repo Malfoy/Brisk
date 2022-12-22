@@ -113,7 +113,7 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 	if ((params.compacted_size + size) / 8 > params.allocated_bytes)
 		return false;
 	
-	size_t kmer_suffix_size = kmer.minimizer_idx;
+	size_t kmer_suffix_size = kmer.minimizer_idx + (params.m_reduc + 1) / 2;
 	size_t skm_suffix_size = this->suffix_size();
 	// Suffix sizes are not matching
 	if (kmer_suffix_size != skm_suffix_size+1) {

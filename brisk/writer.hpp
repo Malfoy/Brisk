@@ -117,7 +117,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	sgv.write_var("max", 2 * (index.params.k - index.params.m));
 	sgv.close();
 
-	cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.m_small << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
+	// cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.m_small << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
 
 	// Prepare structures for minimizer enumeration
 	uint8_t bytes_mini = (index.params.m + 3) / 4;
@@ -132,16 +132,16 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
-			cout << "coordinates " << small_mini << " " << idx << endl;
+			// cout << "coordinates " << small_mini << " " << idx << endl;
 			Section_Minimizer * sm = nullptr;
 			uint64_t current_minimizer = 0xFFFFFFFFFFFFFFFFUL;
 
 			uint8_t * big_endian_nucleotides = new uint8_t[index.params.allocated_bytes];
 			Bucket<DATA> & b = menu->bucketMatrix[mutex_idx][idx-1];
-			cout << "bucket " << b.skml.size() << endl;
+			// cout << "bucket " << b.skml.size() << endl;
 			for (SKL & skmer : b.skml) {
 				nb_kmers += skmer.size;
-				cout << "skmer size " << (uint64_t)skmer.size << endl;
+				// cout << "skmer size " << (uint64_t)skmer.size << endl;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
 				DATA * data_ptr = b.data_reserved_memory + skmer.data_idx;
@@ -163,7 +163,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				uint64_t mini_suffix_size = (index.params.m_reduc + 1) / 2;
 				mask = (((kint)1) << (2 * mini_suffix_size)) - 1;
 				minimizer <<= mini_suffix_size * 2;
-				cout << (skmer.suffix_size() - mini_suffix_size) << endl;
+				// cout << (skmer.suffix_size() - mini_suffix_size) << endl;
 				minimizer += (suffix >> (2 * (skmer.suffix_size() - mini_suffix_size))) & mask;
 				// Update suffix
 				mask = (((kint)1) << (2 * (skmer.suffix_size() - mini_suffix_size))) - 1;
@@ -171,15 +171,15 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				// Unhash minimizer
 				minimizer = bfc_hash_64_inv(minimizer, index.params.mask_large_minimizer);
 
-				cout << "skmer " << (uint64_t)skmer.size << endl;
-				cout << "sizes: " << "prefix=" << (uint64_t)skmer.prefix_size(index.params);
-				cout << " mini_prefix_size=" << (uint64_t)mini_prefix_size;
-				cout << " m=" << (uint64_t)index.params.m;
-				cout << " suffix=" << (uint64_t)skmer.suffix_size();
-				cout << " mini_suffix_size=" << (uint64_t)mini_suffix_size << endl;
-				cout << kmer2str(prefix, skmer.prefix_size(index.params) - mini_prefix_size);
-				cout << " " << kmer2str(minimizer, index.params.m) << " ";
-				cout << kmer2str(suffix, skmer.suffix_size() - mini_suffix_size) << endl;
+				// cout << "skmer " << (uint64_t)skmer.size << endl;
+				// cout << "sizes: " << "prefix=" << (uint64_t)skmer.prefix_size(index.params);
+				// cout << " mini_prefix_size=" << (uint64_t)mini_prefix_size;
+				// cout << " m=" << (uint64_t)index.params.m;
+				// cout << " suffix=" << (uint64_t)skmer.suffix_size();
+				// cout << " mini_suffix_size=" << (uint64_t)mini_suffix_size << endl;
+				// cout << kmer2str(prefix, skmer.prefix_size(index.params) - mini_prefix_size);
+				// cout << " " << kmer2str(minimizer, index.params.m) << " ";
+				// cout << kmer2str(suffix, skmer.suffix_size() - mini_suffix_size) << endl;
 
 				// Create a new minimizer section while changing
 				if (current_minimizer != minimizer) {

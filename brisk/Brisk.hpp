@@ -216,6 +216,7 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 
 		unhash_skmer(superkmer, this->params.m);
 	}
+
 	return result;
 }
 
