@@ -141,6 +141,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 			cout << "bucket " << b.skml.size() << endl;
 			for (SKL & skmer : b.skml) {
 				nb_kmers += skmer.size;
+				cout << "skmer size " << (uint64_t)skmer.size << endl;
 				// Get the right pointers
 				uint8_t * nucleotides_ptr = b.nucleotides_reserved_memory + skmer.idx * index.params.allocated_bytes;
 				DATA * data_ptr = b.data_reserved_memory + skmer.data_idx;
@@ -182,6 +183,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 				// Create a new minimizer section while changing
 				if (current_minimizer != minimizer) {
+					current_minimizer = minimizer;
+
 					// Init new section object
 					if (sm != nullptr) {
 						sm->close();
