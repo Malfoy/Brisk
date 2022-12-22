@@ -64,10 +64,10 @@ void to_big_endian_compact(uint8_t * big, kint prefix, size_t pref_size, kint su
 		prefix >>= 2;
 	}
 
-	cout << "compact ";
-	for (size_t i=0 ; i<compact_bytes ; i++)
-		cout << (uint64_t)big[i] << " ";
-	cout << endl;
+	// cout << "compact ";
+	// for (size_t i=0 ; i<compact_bytes ; i++)
+	// 	cout << (uint64_t)big[i] << " ";
+	// cout << endl;
 }
 
 
@@ -88,7 +88,6 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	// Set global variables
 	Section_GV sgv(current_file);
 	sgv.write_var("k", index.params.k);
-	sgv.write_var("m", index.params.m_small);
 	sgv.write_var("data_size", sizeof(DATA));
 	sgv.write_var("max", 1);
 	sgv.close();
@@ -113,15 +112,15 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	// Prepare max value for super kmer size
 	sgv = Section_GV(current_file);
 	sgv.write_var("k", index.params.k);
-	sgv.write_var("m", index.params.m_small);
+	sgv.write_var("m", index.params.m);
 	sgv.write_var("data_size", sizeof(DATA));
-	sgv.write_var("max", 2 * (index.params.k - index.params.m_small));
+	sgv.write_var("max", 2 * (index.params.k - index.params.m));
 	sgv.close();
 
 	cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.m_small << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
 
 	// Prepare structures for minimizer enumeration
-	uint8_t bytes_mini = index.params.m_small % 4 == 0 ? index.params.m_small / 4 : index.params.m_small / 4 + 1;
+	uint8_t bytes_mini = (index.params.m + 3) / 4;
 	uint8_t * mini_seq = new uint8_t[bytes_mini];
 	uint32_t max_mini = (1 << (2 * index.params.m_small)) - 1;
 	// Enumerate all possible minimizers
@@ -133,11 +132,13 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
+			cout << "coordinates " << small_mini << " " << idx << endl;
 			Section_Minimizer * sm = nullptr;
 			uint64_t current_minimizer = 0xFFFFFFFFFFFFFFFFUL;
 
 			uint8_t * big_endian_nucleotides = new uint8_t[index.params.allocated_bytes];
 			Bucket<DATA> & b = menu->bucketMatrix[mutex_idx][idx-1];
+			cout << "bucket " << b.skml.size() << endl;
 			for (SKL & skmer : b.skml) {
 				nb_kmers += skmer.size;
 				// Get the right pointers
@@ -179,47 +180,34 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				cout << " " << kmer2str(minimizer, index.params.m) << " ";
 				cout << kmer2str(suffix, skmer.suffix_size() - mini_suffix_size) << endl;
 
-				// // Create a new minimizer section while changing
-				// if (current_minimizer != minimizer) {
-				// 	// Init new section object
-				// 	if (sm != nullptr) {
-				// 		sm->close();
-				// 		delete sm;
-				// 	}
-				// 	sm = new Section_Minimizer(current_file);
-				// 	memset(mini_seq, 0, bytes_mini);
+				// Create a new minimizer section while changing
+				if (current_minimizer != minimizer) {
+					// Init new section object
+					if (sm != nullptr) {
+						sm->close();
+						delete sm;
+					}
+					sm = new Section_Minimizer(current_file);
+					memset(mini_seq, 0, bytes_mini);
 
-				// 	// Create the minimizer in bigendian order
-				// 	size_t pos = index.params.m - 1;
-				// 	for (size_t nucl_idx=0 ; nucl_idx<index.params.m ; nucl_idx++, pos--) {
-				// 		size_t byte_idx = pos / 4;
-				// 		size_t byte_position = 3 - (pos % 4);
-				// 		uint8_t nucl = (minimizer >> (2 * nucl_idx)) & 0b11;
-				// 		mini_seq[byte_idx] |= nucl << (2 * byte_position);
-				// 	}
+					// Create the minimizer in bigendian order
+					size_t pos = bytes_mini * 4 - 1;
+					for (size_t nucl_idx=0 ; nucl_idx<index.params.m ; nucl_idx++, pos--) {
+						size_t byte_idx = pos / 4;
+						size_t byte_position = 3 - (pos % 4);
+						uint8_t nucl = (minimizer >> (2 * nucl_idx)) & 0b11;
+						mini_seq[byte_idx] |= nucl << (2 * byte_position);
+					}
 
-				// 	// Write the minimizer inside of the section
-				// 	sm->write_minimizer(mini_seq);
-				// }
+					// Write the minimizer inside of the section
+					sm->write_minimizer(mini_seq);
+				}
 
 				// Transform the superkmer into a compacted big endian byte array
 				to_big_endian_compact(big_endian_nucleotides,
 									  prefix, skmer.prefix_size(index.params) - mini_prefix_size,
 									  suffix, skmer.suffix_size() - mini_suffix_size);
-				exit(0);
-
 				size_t real_seq_size = index.params.k + skmer.size - 1 - index.params.m;
-				// register skmer
-
-				
-				// Copy the superkmer
-				// for (uint i=0 ; i<real_seq_bytes ; i++) {
-				// 	big_endian_nucleotides[i] = nucleotides_ptr[index.params.allocated_bytes-i-1];
-				// }
-				// // Align the skmer on the right
-				// if (real_seq_size % 4 != 0) {
-				// 	rightshift8(big_endian_nucleotides, real_seq_bytes, ((4 - (real_seq_size % 4)) % 4) * 2);
-				// }
 
 				// Save the whole skmer at once
 				sm->write_compacted_sequence_without_mini(
