@@ -619,11 +619,10 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		current_minimizer += 1;
 		return this->next(kmer);
 	}
-	
+
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
 	// kmer.minimizer_idx -= (params.m_reduc + 1)/2;
-	// TODO: Must unhash the kmers !!
-	kmer.minimizer_idx -= (params.m-params.m_small)/2;
+	kmer.minimizer_idx -= (params.m_reduc + 1)/2;
 	kmer.compute_mini(params.m);
 
 	return true;

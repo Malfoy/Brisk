@@ -63,23 +63,6 @@ void to_big_endian_compact(uint8_t * big, kint prefix, size_t pref_size, kint su
 
 		prefix >>= 2;
 	}
-
-	// cout << "compact ";
-	// for (size_t i=0 ; i<compact_bytes ; i++)
-	// 	cout << (uint64_t)big[i] << " ";
-	// cout << endl;
-}
-
-
-static void rightshift8(uint8_t * bitarray, size_t length, size_t bitshift) {
-	assert(bitshift < 8);
-
-	if (length > 0) {
-		for (uint64_t i=length-1 ; i>0 ; i--) {
-			bitarray[i] = (bitarray[i-1] << (8-bitshift)) | (bitarray[i] >> bitshift);
-		}
-		bitarray[0] >>= bitshift;
-	}
 }
 
 

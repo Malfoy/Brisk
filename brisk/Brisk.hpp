@@ -239,8 +239,9 @@ void Brisk<DATA>::unprotect_data(const kmer_full & kmer) {
 template<class DATA>
 bool Brisk<DATA>::next(kmer_full & kmer) {
 	bool has_next = this->menu->next(kmer);
-	if (has_next)
+	if (has_next) {
 		kmer.unhash_kmer_minimizer(this->params.m);
+	}
 	return has_next;
 }
 
