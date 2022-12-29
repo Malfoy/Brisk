@@ -296,6 +296,7 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
+	// cout << "insertion " << mutex_idx << " " << column_idx << " " << matrix_idx << " " << idx << endl;
 
 	// Bucket now too big to hold
 	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers>100 and bucketMatrix[mutex_idx][idx-1].nb_kmers*active_buckets/(total_number_kmers) >= GROGRO_THREASHOLD) {
@@ -600,7 +601,6 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// Select minimizer
 	while (current_minimizer<bucket_number and idx == 0) {
-		current_minimizer += 1;
 		mutex_idx = get_mutex(current_minimizer);
 		column_idx = get_column(current_minimizer);
 		matrix_idx = get_matrix_position(mutex_idx, column_idx);
@@ -609,6 +609,9 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		// Already enumerated kmers
 		if (idx != 0 and bucketMatrix[mutex_idx][idx-1].cleared) // Maybe a bug here
 			idx = 0;
+
+		if (idx == 0)
+			current_minimizer += 1;
 	}
 
 	// Enumeration is over
@@ -619,6 +622,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		current_minimizer += 1;
 		return this->next(kmer);
 	}
+
 
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
 	// kmer.minimizer_idx -= (params.m_reduc + 1)/2;
