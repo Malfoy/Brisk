@@ -160,7 +160,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	// Count 
 	while (counter.next(kmer)) {
 		
-		cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
+		// cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
 
@@ -260,7 +260,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	omp_set_nested(2);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		while (in.good()) {
 			string line;
@@ -290,7 +290,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
@@ -319,9 +319,16 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			newly_inserted.clear();
 			
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
+
+			cout << "vector";
+			for (uint8_t * val : vec)
+				cout << " " << (uint64_t *)val;
+			cout << endl;
+
 			for(uint i(0); i < vec.size();++i){
 				uint8_t * data_pointer(vec[i]);
 				if(newly_inserted[i]){
+					cout << i << "/" << superkmer.size() << " " << kmer2str(superkmer[i].kmer_s, counter.params.k) << endl;
 					(*data_pointer)=1;
 				}else{
 					(*data_pointer)++;

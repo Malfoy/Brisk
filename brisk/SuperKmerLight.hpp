@@ -232,11 +232,12 @@ uint SKL::byte_index(uint nucl_position, const Parameters & params) const{
 
 uint64_t comparaisons(0);
 
-bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const{
+bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Parameters & params) const {
 	uint64_t kmer_mini_idx = kmer.minimizer_idx + (params.m_reduc + 1) / 2;
 	if (kmer_mini_idx <= this->minimizer_idx and // Suffix long enougth
-			kmer_mini_idx - this->minimizer_idx + size > 0) { // Prefix long enougth
+			(uint64_t)this->minimizer_idx < kmer_mini_idx + size) { // Prefix long enougth
 		int kmer_idx = size - (this->minimizer_idx - kmer_mini_idx) - 1;
+		// exit(0);
 		return get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small, kmer_mini_idx);
 	} else
 		return false;
@@ -372,6 +373,7 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 	// Compute my max number of iteration
 	uint8_t my_suff_size = this->suffix_size();
 	uint8_t my_pref_size = this->prefix_size(params);
+	// cout << (uint64_t)my_suff_size << " " << (uint64_t)my_pref_size << " " << (uint64_t)size << endl;
 	kint my_pref = this->get_prefix(my_nucleotides, params);
 	kint my_suff = this->get_suffix(my_nucleotides, params);
 
