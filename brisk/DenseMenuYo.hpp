@@ -312,14 +312,12 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 		DATA * prev_val = this->get_kmer_no_mutex(kmer);
 		if (prev_val != NULL) {
 			newly_inserted=false;
-			cout << "prev val" << endl;
 			return prev_val;
 		}
 	}
 	newly_inserted=true;
 	// Cursed kmers
 	if (kmer.multi_mini) {
-		cout << "multi mini" << endl;
 		omp_set_lock(&multi_lock);
 		cursed_kmers[kmer.kmer_s] = DATA();
 		auto el=& cursed_kmers[kmer.kmer_s];
@@ -333,9 +331,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
-	cout << "kmer       " << kmer2str(kmer.kmer_s, params.k) << endl;
-	cout << "minimizer  " << kmer2str(kmer.minimizer, params.m) << endl;
-	cout << "small mini " << kmer2str(small_minimizer, params.m_small) << endl;
 
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
@@ -343,8 +338,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
-
-	cout << "bucket " << mutex_idx << " " << idx << endl;
 	
 	// Create the bucket if not already existing
 	if (idx == 0) {
@@ -367,7 +360,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	// Insert the kmer in the right bucket
 	// cout << "mini idx " << (uint)kmer.minimizer_idx << endl;
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
-	cout << (uint64_t *)value << endl;
 	total_number_kmers++;
 
 	return value;
@@ -431,7 +423,6 @@ DATA * DenseMenuYo<DATA>::get_kmer(const kmer_full & kmer) {
 
 template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmers)  {
-	cout << "--- GET ---" << endl;
 	vector<DATA *> result(kmers.size(),NULL);
 	//WE ASSUME HERE THAT ALL KMERS are equally cursed
 	if (kmers[0].multi_mini) {
@@ -450,7 +441,6 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmer
 	uint64_t small_minimizer = kmers[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
-	cout << kmer2str(small_minimizer, params.m_small) << endl;
 
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 

@@ -88,24 +88,31 @@ static int const lookup[4][256] = {
 };
 
 
-vector<int> kmer_full::compute_interleaved(const uint8_t k, const uint8_t m) const {
+vector<int> kmer_full::compute_interleaved(const Parameters & params) const {
 	vector<int> interleaved;
 
-	uint8_t suff_size = this->suffix_size();
-	uint8_t pref_size = this->prefix_size(k, m);
-	uint16_t max_idx = 2 * (uint16_t)max(suff_size, pref_size);
+	uint64_t k = params.k;
+	uint64_t pref_reduc = params.m_reduc / 2;
+	uint64_t suff_reduc = params.m_reduc - pref_reduc;
+
+	// cout << kmer2str(this->kmer_s, k) << endl;
+
+	uint64_t suff_size = this->suffix_size() + suff_reduc;
+	uint64_t pref_size = k - params.m_small - suff_size;
+	// cout << "kmer sizes " << pref_size << " " << suff_size << " " << (uint64_t)minimizer_idx << endl;
+	uint64_t max_idx = 2 * max(suff_size, pref_size);
 	interleaved.resize(max_idx, -2);
 
 	// Compute suffix interleved
 	for (uint offset=0 ; offset<suff_size ; offset++) {
-		uint8_t nucl_idx = suff_size - 1 - offset;
+		uint64_t nucl_idx = suff_size - 1 - offset;
 		uint8_t byte = ((uint8_t*)&kmer_s)[nucl_idx/4];
 		interleaved[2*offset] = lookup[nucl_idx%4][byte];
 	}
 
 	// Compute prefix interleved
 	for (uint offset=0 ; offset<pref_size ; offset++) {
-		uint8_t nucl_idx = suff_size + m + offset;
+		uint8_t nucl_idx = suff_size + params.m_small + offset;
 		uint8_t byte = ((uint8_t*)&kmer_s)[nucl_idx/4];
 		interleaved[2*offset+1] = lookup[nucl_idx%4][byte];
 	}

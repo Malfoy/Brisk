@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include "parameters.hpp"
 #include "hashing.hpp"
 #include "robin_hood.h"
 #include "sparse_growth_policy.h"
@@ -67,7 +68,7 @@ public:
 	bool contains_multi_minimizer() const;
 	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;
 	uint8_t suffix_size() const;
-	vector<int> compute_interleaved(const uint8_t k, const uint8_t m) const;
+	vector<int> compute_interleaved(const Parameters & params) const;
 	// int8_t interleaved_nucleotide(const uint8_t nucl_idx, const uint8_t k, const uint8_t m, bool debug);
 	kint get_unhash_kmer_value(uint8_t m) const;
 	kmer_full hash_kmer_minimizer_copy(uint8_t m) const;

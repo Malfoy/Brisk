@@ -253,35 +253,35 @@ atomic<int64_t> kmer_comp_call(0);
 inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
 	inferior=equal=superior=false;
 	bool can_be_superior(true);
-		
-		for(uint i(0);i<kmer_interleave.size(); ++i){
-			int nuckmer(kmer_interleave[i]);
-			int nuc=superkmer_interleave[i];
-			if(nuc==-3){
-				nuc=interleaved_nucleotide(i, nucleotides, params);
-				superkmer_interleave[i]=nuc;
-			}
-			if(nuckmer<-1){
-				if(nuc==3){
-					continue;
-				}
-				can_be_superior=false;
+	
+	for(uint i(0);i<kmer_interleave.size(); ++i){
+		int nuckmer(kmer_interleave[i]);
+		int nuc=superkmer_interleave[i];
+		if(nuc==-3){
+			nuc=interleaved_nucleotide(i, nucleotides, params);
+			superkmer_interleave[i]=nuc;
+		}
+		if(nuckmer<-1){
+			if(nuc==3){
 				continue;
 			}
-			if(nuc<0){
-				return true;
-			}
-			if(nuc>nuckmer){
-				if(can_be_superior){
-					superior=true;
-				}				
-				return true;
-			}else if(nuc<nuckmer){
-				return true;
-			}
+			can_be_superior=false;
+			continue;
 		}
-		equal=true;
-		return true;
+		if(nuc<0){
+			return true;
+		}
+		if(nuc>nuckmer){
+			if(can_be_superior){
+				superior=true;
+			}				
+			return true;
+		}else if(nuc<nuckmer){
+			return true;
+		}
+	}
+	equal=true;
+	return true;
 }
 
 
