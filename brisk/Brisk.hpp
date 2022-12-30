@@ -108,48 +108,6 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) const {
 }
 
 
-
-// template<class DATA>
-// vector<DATA *> Brisk<DATA>::get_sequence(const string& str) {
-// 	vector<DATA *> result;
-// 	// Line too short
-// 	if (str.size() < this.params.k){
-// 		return result;
-// 	}
-// 	vector<kmer_full> superkmer;
-// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
-// 	enumerator.next(superkmer);
-// 	while (superkmer.size() > 0) {
-// 		// Add the values
-// 		auto vec=get_superkmer(superkmer);
-// 		result.insert(result.end(),vec.begin(),vec.end());
-// 	}
-// 	return result;
-// }
-
-
-// template<class DATA>
-// vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
-// 	vector<DATA *> result;
-// 	// Line too short
-// 	if (str.size() < this.params.k){
-// 		return result;
-// 	}
-// 	vector<kmer_full> superkmer;
-// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
-// 	enumerator.next(superkmer);
-// 	while (superkmer.size() > 0){
-// 		// Add the values
-// 		vector<bool> newly_inserted_local;
-// 		vector<DATA*> vec(insert_superkmer(superkmer,newly_inserted));
-// 		superkmer.clear();
-// 		result.insert(result.end(),vec.begin(),vec.end());
-// 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
-// 	}//TODO MISSING A NEXT HERE
-// 	return result;
-// }
-
-
 void hash_skmer(vector<kmer_full> & skmer, size_t m) {
 	// Replace all the minimizers in the kmers
 	for (kmer_full & kmer : skmer)
@@ -175,23 +133,23 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	return result;
 }
 
-// TODO: This function has a bug if multiple skmers share the same minimizer and if there is a reallocation of a bucket for the second add. In this case, the DATA * from the first skmer are not relevant anymore.
-template<class DATA>
-vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
-	vector<DATA *> result;
-	vector<kmer_full> superkmer;
-	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
-	enumerator.next(superkmer);
-	while (superkmer.size() > 0){
-		// Add the values
-		vector<bool> newly_inserted_local;
-		vector<DATA*> vec(this->insert_superkmer(superkmer,newly_inserted));
-		superkmer.clear();
-		result.insert(result.end(),vec.begin(),vec.end());
-		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
-	}//TODO MISSING A NEXT HERE
-	return result;
-}
+// // TODO: This function has a bug if multiple skmers share the same minimizer and if there is a reallocation of a bucket for the second add. In this case, the DATA * from the first skmer are not relevant anymore.
+// template<class DATA>
+// vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
+// 	vector<DATA *> result;
+// 	vector<kmer_full> superkmer;
+// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
+// 	enumerator.next(superkmer);
+// 	while (superkmer.size() > 0){
+// 		// Add the values
+// 		vector<bool> newly_inserted_local;
+// 		vector<DATA*> vec(this->insert_superkmer(superkmer,newly_inserted));
+// 		superkmer.clear();
+// 		result.insert(result.end(),vec.begin(),vec.end());
+// 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
+// 	}//TODO MISSING A NEXT HERE
+// 	return result;
+// }
 
 
 

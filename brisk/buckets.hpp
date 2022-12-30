@@ -192,7 +192,7 @@ void Bucket<DATA>::data_space_update() {
 
 template <class DATA>
 DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
-	// cout << "kmer " << kmer2str(kmer.kmer_s, this->params->k) << endl;
+	// cout << "bucket insert " << kmer2str(kmer.kmer_s, this->params->k) << endl;
 	// 0 - Update space for DATA if needed
 	this->data_space_update();
 	// 1 - Try to compact with the last kmer

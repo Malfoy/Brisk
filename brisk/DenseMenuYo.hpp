@@ -276,9 +276,9 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 	vector<DATA *> result = this->get_kmer_vector(kmers);
 	for(uint i(0);i<kmers.size(); ++i){
 		if(result[i]==NULL){
-			newly_inserted.push_back(true);
-			bool newly_inserted = false;
-			insert_kmer_no_mutex(kmers[i],newly_inserted,true);
+			bool new_insert = false;
+			insert_kmer_no_mutex(kmers[i],new_insert,true);
+			newly_inserted.push_back(new_insert);
 		}else{
 			newly_inserted.push_back(false);
 		}
@@ -309,6 +309,7 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newly_inserted, bool already_checked) {
+
 	if(not already_checked){
 		DATA * prev_val = this->get_kmer_no_mutex(kmer);
 		if (prev_val != NULL) {
@@ -320,7 +321,11 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	// Cursed kmers
 	if (kmer.multi_mini) {
 		omp_set_lock(&multi_lock);
-		cursed_kmers[kmer.kmer_s] = DATA();
+		if (cursed_kmers.count(kmer.kmer_s) == 0) {
+			cursed_kmers[kmer.kmer_s] = DATA();
+		} else {
+			newly_inserted = false;
+		}
 		auto el=& cursed_kmers[kmer.kmer_s];
 		omp_unset_lock(&multi_lock);
 
@@ -622,7 +627,6 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		current_minimizer += 1;
 		return this->next(kmer);
 	}
-
 
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer);
 	// kmer.minimizer_idx -= (params.m_reduc + 1)/2;

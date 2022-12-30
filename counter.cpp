@@ -167,16 +167,14 @@ void verif_counts(Brisk<uint8_t> & counter) {
 			cin.get();
 		}
 
-
-
-
 		uint8_t * count = counter.get(kmer);
 		if (count == NULL) {
-			cout<<"NULL COUNT"<<endl;
-			print_kmer(kmer.minimizer, counter.params.m); cout << endl;
-			cout << (uint)kmer.minimizer << endl;
+			cout<<"No data linked ";
+			// print_kmer(kmer.minimizer, counter.params.m); cout << endl;
+			// cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
 		}else{
+			// print_kmer(kmer.kmer_s, counter.params.k); cout << " " << (uint64_t)*count << endl;
 			verif[kmer.kmer_s] -= *count;
 		}
 
