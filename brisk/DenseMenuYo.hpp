@@ -194,8 +194,11 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 	bucket.init_enumerator();
 	while (bucket.has_next_kmer()) {
 		bucket.next_kmer(kmer, small_minimizer);
+		kmer.minimizer_idx -= (params.m_reduc + 1)/2;
+		kmer.compute_mini(params.m);
 		data = bucket.data_reserved_memory+kmer_id*sizeof(DATA);
 		kmer.unhash_kmer_minimizer(params.m);
+		cout << kmer2str(kmer, params.k) << " GROGRO" << endl;
 		kint local_kmer = kmer.kmer_s;
 		this->overload_kmers[small_minimizer%bucket_overload][local_kmer]=*data;
 		kmer_id++;
@@ -283,6 +286,9 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 			newly_inserted.push_back(false);
 		}
 	}
+	for (bool val : newly_inserted)
+		cout << val << " ";
+	cout << endl;	
 	if (kmers[0].multi_mini) {
 		return;
 	}
@@ -299,8 +305,9 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 	// cout << "insertion " << mutex_idx << " " << column_idx << " " << matrix_idx << " " << idx << endl;
 
 	// Bucket now too big to hold
-	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and bucketMatrix[mutex_idx][idx-1].nb_kmers>100 and bucketMatrix[mutex_idx][idx-1].nb_kmers*active_buckets/(total_number_kmers) >= GROGRO_THREASHOLD) {
+	if ((not bucketMatrix[mutex_idx][idx-1].cleared) and (bucketMatrix[mutex_idx][idx-1].nb_kmers>100) and (bucketMatrix[mutex_idx][idx-1].nb_kmers*active_buckets/(total_number_kmers) >= GROGRO_THREASHOLD)) {
 		this->bucket_to_map(small_minimizer);
+		cout << "OLALALALA " << GROGRO_THREASHOLD << endl;
 	}
 	return;
 }
@@ -309,6 +316,7 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newly_inserted, bool already_checked) {
+	cout << "--- Insert no mutex ---" << endl;
 
 	if(not already_checked){
 		DATA * prev_val = this->get_kmer_no_mutex(kmer);
@@ -335,6 +343,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 
 	// Remove the minimizer suffix
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
+	cout << kmer2str(kmer.kmer_s, params.k) << " " << kmer2str(small_minimizer, params.m_small) << endl;
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
 
@@ -344,6 +353,8 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	uint32_t column_idx = get_column(small_minimizer);
 	uint64_t matrix_idx = get_matrix_position(mutex_idx, column_idx);
 	uint32_t idx = bucket_indexes[matrix_idx];
+
+	cout << "bucket index " << matrix_idx << " " << idx << endl;
 	
 	// Create the bucket if not already existing
 	if (idx == 0) {
@@ -366,6 +377,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	// Insert the kmer in the right bucket
 	// cout << "mini idx " << (uint)kmer.minimizer_idx << endl;
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+	cout << (uint64_t *)value << endl;
 	total_number_kmers++;
 
 	return value;
@@ -475,7 +487,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmer
 		return result;
 	}
 	// Looks into the bucket for the right kmer
-	// cout << "bucket " << mutex_idx << " " << (idx-1) << endl;
+	cout << "bucket " << mutex_idx << " " << (idx) << endl;
 	// cout << "small mini " << kmer2str(small_minimizer, params.m_small) << endl;
 	result = bucketMatrix[mutex_idx][idx-1].find_kmer_vector(kmers);
 	return result;

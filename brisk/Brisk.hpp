@@ -162,6 +162,8 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 
 		// Remove the minimizer suffix
 		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
+		cout << "hashed mini " << kmer2str(superkmer[0].minimizer, params.m) << endl;
+		cout << "small mini " << kmer2str(small_minimizer, params.m_small) << endl;
 		// Remove the minimizer prefix
 		small_minimizer &= (((kint)1) << (this->params.m_small * 2)) - 1;
 
