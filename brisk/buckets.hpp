@@ -155,6 +155,9 @@ void Bucket<DATA>::clear() {
 	free(this->data_reserved_memory);
 	this->data_reserved_memory = nullptr;
 	this->cleared = true;
+	this->nb_kmers = 0;
+	this->sorted_size = 0;
+	this->skml.clear();
 }
 
 
@@ -627,14 +630,13 @@ DATA * Bucket<DATA>::find_kmer(const kmer_full& kmer) {
 
 template <class DATA>
 vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
-	cout << "--- find_kmer_vector ---" << endl;
-	for (SKL & sk: skml) {
-		sk.print(nucleotides_reserved_memory + params->allocated_bytes * sk.idx, 0b01111000, *params); cout << endl;
-	}
-	cout << "--- find_kmer_vector ---" << endl;
+	// cout << "--- find_kmer_vector ---" << endl;
+	// for (SKL & sk: skml) {
+	// 	sk.print(nucleotides_reserved_memory + params->allocated_bytes * sk.idx, 0b01111000, *params); cout << endl;
+	// }
+	// cout << "--- find_kmer_vector ---" << endl;
 	vector<DATA *> result(kmers.size(),NULL);
 	if(sorted_size > 0){
-		cout << sorted_size << endl;
 		result = find_kmer_log_simple_vector(kmers);
 	}
 	return find_kmer_linear_vector(kmers,result,sorted_size,skml.size()-1);

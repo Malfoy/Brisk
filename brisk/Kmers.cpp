@@ -312,17 +312,6 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 }
 
 
-uint64_t hash64shift(uint64_t key) {
-	key = (~key) + (key << 21); // key = (key << 21) - key - 1;
-	key = key ^ (key >> 24);
-	key = (key + (key << 3)) + (key << 8); // key * 265
-	key = key ^ (key >> 14);
-	key = (key + (key << 2)) + (key << 4); // key * 21
-	key = key ^ (key >> 28);
-	key = key + (key << 31);
-	return (uint64_t)key;
-}
-
 
 /** Get the minimizer from a sequence and modify the position parameter.
   * WARNING: If the sequence contains a multiple time the minimizer, return the minimizer position generating a kmer with the longest prefix.
@@ -332,7 +321,7 @@ uint64_t hash64shift(uint64_t key) {
 	* @param min_position Position of the minimizer in the kmer (from the end of the suffix). Negative with complement A 1 if the sequence contains multiple values of the minimizer.
 	* @param m Minimizer size
 	*
-	* @return The minimizer value. Negative number if the minimizer is on the reverse complement.
+	* @return The minimizer value.
   */
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t m_mask) {
 	// Init with the first possible minimizer
@@ -347,8 +336,8 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 
 	// Search in all possible position (from 1) the minimizer
 	for (uint8_t i=1; i <= k - m; i++) {
-		seq >>= 2;
-		fwd_mini = seq & m_mask;
+		seq >>= (kint)2;
+		fwd_mini = ((uint64_t)seq) & m_mask;
 		mmer = canonize(fwd_mini, m);
 		uint64_t hash = bfc_hash_64(mmer,m_mask);
 
@@ -365,7 +354,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 			multiple = true;
 		}
 	}
-	return hash_mini;
+	return mini;
 }
 
 

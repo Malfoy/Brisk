@@ -318,12 +318,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
 
-			for (auto & val : vec)
-				cout << (uint64_t *)val << " ";
-			cout << endl;
-
 			for(uint i(0); i < vec.size();++i){
-				cout << kmer2str(superkmer[i].kmer_s, counter.params.k) << " " << kmer2str(superkmer[i].minimizer, counter.params.m) << endl;
 				uint8_t * data_pointer(vec[i]);
 				if(newly_inserted[i]){
 					(*data_pointer)=1;
@@ -331,7 +326,6 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					(*data_pointer)++;
 				}
 			}
-			cout << endl;
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();

@@ -110,8 +110,9 @@ DATA * Brisk<DATA>::get(kmer_full & kmer) const {
 
 void hash_skmer(vector<kmer_full> & skmer, size_t m) {
 	// Replace all the minimizers in the kmers
-	for (kmer_full & kmer : skmer)
+	for (kmer_full & kmer : skmer) {
 		kmer.hash_kmer_minimizer_inplace(m);
+	}
 }
 
 
@@ -133,24 +134,6 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	return result;
 }
 
-// // TODO: This function has a bug if multiple skmers share the same minimizer and if there is a reallocation of a bucket for the second add. In this case, the DATA * from the first skmer are not relevant anymore.
-// template<class DATA>
-// vector<DATA *> Brisk<DATA>::insert_sequence(const string& str,vector<bool>& newly_inserted) {
-// 	vector<DATA *> result;
-// 	vector<kmer_full> superkmer;
-// 	SuperKmerEnumerator enumerator(str, this.params.k, this.params.m);
-// 	enumerator.next(superkmer);
-// 	while (superkmer.size() > 0){
-// 		// Add the values
-// 		vector<bool> newly_inserted_local;
-// 		vector<DATA*> vec(this->insert_superkmer(superkmer,newly_inserted));
-// 		superkmer.clear();
-// 		result.insert(result.end(),vec.begin(),vec.end());
-// 		newly_inserted.insert(newly_inserted.end(),newly_inserted_local.begin(),newly_inserted_local.end());
-// 	}//TODO MISSING A NEXT HERE
-// 	return result;
-// }
-
 
 
 template<class DATA>
@@ -162,8 +145,6 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 
 		// Remove the minimizer suffix
 		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
-		cout << "hashed mini " << kmer2str(superkmer[0].minimizer, params.m) << endl;
-		cout << "small mini " << kmer2str(small_minimizer, params.m_small) << endl;
 		// Remove the minimizer prefix
 		small_minimizer &= (((kint)1) << (this->params.m_small * 2)) - 1;
 

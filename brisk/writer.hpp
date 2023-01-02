@@ -92,6 +92,8 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	}
 	sr.close();
 
+	// TODO: Bucket overloads (overload_kmers) GROGRO
+
 	// Prepare max value for super kmer size
 	sgv = Section_GV(current_file);
 	sgv.write_var("k", index.params.k);
@@ -206,8 +208,10 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				);
 			}
 
-			sm->close();
-			delete sm;
+			if (sm != nullptr) {
+				sm->close();
+				delete sm;
+			}
 			delete[] big_endian_nucleotides;
 		}
 	}
