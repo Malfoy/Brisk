@@ -333,13 +333,18 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	reversed=(mini!=fwd_mini);
 	min_position = 0;
 	multiple = false;
+	bool debug = kmer2str(seq, 21) == "GTTTGTTGCCGCCATCTGGAC";
+	if (debug)
+			cout << (uint64_t)min_position << " fwd " << kmer2str(fwd_mini, m) << " mmer " << kmer2str(mmer, m) << " " << hash_mini << endl;
 
 	// Search in all possible position (from 1) the minimizer
-	for (uint8_t i=1; i <= k - m; i++) {
+	for (uint64_t i=1; i <= k - m; i++) {
 		seq >>= (kint)2;
 		fwd_mini = ((uint64_t)seq) & m_mask;
 		mmer = canonize(fwd_mini, m);
 		uint64_t hash = bfc_hash_64(mmer,m_mask);
+		if (debug)
+			cout << i << " fwd " << kmer2str(fwd_mini, m) << " mmer " << kmer2str(mmer, m) << " " << hash << endl;
 
 		if (hash_mini > hash) {
 			min_position = i;
@@ -452,14 +457,13 @@ SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint
 , saved( false ), saved_kmer( kmer_full((kint)0,(uint8_t)0, (uint8_t)0, false) )
 , current_kmer( 0 ), current_rc_kmer( 0 )
 , mini_candidate( 0 ), rc_mini_candidate( 0 )
-, mini_pos ( 1 )
+, mini_pos ( 1 ), mini_hash ( 0 )
 {}
 
 
 kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	bool to_return = false;
 	uint64_t return_val;
-	uint64_t mini_hash = 0;
 
 	// If start of the sequence, init the kmer and the minimizer
 	if (seq_idx == 0) {

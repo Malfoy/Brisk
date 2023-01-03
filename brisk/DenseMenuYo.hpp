@@ -395,6 +395,11 @@ DATA * DenseMenuYo<DATA>::get_kmer(const kmer_full & kmer) {
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
 
+	bool debug = kmer2str(kmer.kmer_s, 21) == "GTTTGTAACGTATATCTGGAC";
+	if (debug) {
+		cout << kmer2str(kmer.kmer_s, 21) << " " << kmer2str(small_minimizer, params.m_small) << endl;
+	}
+
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Normal kmer
@@ -593,6 +598,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 			
 			bool reversed;
 			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer);
+
 			kmer.hash_kmer_minimizer_inplace(params.m);
 			overload_iter=std::next(overload_iter);
 			return true;

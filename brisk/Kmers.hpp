@@ -112,6 +112,7 @@ private:
 	bool multiple;
 	uint8_t mini_pos;
 	uint64_t mini;
+	uint64_t mini_hash;
 };
 
 
