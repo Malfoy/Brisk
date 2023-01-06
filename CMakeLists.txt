@@ -6,7 +6,7 @@ project(Brisk VERSION 1.0)
 # configure_file(kff_io.hpp.in kff_io.hpp)
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -39,4 +39,4 @@ add_executable(counter ${SRCS} ${HEADERS})
 # link libraries
 find_package(ZLIB)
 find_package(OpenMP)
-target_link_libraries(counter ZLIB::ZLIB OpenMP::OpenMP_CXX brisk kff)
+target_link_libraries(counter ZLIB::ZLIB OpenMP::OpenMP_CXX brisk kff unordered_dense)

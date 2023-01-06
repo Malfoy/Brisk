@@ -1,3 +1,6 @@
 [submodule "brisk/lib/kff"]
 	path = brisk/lib/kff
 	url = https://github.com/Kmer-File-Format/kff-cpp-api.git
+[submodule "brisk/lib/unordered_dense"]
+	path = brisk/lib/unordered_dense
+	url = https://github.com/martinus/unordered_dense.git

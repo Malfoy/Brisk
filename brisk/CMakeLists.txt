@@ -1,10 +1,8 @@
-# Nous voulons un cmake "récent" pour utiliser les dernières fonctionnalités
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 
-# Notre projet est étiqueté libhello
 project(brisk_lib)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS "-Wall")
@@ -26,7 +24,6 @@ set(HEADERS
     Kmers.hpp
     parameters.hpp
     pow2.hpp
-    robin_hood.h
     SuperKmerLight.hpp
     writer.hpp
     )
@@ -37,8 +34,12 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_subdirectory(lib/kff)
 target_link_libraries(kff)
 
+add_subdirectory(lib/unordered_dense)
+target_link_libraries(unordered_dense)
+
 add_library(brisk ${SRCS} ${HEADERS})
 target_include_directories(brisk
     PUBLIC
     ./
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/unordered_dense/include
 )

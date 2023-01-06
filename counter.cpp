@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <chrono>
+#include <unordered_map>
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
@@ -81,7 +82,10 @@ string pretty_int(uint64_t n){
 
 
 // static robin_hood::unordered_map<kint, int16_t> verif;
-static tsl::sparse_map<kint, int16_t> verif;
+// static tsl::sparse_map<kint, int16_t> verif;
+// static typename ankerl::unordered_dense::map<kint, DATA>::iterator cursed_iter;
+// typename ankerl::unordered_dense::map<kint, int16_t> verif;
+static unordered_map<kint, int16_t> verif;
 static bool check;
 static uint64_t number_kmer_count(0);
 uint64_t low_complexity_kmer(0);
@@ -247,12 +251,14 @@ string getLineFasta(zstr::ifstream* in) {
 void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads) {
 	kmer_full init;
 	// Test file existance
-	struct stat exist_buffer;
-  bool file_existance = (stat (filename.c_str(), &exist_buffer) == 0);
+	ifstream fs;
+	fs.open(filename);
+  bool file_existance = fs ? true : false;
 	if(not file_existance){
 		cerr<<"Problem with file opening:	"<<filename<<endl;
 		exit(1);
 	}
+  fs.close();
 
 	// Read file line by line
 	cout << filename << " " << filename.length() << endl;

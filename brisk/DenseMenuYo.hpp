@@ -1,23 +1,23 @@
 #include <iostream>
 #include <cstdint>
 #include <cstring>
-#include <map>
+#include <unordered_map>
 #include <omp.h>
 #include <vector>
 
 #include <sys/resource.h>
 
-#include "hashing.hpp"
 #include "Kmers.hpp"
 #include "hashing.hpp"
 #include "buckets.hpp"
 #include "SuperKmerLight.hpp"
 #include "parameters.hpp"
+// #include "ankerl/unordered_dense.h"
 
 #ifndef DENSEMENUYO_H
 #define DENSEMENUYO_H
 
-#define GROGRO_THREASHOLD ((uint64_t)1 << 3)
+#define GROGRO_THREASHOLD ((uint64_t)1 << 10)
 #define bucket_overload ((uint64_t)1 << 12)
 
 
@@ -54,8 +54,12 @@ public:
 	omp_lock_t multi_lock;
 
 	// Cursed kmer buckets
-	robin_hood::unordered_node_map<kint, DATA> cursed_kmers;
-	robin_hood::unordered_node_map<kint, DATA> overload_kmers[bucket_overload];
+	unordered_map<kint, DATA> cursed_kmers;
+	unordered_map<kint, DATA> overload_kmers[bucket_overload];
+	// ankerl::unordered_dense::map<kint, DATA> cursed_kmers;
+	// ankerl::unordered_dense::map<kint, DATA> overload_kmers[bucket_overload];
+	// robin_hood::unordered_node_map<kint, DATA> cursed_kmers;
+	// robin_hood::unordered_node_map<kint, DATA> overload_kmers[bucket_overload];
 	// tsl::sparse_map<kint, DATA> cursed_kmers;
 	// tsl::sparse_map<kint, DATA> overload_kmers[bucket_overload];
 	omp_lock_t lock_overload[bucket_overload];
@@ -94,32 +98,18 @@ private:
 	
 	// uint64_t getMemorySelfMaxUsed();
 	bool enumeration_started;
-	typename robin_hood::unordered_node_map<kint, DATA>::iterator cursed_iter;
-	typename robin_hood::unordered_node_map<kint, DATA>::iterator overload_iter;
+	typename unordered_map<kint, DATA>::iterator cursed_iter;
+	typename unordered_map<kint, DATA>::iterator overload_iter;
+	// typename ankerl::unordered_dense::map<kint, DATA>::iterator cursed_iter;
+	// typename ankerl::unordered_dense::map<kint, DATA>::iterator overload_iter;
+	// typename robin_hood::unordered_node_map<kint, DATA>::iterator cursed_iter;
+	// typename robin_hood::unordered_node_map<kint, DATA>::iterator overload_iter;
 	// typename tsl::sparse_map<kint, DATA>::iterator cursed_iter;
 	// typename tsl::sparse_map<kint, DATA>::iterator overload_iter;
 	uint32_t current_overload;
 	uint64_t current_minimizer;
 };
 
-
-// kint get_unhash_kmer(const kmer_full & kmer, size_t m) {
-// 	kint val = kmer.kmer_s;
-
-// 	// Extract the minimizer and hash it
-// 	kint hash = val >> (2 * kmer.minimizer_idx);
-// 	kint minimizer_mask = (((kint)1) << (2 * m)) - 1;
-// 	hash &= minimizer_mask;
-// 	kint minimizer = (kint)bfc_hash_64_inv((uint64_t)minimizer, (uint64_t)minimizer_mask);
-
-// 	// Replace all the minimizer in the value
-// 	minimizer_mask <<= 2 * kmer.minimizer_idx;
-// 	val &= ~minimizer_mask;
-// 	minimizer <<= 2 * kmer.minimizer_idx;
-// 	val += minimizer;
-
-// 	return val;
-// }
 
 
 template <class DATA>

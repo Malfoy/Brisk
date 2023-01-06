@@ -6,10 +6,6 @@
 #include <utility>
 #include "parameters.hpp"
 #include "hashing.hpp"
-#include "robin_hood.h"
-#include "sparse_growth_policy.h"
-#include "sparse_hash.h"
-#include "sparse_map.h"
 
 using namespace std;
 
