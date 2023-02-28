@@ -5,11 +5,22 @@ set -e
 cmake .
 make
 
-echo ">test" > data/test.fa
-tail data/rongeur.fa -n 4000000 >> data/test.fa
-./counter -k 63 -m 21 -b 9 -f data/test.fa -o data/test.kff --mode 2
-# ./counter -k 63 -m 21 -b 9 -f data/rongeur.fa -o data/rongeur.fa --mode 2
-# ./counter -k 63 -m 21 -b 9 -f data/bacterie.fa -o data/bacterie.fa --mode 2
-# ./counter -k 21 -m 7 -b 5 -f data/bacterie.fa -o data/bacterie.fa --mode 2
-# valgrind ./counter -k 63 -m 21 -b 9 -f data/debug/test.fa -o data/debug/test_count.kff --mode 2
-# kfftools validate -v -i data/debug/test_count.kff
+DATA=data/rongeur.fa
+OUT=data/rongeur
+# DATA=data/debug/test.fa
+# OUT=data/debug/test
+K=63
+
+
+# echo ">Test" > data/test.fa
+# head $DATA -n 200 | tail -n 100 >> data/test.fa
+# head $DATA -n 200 > data/test.fa
+DATA=data/test.fa
+
+
+echo "kmc -k$K -ci0 -okff -fm $DATA ${OUT}_kmc /tmp"
+kmc -k$K -fm -ci0 -okff $DATA ${OUT}_kmc /tmp > ${OUT}_kmc.stdout
+./counter -k 63 -m 21 -b 9 -f $DATA -o ${OUT}_brisk.kff --mode 2 > ${OUT}_brisk.stdout
+
+grep "No. of unique counted k-mers" ${OUT}_kmc.stdout
+grep "nb kmers" ${OUT}_brisk.stdout

@@ -261,7 +261,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
   fs.close();
 
 	// Read file line by line
-	cout << filename << " " << filename.length() << endl;
+	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	omp_set_nested(2);
 	// #pragma omp parallel

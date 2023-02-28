@@ -694,6 +694,8 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 
 	nb_cursed = cursed_kmers.size();
 	nb_kmers += nb_cursed;
+	for (uint64_t i=0 ; i<bucket_overload ; i++)
+		nb_kmers += overload_kmers[i].size();
 }
 
 
