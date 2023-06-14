@@ -95,7 +95,7 @@ uint64_t low_complexity_kmer(0);
 int main(int argc, char** argv) {
 	string fasta = "";
 	string outfile = "";
-	uint8_t k=63, m=13, b=4;
+	uint8_t k=63, m=13, b=8;
 	uint mode = 0;
 	uint threads = 8;
 
@@ -160,10 +160,11 @@ int main(int argc, char** argv) {
 
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
-	kmer_full kmer(0,0, counter.params.m, false);
+	cout<<verif.size()<<endl;
+	kmer_full kmer(0,0, counter.params.m, false,counter.menu->dede);
 	// Count 
 	while (counter.next(kmer)) {
-		
+		// print_kmer(kmer.kmer_s,63);
 		// cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
 		if (verif.count(kmer.kmer_s) == 0) {
 			cout << "pas dans verif weird"<<endl;
@@ -209,7 +210,7 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 
 
-void clean_dna(string& str){
+void clean_dna(string& str,string& previous){
 	for(uint i(0); i< str.size(); ++i){
 		switch(str[i]){
 			case 'a':break;
@@ -220,9 +221,9 @@ void clean_dna(string& str){
 			case 'G':break;
 			case 't':break;
 			case 'T':break;
-			case 'N':break;
-			case 'n':break;
-			default: str[i]='A';
+			default: 
+			previous=str.substr(i+1);
+			str=str.substr(0,i);
 		}
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
@@ -230,16 +231,22 @@ void clean_dna(string& str){
 
 
 
-string getLineFasta(zstr::ifstream* in) {
+string getLineFasta(zstr::ifstream* in,string& previous) {
 	string line, result;
-	getline(*in, line);
-	char c = static_cast<char>(in->peek());
-	while (c != '>' and c != EOF) {
+	if(previous.empty()){
 		getline(*in, line);
-		result += line;
-		c = static_cast<char>(in->peek());
+		char c = static_cast<char>(in->peek());
+		while (c != '>' and c != EOF) {
+			getline(*in, line);
+			result += line;
+			c = static_cast<char>(in->peek());
+		}
+	}else{
+		result=previous;
+		previous="";
 	}
-	clean_dna(result);
+	
+	clean_dna(result,previous);
 	return result;
 }
 
@@ -264,17 +271,14 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	omp_set_nested(2);
-	// #pragma omp parallel
+	#pragma omp parallel
 	{
-		while (in.good()) {
-			string line;
+		string line,prev;
+		while (in.good() or prev.size()!=0) {
+			
 			#pragma omp critical
 			{
-					if (in.good()) {
-						line = getLineFasta(&in);
-					} else{
-						line = "";
-					}
+				line = getLineFasta(&in,prev);
 			}
 
 			if (line != "") {
@@ -293,7 +297,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	}
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
-	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m);
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.menu->dede);
 	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;

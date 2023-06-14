@@ -50,9 +50,10 @@ public:
 	uint8_t minimizer_idx;
 	bool multi_mini;
 	vector<int8_t> interleaved;
+	DecyclingSet* dede;
 	static uint16_t* occ2mer_entropy;
 
-	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini);
+	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini,DecyclingSet* dede);
 	kmer_full();
 	kmer_full(kmer_full&& kmer);
 	kmer_full(const kmer_full&& kmer);
@@ -79,13 +80,14 @@ private:
 
 class SuperKmerEnumerator {
 public:
-	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m);
+	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,DecyclingSet* dede);
 	kint next(vector<kmer_full> & kmers);
 
 private:
 	// Sequence and position in it
 	string& seq;
 	uint64_t seq_idx;
+	DecyclingSet* dede;
 
 	// kmer size and minimizer size
 	uint8_t k;
@@ -122,23 +124,24 @@ void print_kmer(T num, uint8_t n){
 		uint64_t nuc = num/anc;
 		num = num % anc;
 		if(nuc==2){
-			cout<<"T";
+			cerr<<"T";
 		}
 		if(nuc==3){
-			cout<<"G";
+			cerr<<"G";
 		}
 		if(nuc==1){
-			cout<<"C";
+			cerr<<"C";
 		}
 		if(nuc==0){
-			cout<<"A";
+			cerr<<"A";
 		}
 		if (nuc>=4){
-			cout<<nuc<<endl;
-			cout<<"WTF"<<endl;
+			cerr<<nuc<<endl;
+			cerr<<"WTF"<<endl;
 		}
 		anc>>=2;
 	}
+	cerr<<endl;
 }
 
 
@@ -146,7 +149,7 @@ string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 kmer_full * str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
-uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t);
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t,DecyclingSet* dede);
 string getCanonical(const string& str);
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
 kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);

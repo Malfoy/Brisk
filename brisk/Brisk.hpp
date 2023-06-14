@@ -33,6 +33,7 @@ private:
 	vector<DATA *> get_sequence(const string& str);
 public:
 	DenseMenuYo<DATA> * menu;
+	
 #ifdef TIME_ANALYSIS
 	uint64_t nb_get;
 	uint64_t nb_insert;

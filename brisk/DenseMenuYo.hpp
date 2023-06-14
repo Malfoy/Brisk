@@ -9,6 +9,7 @@
 
 #include "Kmers.hpp"
 #include "hashing.hpp"
+#include "Decycling.h"
 #include "buckets.hpp"
 #include "SuperKmerLight.hpp"
 #include "parameters.hpp"
@@ -42,6 +43,7 @@ public:
 	// Usefull variables
 	kint mini_reduc_mask,m_mask;
 	Parameters params;
+	DecyclingSet* dede;
 	
 
 	// Mutexes
@@ -117,6 +119,7 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	// If m - reduc > 16, not enougth space for bucket idxs ! (because of uint32_t)
 	this->mini_reduc_mask = ((kint)1 << (2 * params.m_small)) - 1;
 	this->m_mask = ((kint)1 << (2 * params.m)) - 1;
+	dede= new DecyclingSet(params.m);
 
 	// Create the mutexes
 	mutex_order = min((uint8_t)6,params.m_small);
@@ -587,7 +590,7 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 			kmer.kmer_s = overload_iter->first;
 			
 			bool reversed;
-			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer);
+			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer,dede);
 
 			kmer.hash_kmer_minimizer_inplace(params.m);
 			overload_iter=std::next(overload_iter);

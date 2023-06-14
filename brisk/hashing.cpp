@@ -1,7 +1,11 @@
 #include "hashing.hpp"
+#include "Decycling.h"
 
 
-uint64_t bfc_hash_64(uint64_t key, uint64_t mask) {
+
+
+uint64_t bfc_hash_64(uint64_t key, uint64_t mask,DecyclingSet* dede) {
+	uint64_t heavy(dede->memDouble(key));
 	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
 	key = key ^ key >> 24;
 	key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
@@ -9,11 +13,13 @@ uint64_t bfc_hash_64(uint64_t key, uint64_t mask) {
 	key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
 	key = key ^ key >> 28;
 	key = (key + (key << 31)) & mask;
+	return (heavy<<62)+key;
 	return key;
 }
 
 
 uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
+	// key&=mask;
 	uint64_t tmp;
  
 	// Invert key = key + (key << 31)

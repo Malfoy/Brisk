@@ -13,6 +13,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 set(SRCS
     hashing.cpp
     Kmers.cpp
+    Decycling.cpp
     )
     
 set(HEADERS
@@ -26,6 +27,7 @@ set(HEADERS
     pow2.hpp
     SuperKmerLight.hpp
     writer.hpp
+    Decycling.h
     )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
