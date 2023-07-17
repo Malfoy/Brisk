@@ -112,14 +112,14 @@ SKL& SKL::operator=(const SKL& rhs) {
 bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Parameters & params) {
 	if ((params.compacted_size + size) / 8 > params.allocated_bytes)
 		return false;
-	
+
 	size_t kmer_suffix_size = kmer.minimizer_idx + (params.m_reduc + 1) / 2;
 	size_t skm_suffix_size = this->suffix_size();
 	// Suffix sizes are not matching
 	if (kmer_suffix_size != skm_suffix_size+1) {
 		return false;
 	}
-	
+
 	// Get the rightest nucleotides of the skmer
 	kint super_kmer_overlap = this->get_right_overlap(nucleotides, params);
 	// Get the rightest nucleotides of the kmer to compact
@@ -128,7 +128,7 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 	int nuc = kmer_overlap % 4;
 	kmer_overlap >>= 2;
 	kmer_overlap %= ((kint)1 << (2 * (params.k - 1 - params.m_small)));
-	
+
 	if(super_kmer_overlap == kmer_overlap){
 		int byte_to_update = byte_index(params.compacted_size + size - 1, params);
 		int padding = (4 - ((params.compacted_size + size) % 4)) % 4;
@@ -217,7 +217,7 @@ kint SKL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) co
   * Return the byte index corresponding to the nucletide position.
   * Position 0 is the first nucleotide of the prefix.
   * The minimizer nucleotides doesn't count.
-  * 
+  *
   * @param nucl_position Nucleotide position in the sequence (0 for first prefix nucleotide)
   *
   * @return The Byte index in the datastructure.
@@ -253,7 +253,7 @@ atomic<int64_t> kmer_comp_call(0);
 inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_interleave,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
 	inferior=equal=superior=false;
 	bool can_be_superior(true);
-	
+
 	for(uint i(0);i<kmer_interleave.size(); ++i){
 		int nuckmer(kmer_interleave[i]);
 		int nuc=superkmer_interleave[i];
@@ -274,7 +274,7 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_i
 		if(nuc>nuckmer){
 			if(can_be_superior){
 				superior=true;
-			}				
+			}
 			return true;
 		}else if(nuc<nuckmer){
 			return true;
@@ -287,9 +287,9 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer, vector<int>& superkmer_i
 
 
 inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_interleave, uint8_t * nucleotides, const Parameters & params, bool& superior,bool& inferior, bool& equal) const{
-	inferior=equal=superior=false;	
+	inferior=equal=superior=false;
 	bool can_be_superior(true);
-	// kmer_comp_call++;	
+	// kmer_comp_call++;
 
 	uint64_t kmer_mini_idx = kmer.minimizer_idx + (params.m_reduc + 1) / 2;
 
@@ -307,7 +307,7 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_i
 			if(nuc>nuckmer){
 				if(can_be_superior){
 					superior=true;
-				}	
+				}
 				return true;
 			}else if(nuc<nuckmer){
 				inferior=true;
@@ -346,7 +346,7 @@ kint SKL::get_compacted_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides
 
 void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const kint & mini, kmer_full & kmer, const Parameters & params) const {
 	kint compacted = get_compacted_kmer(kmer_idx, nucleotides, params);
-	
+
 	// Suffix preparation
 	uint8_t suffix_size = this->minimizer_idx - (this->size - kmer_idx - 1);
 	kint mask = ((kint)1 << (2 * suffix_size)) - 1;
@@ -417,7 +417,7 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 			my_nucl = (my_pref >> (2 * side_idx)) & 0b11;
 			sk_nucl = (sk_pref >> (2 * side_idx)) & 0b11;
 		}
-		
+
 		// Compare nucleotides
 		if (my_nucl < sk_nucl)
 			return true;
@@ -476,7 +476,7 @@ bool SKL::inf_max (const uint8_t * my_nucleotides, const SKL & skmer, const uint
 			my_nucl = (my_pref >> (2 * side_idx)) & 0b11;
 			sk_nucl = (sk_pref >> (2 * side_idx)) & 0b11;
 		}
-		
+
 		// Compare nucleotides
 		if (my_nucl < sk_nucl)
 			return true;

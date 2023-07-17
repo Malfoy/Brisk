@@ -50,7 +50,7 @@ public:
 	DATA * buffered_data;
 
 	uint8_t * nucleotides_reserved_memory;
-	uint32_t skmer_reserved;
+	//~ uint32_t skmer_reserved;
 	uint64_t next_data;
 	uint64_t data_reserved_number;
 	DATA * data_reserved_memory;
@@ -58,9 +58,9 @@ public:
 	uint32_t enumeration_skmer_idx;
 	uint8_t enumeration_kmer_idx;
 
-	uint debug_count;
+	//~ uint debug_count;
 
-	bool debug;
+	//~ bool debug;
 
 	DATA * find_kmer_unsorted(const kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
@@ -101,7 +101,7 @@ Bucket<DATA>::Bucket(Parameters * params) {
 	this->enumeration_skmer_idx = 0;
 	this->enumeration_kmer_idx = 0;
 
-	this->debug = false;
+	//~ this->debug = false;
 }
 
 
@@ -117,16 +117,16 @@ Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 , buffered_get( ((kint)1) << (sizeof(kint) * 8 - 1) )
 , buffered_data( bucket.buffered_data )
 , nucleotides_reserved_memory( bucket.nucleotides_reserved_memory )
-, skmer_reserved( bucket.skmer_reserved )
+//~ , skmer_reserved( bucket.skmer_reserved )
 , next_data( bucket.next_data )
 , data_reserved_number( bucket.data_reserved_number )
 , data_reserved_memory( bucket.data_reserved_memory )
 , enumeration_skmer_idx( bucket.enumeration_skmer_idx )
 , enumeration_kmer_idx( bucket.enumeration_kmer_idx )
-, debug( bucket.debug )
+//~ , debug( bucket.debug )
 {
-	if (debug)
-			cout << "move construct modified" << endl;
+	//~ if (debug)
+			//~ cout << "move construct modified" << endl;
 	bucket.nucleotides_reserved_memory = NULL;
 	bucket.data_reserved_memory = NULL;
 }
@@ -185,7 +185,7 @@ void Bucket<DATA>::data_space_update() {
 		size_t to_reserve = (int)(factor * this->data_reserved_number);
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
-		
+
 		this->buffered_data = NULL;
 		this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	}
@@ -206,17 +206,17 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 				this->nucleotides_reserved_memory + this->params->allocated_bytes * buffered_skmer->idx,
 				*params
 		);
-		
+
 		if (is_compacted) {
 			this->nb_kmers += 1;
 			this->next_data += 1;
-			
+
 			this->buffered_data = data_reserved_memory + this->next_data - 1;
 			this->buffered_get = kmer.kmer_s;
 			return buffered_data;
 		}
 	}
-	
+
 	// 3 - Create a new skmer
 	DATA * value = this->insert_kmer_buffer(kmer);
 	this->nb_kmers += 1;
@@ -226,7 +226,7 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>100 and skml.size()-sorted_size>sorted_size*1){
+	if(skml.size()-sorted_size>1000){
 		this->insert_buffer();
 	}
 
@@ -277,7 +277,7 @@ template <class DATA>
 DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	DATA * value_pointer = NULL;
 	this->data_space_update();
-	
+
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
 		auto old_capacity = skml.capacity();
@@ -309,7 +309,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	);
 	buffered_skmer = &(skml[skml.size()-1]);
 	value_pointer = this->data_reserved_memory + this->next_data;
-	
+
 	return value_pointer;
 }
 
@@ -377,7 +377,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_log_simple_vector(const vector<kmer_full>
 		);
 		return val;
 	};
-	
+
 	vector<uint64_t> begins(kmers.size());
 	for(uint i(0);i<kmers.size(); ++i){
 		insert_kmer_buffer(kmers[i]);
@@ -491,7 +491,7 @@ DATA * Bucket<DATA>::find_kmer_linear(const kmer_full& kmer, const int64_t begin
 				this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,
 				*params
 		);
-		debug_count += 1;
+		//~ debug_count += 1;
 
 		if (is_present) {
 			uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
@@ -597,7 +597,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 					if(begins[j]==min_value){
 						min_value =*min_element(begins.begin(),begins.end());
 					}
-					
+
 				}
 			}
 		}
@@ -620,7 +620,7 @@ DATA * Bucket<DATA>::find_kmer(const kmer_full& kmer) {
 		DATA * ptr = find_kmer_log_simple(kmer);
 		if (ptr != NULL) {
 			return ptr;
-		}else{	
+		}else{
 		}
 	}
 	return find_kmer_unsorted(kmer);
@@ -658,11 +658,11 @@ bool Bucket<DATA>::has_next_kmer() {
 		return false;
 
 	SKL & skmer = skml[enumeration_skmer_idx];
-	if (enumeration_kmer_idx >= skmer.size) {	
+	if (enumeration_kmer_idx >= skmer.size) {
 		enumeration_skmer_idx += 1;
 		enumeration_kmer_idx = 0;
 		return has_next_kmer();
-	}	
+	}
 
 	return true;
 }
@@ -684,7 +684,7 @@ void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 			kmer,
 			*params
 	);
-	
+
 	enumeration_kmer_idx += 1;
 }
 
