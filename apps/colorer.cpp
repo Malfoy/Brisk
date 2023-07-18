@@ -231,7 +231,7 @@ void add_color_from_sequence(Brisk<uint64_t> & colors, string & sequence, uint64
 
 	vector<kmer_full> superkmer;
 
-	SuperKmerEnumerator enumerator(sequence, colors.params.k, colors.params.m);
+	SuperKmerEnumerator enumerator(sequence, colors.params.k, colors.params.m,colors.menu->dede);
 	kint minimizer = enumerator.next(superkmer);
 	while (superkmer.size() > 0) {
 		colors.protect_data(superkmer[0]);
@@ -276,7 +276,7 @@ void verif_colors(Brisk<uint64_t> & colors) {
 	cout << "--- Start counting verification ---" << endl;
 	// cout<<verif.size() <<endl;
 	// kint mini_mask = (1 << (2 * counter.m)) - 1;
-	kmer_full kmer(0,0, colors.params.m, false);
+	kmer_full kmer(0,0, colors.params.m, false,colors.menu->dede);
 	// Count 
 	while (colors.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {

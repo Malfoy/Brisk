@@ -5,6 +5,7 @@
 #include <iostream>
 // #define TIME_ANALYSIS
 #include "Kmers.hpp"
+#include "buckets.hpp"
 #include "DenseMenuYo.hpp"
 #include "parameters.hpp"
 
@@ -20,7 +21,6 @@ using namespace std;
 #ifdef TIME_ANALYSIS
 #include <chrono>
 #endif
-
 
 
 template <class DATA>
@@ -66,8 +66,8 @@ public:
 
 template<class DATA>
 Brisk<DATA>::Brisk(Parameters & parameters): params( parameters ) {
+	Bucket<DATA>::setParameters(parameters);
 	this->menu = new DenseMenuYo<DATA>(params);
-
 	#ifdef TIME_ANALYSIS
 	previous_time = std::chrono::system_clock::now();
 	nb_get = nb_insert = 0;
@@ -139,8 +139,8 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
-
 	vector<DATA *> result;
+	// return result;
 	if (superkmer.size() > 0) {
 		hash_skmer(superkmer, this->params.m);
 

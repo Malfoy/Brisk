@@ -23,7 +23,8 @@ public:
 		this->m_small = bucket_magnitude;
 		this->mask_large_minimizer =((uint64_t)1<<(2*m))-1;
 		this->compacted_size = k - m_small;
-		this->allocated_bytes = 2 * ((compacted_size + 3) / 4);
+		// this->allocated_bytes = 2 * ((compacted_size + 3) / 4);
+		this->allocated_bytes = ceil(((double)(2*k-m -m_small ))/4);
 	}
 };
 

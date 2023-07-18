@@ -5,6 +5,7 @@
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
+#include "brisk/buckets.hpp"
 #include "brisk/Brisk.hpp"
 #include "brisk/Kmers.hpp"
 #include "brisk/writer.hpp"
@@ -103,6 +104,7 @@ int main(int argc, char** argv) {
 		exit(0);
 
 	Parameters params(k, m, b);
+
   cout << fasta << " " << (uint)k << " " << (uint)m << endl;
 
 	if (mode > 1) {
@@ -124,12 +126,12 @@ int main(int argc, char** argv) {
 	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
 	cout << endl;
 
-	cout<<"kmer comparison calls: " << pretty_int(kmer_comp_call)<<endl;
+	// cout<<"kmer comparison calls: " << pretty_int(kmer_comp_call)<<endl;
 
 	if (check)
 		verif_counts(counter);
 
-	cout << "Global statistics:" << endl;
+	// cout << "Global statistics:" << endl;
 	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket;
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket);
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
@@ -142,9 +144,9 @@ int main(int argc, char** argv) {
 	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
 	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 	cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
-	cout<<"Nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
-	cout<<"Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
-	cout<<"Comparison made : "<<pretty_int(comparaisons)<<endl;
+	// cout<<"Nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
+	// cout<<"Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
+	// cout<<"Comparison made : "<<pretty_int(comparaisons)<<endl;
 
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
@@ -270,7 +272,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// Read file line by line
 	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
-	omp_set_nested(2);
+	// omp_set_nested(2);
 	#pragma omp parallel
 	{
 		string line,prev;

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <limits>
-
+#include "parameters.hpp"
 #include "SuperKmerLight.hpp"
 #include "Kmers.hpp"
 
@@ -12,17 +12,30 @@
 #define BUCKETS_H
 
 
-
+#pragma pack(push, 1)
 template <class DATA>
 class Bucket{
 public:
+	
+	
+	// uint32_t nb_kmers;
+	
+	// SKL * buffered_skmer;
+	// DATA * buffered_data;
+	// kint buffered_get;
 	vector<SKL> skml;
-	uint32_t sorted_size;
+	uint8_t * nucleotides_reserved_memory;
+	DATA * data_reserved_memory;
+	int16_t sorted_size;
+	uint16_t next_data;
+	uint16_t data_reserved_number;
+	
 
-	uint nb_kmers;
-	bool cleared;
+	// uint32_t enumeration_skmer_idx;
+	// uint8_t enumeration_kmer_idx;
+	// bool cleared;
 
-	Bucket(Parameters * params);
+	Bucket();
 	Bucket(const Bucket<DATA> &) = delete;
 	Bucket(Bucket<DATA> && bucket);
 	~Bucket();
@@ -35,32 +48,18 @@ public:
 	vector<DATA *> find_kmer_vector(const vector<kmer_full>& kmers);
 
 	void init_enumerator();
-	void next_kmer(kmer_full & kmer, kint minimizer);
-	bool has_next_kmer();
+	void next_kmer(kmer_full & kmer, kint minimizer,uint32_t& enumeration_skmer_idx, uint32_t& enumeration_kmer_idx);
+	bool has_next_kmer(uint32_t& enumeration_skmer_idx, uint32_t& enumeration_kmer_idx);
 
 	void clear();
 	void print();
 
 	friend class BriskWriter;
 
-	Parameters * params;
-
-	SKL * buffered_skmer;
-	kint buffered_get;
-	DATA * buffered_data;
-
-	uint8_t * nucleotides_reserved_memory;
-	//~ uint32_t skmer_reserved;
-	uint64_t next_data;
-	uint64_t data_reserved_number;
-	DATA * data_reserved_memory;
-
-	uint32_t enumeration_skmer_idx;
-	uint8_t enumeration_kmer_idx;
-
-	//~ uint debug_count;
-
-	//~ bool debug;
+	static Parameters* params;//TODO STATIC
+	static void setParameters( Parameters& params) {
+        Bucket::params = &params;
+    };
 
 	DATA * find_kmer_unsorted(const kmer_full& kmer);
 	// DATA * find_kmer_from_interleave(kmer_full& kmer, SKL & mockskm, uint8_t * mock_nucleotides);
@@ -80,26 +79,26 @@ public:
 
 
 template <class DATA>
-Bucket<DATA>::Bucket(Parameters * params) {
+Bucket<DATA>::Bucket() {
 	this->sorted_size = 0;
-	this->buffered_skmer = (SKL *)NULL;
-	this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
-	this->buffered_data = 0;
-	this->cleared = false;
+	// this->buffered_skmer = (SKL *)NULL;
+	// this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
+	// this->buffered_data = 0;
+	// this->cleared = false;
 
 	this->params = params;
 
-	this->nb_kmers = 0;
+	// this->nb_kmers = 0;
 
-	this->skml.reserve(10);
+	this->skml.reserve(5);
 	this->nucleotides_reserved_memory = (uint8_t *)malloc(params->allocated_bytes * skml.capacity());
 	memset(this->nucleotides_reserved_memory, 0, params->allocated_bytes * skml.capacity());
 	this->next_data = 0;
 	this->data_reserved_number = 10;
 	this->data_reserved_memory = (DATA *)malloc(sizeof(DATA) * this->data_reserved_number);
 
-	this->enumeration_skmer_idx = 0;
-	this->enumeration_kmer_idx = 0;
+	// this->enumeration_skmer_idx = 0;
+	// this->enumeration_kmer_idx = 0;
 
 	//~ this->debug = false;
 }
@@ -110,19 +109,18 @@ template <class DATA>
 Bucket<DATA>::Bucket(Bucket<DATA> && bucket)
 : skml( std::move(bucket.skml) )
 , sorted_size( bucket.sorted_size )
-, nb_kmers( bucket.nb_kmers )
-, cleared( bucket.cleared )
-, params( bucket.params )
-, buffered_skmer( bucket.buffered_skmer )
-, buffered_get( ((kint)1) << (sizeof(kint) * 8 - 1) )
-, buffered_data( bucket.buffered_data )
+// , nb_kmers( bucket.nb_kmers )
+// , cleared( bucket.cleared )
+// , buffered_skmer( bucket.buffered_skmer )
+// , buffered_get( ((kint)1) << (sizeof(kint) * 8 - 1) )
+// , buffered_data( bucket.buffered_data )
 , nucleotides_reserved_memory( bucket.nucleotides_reserved_memory )
 //~ , skmer_reserved( bucket.skmer_reserved )
 , next_data( bucket.next_data )
 , data_reserved_number( bucket.data_reserved_number )
 , data_reserved_memory( bucket.data_reserved_memory )
-, enumeration_skmer_idx( bucket.enumeration_skmer_idx )
-, enumeration_kmer_idx( bucket.enumeration_kmer_idx )
+// , enumeration_skmer_idx( bucket.enumeration_skmer_idx )
+// , enumeration_kmer_idx( bucket.enumeration_kmer_idx )
 //~ , debug( bucket.debug )
 {
 	//~ if (debug)
@@ -142,6 +140,7 @@ Bucket<DATA> & Bucket<DATA>::operator=(Bucket<DATA>&& bucket) {
 
 template <class DATA>
 Bucket<DATA>::~Bucket() {
+
 	free(this->nucleotides_reserved_memory);
 	free(this->data_reserved_memory);
 }
@@ -154,9 +153,9 @@ void Bucket<DATA>::clear() {
 	this->nucleotides_reserved_memory = nullptr;
 	free(this->data_reserved_memory);
 	this->data_reserved_memory = nullptr;
-	this->cleared = true;
-	this->nb_kmers = 0;
-	this->sorted_size = 0;
+	// this->cleared = true;
+	// this->nb_kmers = 0;
+	this->sorted_size = -1;
 	this->skml.clear();
 }
 
@@ -181,13 +180,13 @@ void Bucket<DATA>::print() {
 template <class DATA>
 void Bucket<DATA>::data_space_update() {
 	if (this->next_data == this->data_reserved_number) {
-		auto factor = this->data_reserved_number > 500 ? 1 : 2;
+		auto factor = this->data_reserved_number > 500 ? 0.2 : 0.2;
 		size_t to_reserve = (int)(factor * this->data_reserved_number);
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
 
-		this->buffered_data = NULL;
-		this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
+		// this->buffered_data = NULL;
+		// this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	}
 }
 
@@ -199,30 +198,31 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 	// 0 - Update space for DATA if needed
 	this->data_space_update();
 	// 1 - Try to compact with the last kmer
-	if (buffered_skmer != NULL) {
+	if (not skml.empty()) {
 		// TODO: small minimizer idx ok ?
-		bool is_compacted = buffered_skmer->compact_right(
+		bool is_compacted = skml[skml.size()-1].compact_right(
 				kmer,
-				this->nucleotides_reserved_memory + this->params->allocated_bytes * buffered_skmer->idx,
+				this->nucleotides_reserved_memory + this->params->allocated_bytes * skml[skml.size()-1].idx,
 				*params
 		);
 
 		if (is_compacted) {
-			this->nb_kmers += 1;
+			// this->nb_kmers += 1;
 			this->next_data += 1;
 
-			this->buffered_data = data_reserved_memory + this->next_data - 1;
-			this->buffered_get = kmer.kmer_s;
-			return buffered_data;
+			// this->buffered_data = data_reserved_memory + this->next_data - 1;
+			return data_reserved_memory + this->next_data - 1;
+			// this->buffered_get = kmer.kmer_s;
+			// return buffered_data;
 		}
 	}
 
 	// 3 - Create a new skmer
 	DATA * value = this->insert_kmer_buffer(kmer);
-	this->nb_kmers += 1;
+	// this->nb_kmers += 1;
 	this->next_data += 1;
-	this->buffered_data = value;
-	this->buffered_get = kmer.kmer_s;
+	// this->buffered_data = value;
+	// this->buffered_get = kmer.kmer_s;
 
 	// 2 - Sort if needed
 	//TAMPON
@@ -248,26 +248,15 @@ void Bucket<DATA>::insert_buffer(){
 				nucleotides_reserved_memory + b.idx * params->allocated_bytes,
 				*params
 		);
-		// a.print(
-		// 	nucleotides_reserved_memory + a.idx * params->allocated_bytes,
-		// 	1,
-		// 	*params
-		// ); cout << endl;
-		// b.print(
-		// 	nucleotides_reserved_memory + b.idx * params->allocated_bytes,
-		// 	1,
-		// 	*params
-		// ); cout << endl;
-		// cout << val << endl;
 		return val;
 	};
 	// TODO: We should not sort the last kmer
 	sort(skml.begin()+sorted_size, skml.end(), comp_function);
 	inplace_merge(skml.begin(), skml.begin()+sorted_size, skml.end(), comp_function);
 
-	buffered_skmer = NULL;
-	this->buffered_data = NULL;
-	this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
+	// buffered_skmer = NULL;
+	// this->buffered_data = NULL;
+	// this->buffered_get = ((kint)1) << (sizeof(kint) * 8 - 1);
 	sorted_size=skml.size();
 }
 
@@ -281,7 +270,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
 		auto old_capacity = skml.capacity();
-		auto factor = old_capacity > 500 ? 1.2 : 1.5;
+		auto factor = old_capacity > 500 ? 1.2 : 1.2;
 		skml.reserve(skml.capacity()*factor);
 
 		this->nucleotides_reserved_memory = (uint8_t *)realloc(
@@ -307,7 +296,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 		this->next_data,
 		*params
 	);
-	buffered_skmer = &(skml[skml.size()-1]);
+	// buffered_skmer = &(skml[skml.size()-1]);
 	value_pointer = this->data_reserved_memory + this->next_data;
 
 	return value_pointer;
@@ -318,7 +307,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 template <class DATA>
 void Bucket<DATA>::discard_last_kmer(){
 	skml.pop_back();
-	buffered_skmer = &(skml[skml.size()-1]);
+	// buffered_skmer = &(skml[skml.size()-1]);
 }
 
 
@@ -497,7 +486,7 @@ DATA * Bucket<DATA>::find_kmer_linear(const kmer_full& kmer, const int64_t begin
 			uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
 			uint64_t kmer_mini_idx = kmer.minimizer_idx + mini_reduc_offset;
 			uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
-			buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+			// buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			return this->data_reserved_memory + skml[i].data_idx + kmer_position;
 		}
 	}
@@ -516,13 +505,11 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_vector(const vector<kmer_full>& km
 					kmers[j],
 					this->nucleotides_reserved_memory + params->allocated_bytes * skml[i].idx,
 					*params);
-				// cout << is_present << endl;
-				// cout << "-----" << endl;
 				if (is_present) {
 					uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
 					uint64_t kmer_mini_idx = kmers[j].minimizer_idx + mini_reduc_offset;
 					uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
-					buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+					// buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 					result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
 				}
 			}
@@ -543,7 +530,7 @@ DATA * Bucket<DATA>::find_kmer_linear_sorted_stop(const kmer_full& kmer, const i
 				uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
 				uint64_t kmer_mini_idx = kmer.minimizer_idx + mini_reduc_offset;
 				uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
-				buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+				// buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 				return this->data_reserved_memory + skml[i].data_idx + kmer_position;
 			}else if(superior){
 				return NULL;
@@ -579,7 +566,7 @@ vector<DATA *> Bucket<DATA>::find_kmer_linear_sorted_stop_vector(const vector<km
 					uint64_t mini_reduc_offset = (this->params->m_reduc + 1) / 2;
 					uint64_t kmer_mini_idx = kmers[j].minimizer_idx + mini_reduc_offset;
 					uint8_t kmer_position = skml[i].size - (skml[i].minimizer_idx - kmer_mini_idx) - 1;
-					buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
+					// buffered_data = this->data_reserved_memory + skml[i].data_idx + kmer_position;
 					result[j]=this->data_reserved_memory + skml[i].data_idx + kmer_position;
 					if(min_kmer_indice==j){
 						min_kmer_indice++;
@@ -630,11 +617,6 @@ DATA * Bucket<DATA>::find_kmer(const kmer_full& kmer) {
 
 template <class DATA>
 vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
-	// cout << "--- find_kmer_vector ---" << endl;
-	// for (SKL & sk: skml) {
-	// 	sk.print(nucleotides_reserved_memory + params->allocated_bytes * sk.idx, 0b01111000, *params); cout << endl;
-	// }
-	// cout << "--- find_kmer_vector ---" << endl;
 	vector<DATA *> result(kmers.size(),NULL);
 	if(sorted_size > 0){
 		result = find_kmer_log_simple_vector(kmers);
@@ -644,16 +626,16 @@ vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
 
 
 
-template <class DATA>
-void Bucket<DATA>::init_enumerator() {
-	this->enumeration_skmer_idx = 0;
-	this->enumeration_kmer_idx = 0;
-}
+// template <class DATA>
+// void Bucket<DATA>::init_enumerator() {
+// 	this->enumeration_skmer_idx = 0;
+// 	this->enumeration_kmer_idx = 0;
+// }
 
 
 
 template <class DATA>
-bool Bucket<DATA>::has_next_kmer() {
+bool Bucket<DATA>::has_next_kmer(uint32_t& enumeration_skmer_idx, uint32_t & enumeration_kmer_idx) {
 	if (enumeration_skmer_idx >= skml.size())
 		return false;
 
@@ -661,7 +643,7 @@ bool Bucket<DATA>::has_next_kmer() {
 	if (enumeration_kmer_idx >= skmer.size) {
 		enumeration_skmer_idx += 1;
 		enumeration_kmer_idx = 0;
-		return has_next_kmer();
+		return has_next_kmer(enumeration_skmer_idx,enumeration_kmer_idx);
 	}
 
 	return true;
@@ -670,9 +652,9 @@ bool Bucket<DATA>::has_next_kmer() {
 
 
 template <class DATA>
-void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
+void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer,uint32_t& enumeration_skmer_idx, uint32_t& enumeration_kmer_idx) {
 	// Nothing to do here
-	if (not has_next_kmer()){
+	if (not has_next_kmer(enumeration_skmer_idx, enumeration_kmer_idx)){
 		return;
 	}
 
@@ -687,6 +669,10 @@ void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer) {
 
 	enumeration_kmer_idx += 1;
 }
+
+
+template<class T>
+Parameters* Bucket<T>::params = nullptr;
 
 
 
