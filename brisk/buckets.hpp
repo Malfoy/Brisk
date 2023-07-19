@@ -90,7 +90,7 @@ Bucket<DATA>::Bucket() {
 
 	// this->nb_kmers = 0;
 
-	this->skml.reserve(5);
+	this->skml.reserve(10);
 	this->nucleotides_reserved_memory = (uint8_t *)malloc(params->allocated_bytes * skml.capacity());
 	memset(this->nucleotides_reserved_memory, 0, params->allocated_bytes * skml.capacity());
 	this->next_data = 0;
@@ -180,7 +180,7 @@ void Bucket<DATA>::print() {
 template <class DATA>
 void Bucket<DATA>::data_space_update() {
 	if (this->next_data == this->data_reserved_number) {
-		auto factor = this->data_reserved_number > 500 ? 0.2 : 0.2;
+		auto factor = this->data_reserved_number > 500 ? 0.1 : 0.1;
 		size_t to_reserve = (int)(factor * this->data_reserved_number);
 		this->data_reserved_memory = (DATA *)realloc(this->data_reserved_memory, sizeof(DATA) * (this->data_reserved_number + to_reserve));
 		this->data_reserved_number += to_reserve;
@@ -270,7 +270,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 	// Scale Superkmer vector capacity if needed
 	if(skml.size()==skml.capacity()){
 		auto old_capacity = skml.capacity();
-		auto factor = old_capacity > 500 ? 1.2 : 1.2;
+		auto factor = old_capacity > 500 ? 1.1 : 1.1;
 		skml.reserve(skml.capacity()*factor);
 
 		this->nucleotides_reserved_memory = (uint8_t *)realloc(

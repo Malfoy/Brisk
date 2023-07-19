@@ -113,7 +113,7 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	dede= new DecyclingSet(params.m);
 
 	// Create the mutexes
-	mutex_order = min((uint8_t)2,params.m_small);
+	mutex_order = min((uint8_t)10,params.m_small);
 	mutex_number = ((uint64_t)1)<<(2*mutex_order); /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
 	// Init the mutexes
 	MutexData.resize(mutex_number);
