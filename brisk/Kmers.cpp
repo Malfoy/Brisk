@@ -339,9 +339,6 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	reversed=(mini!=fwd_mini);
 	min_position = 0;
 	multiple = false;
-	bool debug = kmer2str(seq, 21) == "GTTTGTTGCCGCCATCTGGAC";
-	if (debug)
-			cout << (uint64_t)min_position << " fwd " << kmer2str(fwd_mini, m) << " mmer " << kmer2str(mmer, m) << " " << hash_mini << endl;
 
 	// Search in all possible position (from 1) the minimizer
 	for (uint64_t i=1; i <= (uint)k - m; i++) {
@@ -349,8 +346,6 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 		fwd_mini = ((uint64_t)seq) & m_mask;
 		mmer = canonize(fwd_mini, m);
 		uint64_t hash = bfc_hash_64(mmer,m_mask,dede);
-		if (debug)
-			cout << i << " fwd " << kmer2str(fwd_mini, m) << " mmer " << kmer2str(mmer, m) << " " << hash << endl;
 
 		if (hash_mini > hash) {
 			min_position = i;
