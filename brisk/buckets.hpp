@@ -26,9 +26,9 @@ public:
 	vector<SKL> skml;
 	uint8_t * nucleotides_reserved_memory;
 	DATA * data_reserved_memory;
-	int16_t sorted_size;
-	uint16_t next_data;
-	uint16_t data_reserved_number;
+	int32_t sorted_size;
+	uint32_t next_data;
+	uint32_t data_reserved_number;
 	
 
 	// uint32_t enumeration_skmer_idx;
