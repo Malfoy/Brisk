@@ -5,7 +5,6 @@
 #include "Kmers.hpp"
 #include "pow2.hpp"
 
-
 using namespace std;
 
 
@@ -297,6 +296,60 @@ kint str2num2(const string& str) {
 	return res;
 }
 
+__m128i mm_bitshift_right(__m128i x, unsigned count) {
+	//~ assume(count < 128, "count=%u >= 128", count);
+	__m128i carry = _mm_srli_si128(x, 8);
+	if (count >= 64) return _mm_srli_epi64(carry, count - 64); // the non-carry part is all zero, so return early
+	// else
+	carry = _mm_slli_epi64(carry, 64 - count);
+
+	x = _mm_srli_epi64(x, count);
+	return _mm_or_si128(x, carry);
+}
+
+__uint128_t rcb(const __uint128_t& in, uint64_t n) {
+
+	// assume(n <= 64, "n=%u > 64", n);
+
+	union kmer_u {
+		__uint128_t k;
+		__m128i m128i;
+		uint64_t u64[2];
+		uint8_t u8[16];
+	};
+
+	kmer_u res = {.k = in};
+
+	static_assert(sizeof(res) == sizeof(__uint128_t), "kmer sizeof mismatch");
+
+	// Swap byte order
+
+	kmer_u shuffidxs = {.u8 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0}};
+
+	// res.m128i = 
+	_mm_shuffle_epi8(res.m128i, shuffidxs.m128i);
+
+	// Swap nuc order in bytes
+
+	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+
+	const uint64_t c2 = 0x3333333333333333;
+
+	for (uint64_t& x : res.u64) {
+
+		x = ((x & c1) << 4) | ((x & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+
+		x = ((x & c2) << 2) | ((x & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+
+		x ^= 0xaaaaaaaaaaaaaaaa; // Complement;
+	}
+
+	// Realign to the right
+
+	res.m128i = mm_bitshift_right(res.m128i, 128 - 2 * n);
+
+	return res.k;
+}
 
 uint64_t rcbc(uint64_t in, uint64_t n) {
 	assume(n <= 32, "n=%u > 32", n);
@@ -317,8 +370,6 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 	return min(x, rcbc(x, n));
 }
 
-
-
 /** Get the minimizer from a sequence and modify the position parameter.
   * WARNING: If the sequence contains a multiple time the minimizer, return the minimizer position generating a kmer with the longest prefix.
 	*
@@ -333,6 +384,7 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	// Init with the first possible minimizer
 	uint64_t mini, mmer;
 	uint64_t fwd_mini = seq & m_mask;
+	kint rcseq = rcb(seq,k);
 	mini = mmer = canonize(fwd_mini, m);
 	uint64_t hash_mini = bfc_hash_64(mmer,m_mask,dede);
 	// Update values regarding the minimizer
@@ -345,24 +397,42 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 		seq >>= (kint)2;
 		fwd_mini = ((uint64_t)seq) & m_mask;
 		mmer = canonize(fwd_mini, m);
-		uint64_t hash = bfc_hash_64(mmer,m_mask,dede);
+		uint64_t new_hash = bfc_hash_64(mmer,m_mask,dede);
 
-		if (hash_mini > hash) {
+		// new mmer is smaller than previous minimizer
+		if (hash_mini > new_hash) {
 			min_position = i;
 			mini = mmer;
 			reversed=(mini!=fwd_mini);		
-			hash_mini = hash;
+			hash_mini = new_hash;
 			multiple = false;
-		} else if (hash_mini == hash) {
-			min_position = i;
-			reversed=(mini!=fwd_mini);
 
-			multiple = true;
+		// new mmer is equal to previous minimizer
+		} else if (hash_mini == new_hash) {
+			// new mmer's position is closer to kmer edge than previous minimizer
+			if(i < k-m-i){
+				min_position = i;
+				reversed = false;
+			// old mmer's position is closer to kmer edge than previous minimizer
+			}else if(k-m-i < i){
+				min_position = k-m-i;
+				reversed = true;
+			// new mmer's position is as close to kmer edge as previous minimizer
+			}else{
+				// - strand is the canonical strand
+				if(seq > rcseq){
+					reversed = true;
+					min_position = k-m-i;
+				// + strand is the canonical strand
+				}else{
+					reversed = false;
+					min_position = i;			
+				}
+			}
 		}
 	}
 	return mini;
 }
-
 
 char revCompChar(char c) {
 	switch (c) {
@@ -526,33 +596,12 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			reversed = (candidate_canon == rc_mini_candidate);
 			multiple = false;
 		}
-		// Equal minimizer
-		else if (current_hash == mini_hash) {
-			// Save previous kmers from superkmer
-			if (reversed){
-				reverse(kmers.begin(), kmers.end());
-			}
-				
-			to_return = true;
-			return_val = mini;
-
-			multiple = true;
-		}
-
-		// Multiple minimizer is directed regarding the complete kmer value because there is no reference due to the multiple index for minimizers.
-		if (multiple) {
-			if (current_kmer > current_rc_kmer) {
-				reversed = true;
-			} else {
-				reversed = false;
-			}
-		}
 
 		if (not reversed) {
 			saved_kmer = kmer_full(current_kmer, mini_pos, m, multiple,dede);
 		} else {
 			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, multiple,dede);
-			saved_kmer.minimizer=mini;
+			saved_kmer.minimizer = mini;
 		}
 
 		if (to_return and seq_idx > 0) {
