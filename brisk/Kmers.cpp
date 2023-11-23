@@ -354,6 +354,17 @@ uint64_t canonize(uint64_t x, uint64_t n) {
 	return min(x, rcbc(x, n));
 }
 
+kint canonize(kint x, uint64_t n) {
+	return min(x, rcb(x, n));
+}
+
+bool canonized(kint x, uint64_t n) {
+	if (x < canonize(x,n)) {
+		return true;
+	}
+	return false;
+}
+
 /** Get the minimizer from a sequence and modify the position parameter.
   * WARNING: If the sequence contains a multiple time the minimizer, return the minimizer position generating a kmer with the longest prefix.
 	*
@@ -368,7 +379,6 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 	// Init with the first possible minimizer
 	uint64_t mini, mmer;
 	uint64_t fwd_mini = seq & m_mask;
-	kint rcseq = rcb(seq,k);
 	mini = mmer = canonize(fwd_mini, m);
 	uint64_t hash_mini = bfc_hash_64(mmer,m_mask,dede);
 	// Update values regarding the minimizer
@@ -402,13 +412,14 @@ uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const u
 			// new mmer's position is as close to kmer edge as previous minimizer
 			}else{
 				// - strand is the canonical strand
-				if(seq > rcseq){
-					reversed = true;
-					min_position = k-m-i;
+				if(canonized(seq,k)){
+					reversed = false;
+					min_position = i;
 				// + strand is the canonical strand
 				}else{
-					reversed = false;
-					min_position = i;			
+					reversed = true;
+					min_position = k-m-i;
+
 				}
 			}
 		}

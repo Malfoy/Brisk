@@ -145,7 +145,13 @@ void print_kmer(T num, uint8_t n){
 string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 kmer_full * str2kmer(const std::string & str, const uint8_t m);
-// Return the canonical minimizer for a uint64 sequence.
+kint str2num2(const string& str);
+__m128i mm_bitshift_right(__m128i x, unsigned count);
+__uint128_t rcb(const __uint128_t& in, uint64_t n);
+uint64_t rcbc(uint64_t in, uint64_t n);
+uint64_t canonize(uint64_t x, uint64_t n);
+kint canonize(kint x, uint64_t n);
+bool canonized(kint x, uint64_t n);
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, const uint64_t,DecyclingSet* dede);
 string getCanonical(const string& str);
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
