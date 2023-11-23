@@ -56,7 +56,6 @@ public:
 	// Mutex
 	vector<omp_lock_t> MutexData;
 	vector<omp_lock_t> MutexBucket;
-	omp_lock_t multi_lock;
 
 	// Cursed kmer buckets
 	ankerl::unordered_dense::map<kint, DATA> cursed_kmers;
@@ -121,10 +120,6 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	for (uint64_t i(0); i < mutex_number; ++i) {
 		omp_init_lock(&MutexData[i]);
 		omp_init_lock(&MutexBucket[i]);
-	}
-	omp_init_lock(&multi_lock);
-	for (uint64_t i(0); i < bucket_overload; ++i) {
-		omp_init_lock(&lock_overload[i]);
 	}
 	total_number_kmers=0;
 	active_buckets=0;
@@ -210,15 +205,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer(kmer_full & kmer) {
 		return prev_val;
 	}
 
-	// Cursed kmers
-	if (kmer.multi_mini) {
-		omp_set_lock(&multi_lock);
-		cursed_kmers[kmer.kmer_s] = DATA();
-		auto el=&(cursed_kmers[kmer.kmer_s]);
-		omp_unset_lock(&multi_lock);
-		return el;
-	}
-
 	// Transform the super minimizer to the used minimizer
 	// Remove the minimizer suffix
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
@@ -279,10 +265,6 @@ void DenseMenuYo<DATA>::insert_kmer_vector(const vector<kmer_full> & kmers,vecto
 		}
 	}
 
-	if (kmers[0].multi_mini) {
-		return;
-	}
-
 	// Remove the minimizer suffix
 	uint64_t small_minimizer = kmers[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
@@ -313,19 +295,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 		}
 	}
 	newly_inserted=true;
-	// Cursed kmers
-	if (kmer.multi_mini) {
-		omp_set_lock(&multi_lock);
-		if (cursed_kmers.count(kmer.kmer_s) == 0) {
-			cursed_kmers[kmer.kmer_s] = DATA();
-		} else {
-			newly_inserted = false;
-		}
-		auto el=& cursed_kmers[kmer.kmer_s];
-		omp_unset_lock(&multi_lock);
-
-		return el;
-	}
 	// Transform the super minimizer to the used minimizer
 
 	// Remove the minimizer suffix
@@ -373,18 +342,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 
 template <class DATA>
 DATA * DenseMenuYo<DATA>::get_kmer(const kmer_full & kmer) {
-	// Cursed kmers
-	if (kmer.multi_mini) {
-		omp_set_lock(&multi_lock);
-		if (cursed_kmers.count(kmer.kmer_s) != 0) {
-			auto el =&(cursed_kmers[kmer.kmer_s]);
-			omp_unset_lock(&multi_lock);
-			return el;
-		} else {
-			omp_unset_lock(&multi_lock);
-			return (DATA *)NULL;
-		}
-	}
 	// Remove the minimizer suffix
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
@@ -430,18 +387,6 @@ DATA * DenseMenuYo<DATA>::get_kmer(const kmer_full & kmer) {
 template <class DATA>
 vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmers)  {
 	vector<DATA *> result(kmers.size(),NULL);
-	//WE ASSUME HERE THAT ALL KMERS are equally cursed
-	if (kmers[0].multi_mini) {
-		omp_set_lock(&multi_lock);
-		for(uint i(0);i<kmers.size();++i){
-			if (cursed_kmers.count(kmers[i].kmer_s) != 0) {
-				result[i] =&cursed_kmers[kmers[i].kmer_s];
-			}
-		}
-		omp_unset_lock(&multi_lock);
-		return result;
-	}
-
 	//WE ASSUME HERE THAT ALL KMER HAVE THE SAME MINIMIZER
     // Remove the minimizer suffix
 	uint64_t small_minimizer = kmers[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
@@ -483,20 +428,7 @@ vector<DATA *> DenseMenuYo<DATA>::get_kmer_vector(const vector<kmer_full> & kmer
 
 
 template <class DATA>
-DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(const kmer_full & kmer) {
-	
-	if (kmer.multi_mini) {
-		omp_set_lock(&multi_lock);
-		if (cursed_kmers.count(kmer.kmer_s) != 0) {
-			auto el=&(cursed_kmers[kmer.kmer_s]);
-			omp_unset_lock(&multi_lock);
-			return el;
-		} else {
-			omp_unset_lock(&multi_lock);
-			return (DATA *)NULL;
-		}
-	}
-	
+DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(const kmer_full & kmer) {	
     // Remove the minimizer suffix
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
@@ -578,17 +510,15 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	// Cursed kmers
 	if (cursed_iter != cursed_kmers.end()) {
 		kmer.kmer_s = cursed_iter->first;
-		kmer.multi_mini = true;
 		cursed_iter=std::next(cursed_iter);
 		return true;
 	}
-	kmer.multi_mini =false;
 	while(current_overload<bucket_overload){	
 		if(overload_iter!=overload_kmers[current_overload].end()){
 			kmer.kmer_s = overload_iter->first;
 			
 			bool reversed;
-			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,kmer.multi_mini,params.mask_large_minimizer,dede);
+			kmer.minimizer = get_minimizer(kmer.kmer_s,params.k,kmer.minimizer_idx,params.m,reversed,params.mask_large_minimizer,dede);
 
 			kmer.hash_kmer_minimizer_inplace(params.m);
 			overload_iter=std::next(overload_iter);

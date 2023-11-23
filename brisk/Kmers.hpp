@@ -48,12 +48,11 @@ public:
 	kint kmer_s;
 	kint minimizer;
 	uint8_t minimizer_idx;
-	bool multi_mini;
 	vector<int8_t> interleaved;
 	DecyclingSet* dede;
 	static uint16_t* occ2mer_entropy;
 
-	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, bool multiple_mini,DecyclingSet* dede);
+	kmer_full(kint value, uint8_t minimizer_idx, uint8_t minimizer_size, DecyclingSet* dede);
 	kmer_full();
 	kmer_full(kmer_full&& kmer);
 	kmer_full(const kmer_full&& kmer);
@@ -62,7 +61,6 @@ public:
 	void print(uint8_t k, uint8_t m) const;
 	kint get_compacted(uint8_t m, uint8_t mini_idx)const ;
 	// uint64_t get_minimizer() const;
-	bool contains_multi_minimizer() const;
 	uint8_t prefix_size(const uint8_t k, const uint8_t m) const;
 	uint8_t suffix_size() const;
 	vector<int> compute_interleaved(const Parameters & params) const;
@@ -107,7 +105,6 @@ private:
 	kint mini_candidate;
 	kint rc_mini_candidate;
 	bool reversed;
-	bool multiple;
 	uint8_t mini_pos;
 	uint64_t mini;
 	uint64_t mini_hash;
@@ -149,7 +146,7 @@ string kmer2str(kint num, uint k);
 kint str2num(const std::string& str);
 kmer_full * str2kmer(const std::string & str, const uint8_t m);
 // Return the canonical minimizer for a uint64 sequence.
-uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, bool & multiple,const uint64_t,DecyclingSet* dede);
+uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, const uint64_t,DecyclingSet* dede);
 string getCanonical(const string& str);
 // void string_to_kmers_by_minimizer(string & seq, vector<vector<kmer_full> > & kmers, uint8_t k, uint8_t m);
 kint string_to_kmers_by_minimizer(string & seq, vector<kmer_full> & kmers, const uint8_t k, const uint8_t m);

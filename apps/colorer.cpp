@@ -276,7 +276,7 @@ void verif_colors(Brisk<uint64_t> & colors) {
 	cout << "--- Start counting verification ---" << endl;
 	// cout<<verif.size() <<endl;
 	// kint mini_mask = (1 << (2 * counter.m)) - 1;
-	kmer_full kmer(0,0, colors.params.m, false,colors.menu->dede);
+	kmer_full kmer(0,0, colors.params.m,colors.menu->dede);
 	// Count 
 	while (colors.next(kmer)) {
 		if (verif.count(kmer.kmer_s) == 0) {

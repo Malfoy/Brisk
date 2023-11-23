@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
 	cout<<verif.size()<<endl;
-	kmer_full kmer(0,0, counter.params.m, false,counter.menu->dede);
+	kmer_full kmer(0,0, counter.params.m, counter.menu->dede);
 	// Count 
 	while (counter.next(kmer)) {
 		// print_kmer(kmer.kmer_s,63);
