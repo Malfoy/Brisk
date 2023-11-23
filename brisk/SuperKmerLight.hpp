@@ -362,7 +362,6 @@ void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const ki
 
 	// Assemble everything
 	kmer.kmer_s += prefix + suffix;
-	kmer.multi_mini = false;
 	kmer.minimizer_idx = suffix_size;
 	kmer.minimizer = mini;
 
