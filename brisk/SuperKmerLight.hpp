@@ -16,8 +16,8 @@
 #pragma pack(push, 1)
 class SKL {
 public:
-	uint32_t idx;
-	uint32_t data_idx;
+	uint16_t idx;
+	uint16_t data_idx;
 	uint8_t size;//1B
 	uint8_t minimizer_idx;//1B
 
