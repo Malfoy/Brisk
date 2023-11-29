@@ -333,6 +333,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+	#pragma omp atomic
 	total_number_kmers++;
 
 	return value;
@@ -580,11 +581,6 @@ void DenseMenuYo<DATA>::restart_kmer_enumeration() {
 }
 
 
-
-ofstream bucket_size("bucketsize.txt");
-
-
-
 static inline uint32_t mylog2(const uint32_t x) {
   uint32_t y;
   asm ( "\tbsr %1, %0\n"
@@ -602,10 +598,8 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 	nb_kmers = 0;
 	nb_skmers = 0;
 	largest_bucket=0;
-	bucket_size<<"size\n";
 	uint64_t alloc_nuc(0),alloc_data(0);
 
-	//#pragma omp parallel for
 	for (uint64_t mini=0 ; mini<bucket_number ; mini++) {
 		uint32_t mutex_idx = get_mutex(mini);
 		uint32_t column_idx = get_column(mini);
@@ -616,29 +610,14 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 			#pragma omp atomic
 			nb_buckets += 1;
 			#pragma omp atomic
-			alloc_nuc += bucketMatrix[mutex_idx][idx-1].skml.capacity()*(params.allocated_bytes+6);
-			#pragma omp atomic
-			alloc_data += bucketMatrix[mutex_idx][idx-1].data_reserved_number;
-			#pragma omp atomic
 			nb_skmers += bucketMatrix[mutex_idx][idx-1].skml.size();
-			#pragma omp critical (filesize)
-			{
-				bucket_size<<(int)mylog2(bucketMatrix[mutex_idx][idx-1].skml.size())<<"\n";
-			}
-			// #pragma omp atomic
-			// nb_kmers += bucketMatrix[mutex_idx][idx-1].nb_kmers;
 			if(largest_bucket<bucketMatrix[mutex_idx][idx-1].skml.size()){
 				#pragma omp critical (max)
 				largest_bucket=bucketMatrix[mutex_idx][idx-1].skml.size();
 			}
 		}
 	}
-	cout<<"LES ALLOC:	"<<(alloc_nuc)<<" "<<(alloc_data)<<" "<<(alloc_data+alloc_nuc)<<endl;
-
-	// nb_cursed = cursed_kmers.size();
-	// nb_kmers += nb_cursed;
-	// for (uint64_t i=0 ; i<bucket_overload ; i++)
-	// 	nb_kmers += overload_kmers[i].size();
+	nb_kmers = total_number_kmers;
 }
 
 

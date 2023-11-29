@@ -105,15 +105,13 @@ int main(int argc, char** argv) {
 
 	Parameters params(k, m, b);
 
-    //cout << fasta << " " << (uint)k << " " << (uint)m << endl;
-
 	if (mode > 1) {
 		check = true;
 		cout << "LETS CHECK THE RESULTS" << endl;
 	}
 
 
-	cout << "\n\n\nI'm counting " << fasta << endl;
+	cout << "I'm counting " << fasta << endl;
 	cout << "Kmer size:	" << (uint)k << endl;
 	cout << "Minimizer size:	" << (uint)m << endl;
 	cout << "Bucket size:     " << (uint)b << endl;
@@ -137,17 +135,13 @@ int main(int argc, char** argv) {
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket);
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
 	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
-	// cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
-	// cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
-	// cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
+	cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
+	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
 	cout << "average superkmer / bucket: " << ((float)nb_skmers / (float)nb_buckets) << endl;
 	cout << "Largest bucket :	"<<pretty_int(largest_bucket) <<endl;
 	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
-	// cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
-	// cout << "nb cursed kmers: " << pretty_int(nb_cursed) << endl;
-	// cout<<"Nb kmer considered: " <<pretty_int(number_kmer_count)<<endl;
-	// cout<<"Low complexity kmer : "<<pretty_int(low_complexity_kmer)<<endl;
-	// cout<<"Comparison made : "<<pretty_int(comparaisons)<<endl;
+	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
 
 	// --- Save Brisk index ---
 	if (mode == 0 and outfile != "") {
