@@ -125,12 +125,9 @@ int main(int argc, char** argv) {
 	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
 	cout << endl;
 
-	// cout<<"kmer comparison calls: " << pretty_int(kmer_comp_call)<<endl;
-
 	if (check)
 		verif_counts(counter);
 
-	// cout << "Global statistics:" << endl;
 	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket;
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket);
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
@@ -157,26 +154,17 @@ int main(int argc, char** argv) {
 
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
-	cout<<verif.size()<<endl;
 	kmer_full kmer(0,0, counter.params.m, counter.menu->dede);
 	// Count 
 	while (counter.next(kmer)) {
-		// print_kmer(kmer.kmer_s,63);
-		// cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
-		if (verif.count(kmer.kmer_s) == 0) {
-			cout << "pas dans verif weird"<<endl;
-
-			cin.get();
-		}
+		print_kmer(kmer.kmer_s,63);
+		cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
 
 		uint8_t * count = counter.get(kmer);
 		if (count == NULL) {
 			cout<<"No data linked ";
-			// print_kmer(kmer.minimizer, counter.params.m); cout << endl;
-			// cout << (uint)kmer.minimizer << endl;
 			print_kmer(kmer.kmer_s, counter.params.k); cout << endl;
 		}else{
-			// print_kmer(kmer.kmer_s, counter.params.k); cout << " " << (uint64_t)*count << endl;
 			verif[kmer.kmer_s] -= *count;
 		}
 
