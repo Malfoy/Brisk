@@ -79,7 +79,7 @@ public:
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & largest_bucket) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & largest_bucket) const;
 
 	void print_bigest_bucket();
 
@@ -593,7 +593,7 @@ static inline uint32_t mylog2(const uint32_t x) {
 
 
 template<class DATA>
-void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & largest_bucket) const {
+void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & largest_bucket) const {
 	nb_buckets = 0;
 	nb_kmers = 0;
 	nb_skmers = 0;

@@ -84,7 +84,6 @@ string pretty_int(uint64_t n){
 
 // static robin_hood::unordered_map<kint, int16_t> verif;
 // static tsl::sparse_map<kint, int16_t> verif;
-// static typename ankerl::unordered_dense::map<kint, DATA>::iterator cursed_iter;
 // typename ankerl::unordered_dense::map<kint, int16_t> verif;
 static unordered_map<kint, int16_t> verif;
 static bool check;
@@ -128,8 +127,8 @@ int main(int argc, char** argv) {
 	if (check)
 		verif_counts(counter);
 
-	uint64_t nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket;
-	counter.stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, memory, largest_bucket);
+	uint64_t nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket);
 	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
 	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
 	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
@@ -157,9 +156,6 @@ void verif_counts(Brisk<uint8_t> & counter) {
 	kmer_full kmer(0,0, counter.params.m, counter.menu->dede);
 	// Count 
 	while (counter.next(kmer)) {
-		print_kmer(kmer.kmer_s,63);
-		cout << kmer2str(kmer.kmer_s, counter.params.k) << endl;
-
 		uint8_t * count = counter.get(kmer);
 		if (count == NULL) {
 			cout<<"No data linked ";

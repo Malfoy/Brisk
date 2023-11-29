@@ -59,7 +59,7 @@ public:
 
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
-	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage, uint64_t & largest_bucket) const;
+	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & memory_usage, uint64_t & largest_bucket) const;
 };
 
 
@@ -207,9 +207,9 @@ uint64_t Brisk<DATA>::getMemorySelfMaxUsed () const{
 
 
 template<class DATA>
-void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & nb_cursed, uint64_t & memory_usage, uint64_t & largest_bucket) const {
+void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & memory_usage, uint64_t & largest_bucket) const {
 	memory_usage = this->getMemorySelfMaxUsed();
-	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, nb_cursed, largest_bucket);
+	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, largest_bucket);
 }
 
 
