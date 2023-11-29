@@ -598,7 +598,6 @@ void DenseMenuYo<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint6
 	nb_kmers = 0;
 	nb_skmers = 0;
 	largest_bucket=0;
-	uint64_t alloc_nuc(0),alloc_data(0);
 
 	for (uint64_t mini=0 ; mini<bucket_number ; mini++) {
 		uint32_t mutex_idx = get_mutex(mini);

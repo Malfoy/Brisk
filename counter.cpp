@@ -87,8 +87,6 @@ string pretty_int(uint64_t n){
 // typename ankerl::unordered_dense::map<kint, int16_t> verif;
 static unordered_map<kint, int16_t> verif;
 static bool check;
-static uint64_t number_kmer_count(0);
-uint64_t low_complexity_kmer(0);
 
 
 

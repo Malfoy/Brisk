@@ -31,8 +31,8 @@ kmer_full::kmer_full(kmer_full&& kmer) :
 	kmer_s(kmer.kmer_s),
 	minimizer(kmer.minimizer),
 	minimizer_idx(kmer.minimizer_idx),
-	dede(kmer.dede),
-	interleaved(move(interleaved))
+	interleaved(move(interleaved)),
+	dede(kmer.dede)
 {}
 
 
@@ -40,8 +40,8 @@ kmer_full::kmer_full(const kmer_full&& kmer) :
 	kmer_s(kmer.kmer_s),
 	minimizer(kmer.minimizer),
 	minimizer_idx(kmer.minimizer_idx),
-	dede(kmer.dede),
-	interleaved(kmer.interleaved)
+	interleaved(kmer.interleaved),
+	dede(kmer.dede)
 {}
 
 
@@ -516,12 +516,13 @@ void update_kmer(const char nucl, kint & kmer_seq, kint & rc_kmer_seq, const uin
 
 SuperKmerEnumerator::SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,DecyclingSet* dd)
 : seq( s ), seq_idx( 0 )
+, dede(dd)
 , k( k ), k_mask( ((kint)1 << (2*k)) - 1 )
 , m( m ), m_mask( ((kint)1 << (2*m)) - 1 )
 , saved( false ), saved_kmer( kmer_full((kint)0,(uint8_t)0, (uint8_t)0,dd) )
 , current_kmer( 0 ), current_rc_kmer( 0 )
 , mini_candidate( 0 ), rc_mini_candidate( 0 )
-, mini_pos ( 1 ),dede(dd), mini_hash ( 0 )
+, mini_pos ( 1 ), mini_hash ( 0 )
 {}
 
 
