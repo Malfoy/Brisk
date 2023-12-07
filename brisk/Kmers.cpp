@@ -231,12 +231,6 @@ string kmer2str(__uint128_t num, uint k) {
 		if (nuc == 0) {
 			res += "A";
 		}
-		if (nuc >= 4) {
-			cout << "WTF kmer2str" << endl;
-			cout<<kmer2str(num,k)<<endl;
-			cout<<nuc<<endl;
-			return "";
-		}
 		anc >>= 2;
 	}
 	return res;

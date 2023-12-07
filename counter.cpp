@@ -27,12 +27,12 @@ int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t 
 								uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
-  auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count");
-  file_opt->required();
-  app.add_option("-k", k, "Kmer size");
-  app.add_option("-m", m, "Minimizer size");
-  app.add_option("-b", buckets, "Bucket number. 4^b  buckets");
-  app.add_option("-t", threads, "Thread number");
+  auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count")->required();
+  file_opt->check(CLI::ExistingFile);
+  app.add_option("-k", k, "Kmer size")->check(CLI::Range(5,63));
+  app.add_option("-m", m, "Minimizer size")->check(CLI::Range(3,29).description("INT in [3 - k-2]"));
+  app.add_option("-b", buckets, "Bucket number. 4^b  buckets")->check(CLI::Range(3,15));
+  app.add_option("-t", threads, "Number of threads to use");
   app.add_option("-o", outfile, "Output file (kff format https://github.com/yoann-dufresne/kmer_file_format)");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
 
