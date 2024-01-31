@@ -23,15 +23,12 @@ void verif_counts(Brisk<uint8_t> & counter);
 
 
 
-int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint8_t & m, uint8_t & buckets,
-								uint & mode, uint & threads) {
+int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
   auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count")->required();
   file_opt->check(CLI::ExistingFile);
   app.add_option("-k", k, "Kmer size")->check(CLI::Range(5,63));
-  app.add_option("-m", m, "Minimizer size")->check(CLI::Range(3,29).description("INT in [3 - k-2]"));
-  app.add_option("-b", buckets, "Bucket number. 4^b  buckets")->check(CLI::Range(3,15));
   app.add_option("-t", threads, "Number of threads to use");
   app.add_option("-o", outfile, "Output file (kff format https://github.com/yoann-dufresne/kmer_file_format)");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
@@ -93,11 +90,11 @@ static bool check;
 int main(int argc, char** argv) {
 	string fasta = "";
 	string outfile = "";
-	uint8_t k=63, m=13, b=8;
+	uint8_t k=63, m=11, b=6;
 	uint mode = 0;
 	uint threads = 8;
 
-	if (parse_args(argc, argv, fasta, outfile, k, m, b, mode, threads) != 0 or fasta == "")
+	if (parse_args(argc, argv, fasta, outfile, k, mode, threads) != 0 or fasta == "")
 		exit(0);
 
 	Parameters params(k, m, b);
@@ -114,7 +111,7 @@ int main(int argc, char** argv) {
 	cout << "Bucket size:     " << (uint)b << endl;
   
 	auto start = std::chrono::system_clock::now();
-	Brisk<uint8_t> counter(params);
+	Brisk<uint8_t> counter(params);	
 	count_fasta(counter, fasta, threads);
 	
 	auto end = std::chrono::system_clock::now();
@@ -127,7 +124,7 @@ int main(int argc, char** argv) {
 
 	uint64_t nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket;
 	counter.stats(nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket);
-	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.m_small)) << " possible)" << endl;
+	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.b)) << " possible)" << endl;
 	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
 	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
 	cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
@@ -151,7 +148,7 @@ int main(int argc, char** argv) {
 
 void verif_counts(Brisk<uint8_t> & counter) {
 	cout << "--- Start counting verification ---" << endl;
-	kmer_full kmer(0,0, counter.params.m, counter.menu->dede);
+	kmer_full kmer(0,0, counter.params.m, counter.params.dede);
 	// Count 
 	while (counter.next(kmer)) {
 		uint8_t * count = counter.get(kmer);
@@ -171,9 +168,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 		if (it.second != 0) {
 			errors += 1;
 			if (it.second > 0) {
-				cout << "missing "; print_kmer(it.first, counter.params.k); cout << " " << (uint)it.second << endl;
+				cout << "missing " << (uint)it.second << " "; print_kmer(it.first, counter.params.k);
 			} else {
-				cout << "too many "; print_kmer(it.first, counter.params.k); cout << " " << (uint)(-it.second) << endl;
+				cout << "too many " << (uint)(-it.second) << " "; print_kmer(it.first, counter.params.k);
 			}
 		}
 	}
@@ -250,7 +247,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	#pragma omp parallel
+	//#pragma omp parallel
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
@@ -276,7 +273,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	}
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
-	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.menu->dede);
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
 	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
@@ -304,20 +301,41 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			newly_inserted.clear();
-			
-			vec=(counter.insert_superkmer(superkmer,newly_inserted));
 
+			vec=(counter.insert_superkmer(superkmer,newly_inserted));
+			// cout << "newly_inserted size: " << newly_inserted.size() << endl;
+			// cout << "vec size: " << vec.size() << endl;
 			for(uint i(0); i < vec.size();++i){
+				// cout << "vec[" << i << "]: " << &vec[i] << endl;
 				uint8_t * data_pointer(vec[i]);
+				// cout << "newly_inserted[" << i << "]: " << newly_inserted[i] << endl;
+				if ((data_pointer)==NULL){
+					cout << "PROBLEME" << endl; cin.get();
+				}
 				if(newly_inserted[i]){
+					// cout << "1" << endl;
 					(*data_pointer)=1;
 				}else{
+					// cout << "2" << endl;
 					(*data_pointer)++;
 				}
 			}
+			// cout << "3"  << endl;
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
+			// cout << "largest bucket: " << counter.menu->largest_bucket << endl;
+			if (counter.menu->largest_bucket >= 65536) {
+				cout << "Starting reallocation" << endl;
+				counter.reallocate();
+				cout << "Finished reallocation" << endl;
+				enumerator.update(counter.params.m,counter.params.dede);
+				string lanadine=sequence.substr(enumerator.seq_idx);
+				enumerator.seq=lanadine;
+				enumerator.seq_idx=0;
+				// cin.get();	
+			}
+
 			omp_set_lock(&local_mutex);
 			minimizer = enumerator.next(superkmer);
 			omp_unset_lock(&local_mutex);

@@ -102,12 +102,12 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	sgv.write_var("max", 2 * (index.params.k - index.params.m));
 	sgv.close();
 
-	// cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.m_small << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
+	// cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.b << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
 
 	// Prepare structures for minimizer enumeration
 	uint8_t bytes_mini = (index.params.m + 3) / 4;
 	uint8_t * mini_seq = new uint8_t[bytes_mini];
-	uint32_t max_mini = (1 << (2 * index.params.m_small)) - 1;
+	uint32_t max_mini = (1 << (2 * index.params.b)) - 1;
 	// Enumerate all possible minimizers
 	for (uint32_t small_mini=0 ; small_mini<=max_mini ; small_mini++) {
 		uint32_t mutex_idx = small_mini % menu->mutex_number;
@@ -142,7 +142,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 				// Update prefix
 				prefix >>= 2 * mini_prefix_size;
 				// Small minimizer
-				minimizer <<= index.params.m_small * 2;
+				minimizer <<= index.params.b * 2;
 				minimizer += small_mini;
 				// Minimizer suffix
 				uint64_t mini_suffix_size = (index.params.m_reduc + 1) / 2;

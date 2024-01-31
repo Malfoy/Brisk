@@ -226,7 +226,7 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>1000){
+	if(skml.size()-sorted_size>1000000){
 		this->insert_buffer();
 	}
 
@@ -288,7 +288,7 @@ DATA * Bucket<DATA>::insert_kmer_buffer(const kmer_full & kmer){
 
 	// Create a new superkmer
 	skml.emplace_back(
-		kmer.get_compacted(params->m_small,
+		kmer.get_compacted(params->b,
 						   kmer.minimizer_idx + (this->params->m_reduc + 1) / 2),
 		(int)kmer.minimizer_idx + (this->params->m_reduc + 1) / 2,
 		skml.size(),
@@ -335,7 +335,7 @@ public:
 template<class DATA>
 DATA * Bucket<DATA>::find_kmer_log_simple(const kmer_full & kmer) {
 	// return (find_kmer_linear_sorted_stop(kmer,0,sorted_size-1));
-	// kmer.minimizer_idx+=params->m-params->m_small;
+	// kmer.minimizer_idx+=params->m-params->b;
 	insert_kmer_buffer(kmer);
 	auto comp_function = [&](const SKL & a, const SKL & b) {
 		bool val = a.inf(
@@ -462,7 +462,7 @@ DATA * Bucket<DATA>::find_kmer_log(const kmer_full & kmer) {
 		}
 
 		if (found) {
-			uint kmer_position = skml[middle].prefix_size(*params) - kmer.prefix_size(params->k, params->m_small);
+			uint kmer_position = skml[middle].prefix_size(*params) - kmer.prefix_size(params->k, params->b);
 			return this->data_reserved_memory + skml[middle].data_idx + kmer_position;
 		}
 	}
@@ -636,16 +636,18 @@ vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
 
 template <class DATA>
 bool Bucket<DATA>::has_next_kmer(uint32_t& enumeration_skmer_idx, uint32_t & enumeration_kmer_idx) {
-	if (enumeration_skmer_idx >= skml.size())
+	if (enumeration_skmer_idx >= skml.size()){
+		// cout<<"hnk1"<<endl;
 		return false;
-
+	}
 	SKL & skmer = skml[enumeration_skmer_idx];
 	if (enumeration_kmer_idx >= skmer.size) {
+		// cout<<"hnk2"<<endl;
 		enumeration_skmer_idx += 1;
 		enumeration_kmer_idx = 0;
 		return has_next_kmer(enumeration_skmer_idx,enumeration_kmer_idx);
 	}
-
+	// cout<<"hnk3"<<endl;
 	return true;
 }
 
@@ -655,6 +657,7 @@ template <class DATA>
 void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer,uint32_t& enumeration_skmer_idx, uint32_t& enumeration_kmer_idx) {
 	// Nothing to do here
 	if (not has_next_kmer(enumeration_skmer_idx, enumeration_kmer_idx)){
+		// cout<<"coup special"<<endl;
 		return;
 	}
 

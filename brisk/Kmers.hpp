@@ -80,8 +80,8 @@ class SuperKmerEnumerator {
 public:
 	SuperKmerEnumerator(string & s, const uint8_t k, const uint8_t m,DecyclingSet* dede);
 	kint next(vector<kmer_full> & kmers);
+	void update(uint8_t m, DecyclingSet* dede);
 
-private:
 	// Sequence and position in it
 	string& seq;
 	uint64_t seq_idx;

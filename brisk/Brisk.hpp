@@ -60,6 +60,8 @@ public:
 	bool next(kmer_full & kmer);
 	void restart_kmer_enumeration();
 	void stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & nb_kmers, uint64_t & memory_usage, uint64_t & largest_bucket) const;
+
+	void reallocate();
 };
 
 
@@ -123,6 +125,22 @@ void unhash_skmer(vector<kmer_full> & skmer, size_t m) {
 		kmer.unhash_kmer_minimizer(m);
 }
 
+kmer_full update_kmer(const kmer_full& old_kmer, uint8_t k, uint8_t m, DecyclingSet* dede) {
+	kint km_val = old_kmer.kmer_s;
+
+	uint8_t min_pos;
+	bool reversed;
+	
+	get_minimizer(km_val, k, min_pos, m, reversed, ((kint)1<<(2*m))-1,dede);
+
+
+	if (not reversed)
+		return kmer_full(km_val, min_pos, m, dede);
+	else
+		return kmer_full(km_val, k - m - min_pos, m, dede);
+		
+}
+
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
@@ -139,6 +157,13 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
+	/*cout << "largest bucket: " << this->menu->largest_bucket << endl;
+	if (this->menu->largest_bucket >= 100){
+		cout << "doublaj" << endl;
+		reallocate();
+		cout << "doublage" << endl;
+	}*/
+
 	vector<DATA *> result;
 	// return result;
 	if (superkmer.size() > 0) {
@@ -147,7 +172,7 @@ vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vecto
 		// Remove the minimizer suffix
 		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 		// Remove the minimizer prefix
-		small_minimizer &= (((kint)1) << (this->params.m_small * 2)) - 1;
+		small_minimizer &= (((kint)1) << (this->params.b * 2)) - 1;
 
 		// Add the values
 		uint32_t mutex_idx = ((small_minimizer)%this->menu->mutex_number);
@@ -212,5 +237,58 @@ void Brisk<DATA>::stats(uint64_t & nb_buckets, uint64_t & nb_skmers, uint64_t & 
 	return this->menu->stats(nb_buckets, nb_skmers, nb_kmers, largest_bucket);
 }
 
+
+template<class DATA>
+void Brisk<DATA>::reallocate(){
+	bool new_insert = false;
+	uint32_t bucket_size = 0;
+
+	uint8_t new_m = this->params.m+2;
+	uint8_t new_b = this->params.b+2;
+	// cout << "ici 1" << endl;
+	Parameters* new_params = new Parameters(this->params.k,new_m,new_b);
+	// cout << "ici 2" << endl;
+	DenseMenuYo<DATA>* big_brother = new DenseMenuYo<DATA>(*new_params);
+	// cout << "ici 3" << endl;
+	kmer_full old_kmer(0,0, this->params.m, this->params.dede);
+	// cout << "ici 4" << endl;
+
+	while (this->next(old_kmer)) {
+		// cout << "ici 5" << endl;
+		old_kmer.hash_kmer_minimizer_inplace(this->params.m);
+		// cout << "ici 6" << endl;
+		DATA* old_value = this->menu->get_kmer_no_mutex(old_kmer);
+		// cout << "ici 7" << endl;
+		old_kmer.unhash_kmer_minimizer(this->params.m);	
+
+		kmer_full new_kmer=update_kmer(old_kmer, this->params.k, new_m, new_params->dede);
+		// cout << "ici 71" << endl;
+		
+		if(old_value==NULL){
+			cout<<"ONE NE TROUVE PAS"<<endl;
+			print_kmer(old_kmer.kmer_s,params.k);
+		// 	cin.get();
+		}
+		// cout << "ici 72" << endl;
+		new_kmer.hash_kmer_minimizer_inplace(new_m);
+		DATA* value = big_brother->insert_kmer_no_mutex(new_kmer, new_insert,bucket_size);
+		new_kmer.unhash_kmer_minimizer(new_m);
+		// cout << "ici 73" << endl;
+		// if (value == NULL){
+		// 	cout << "ici 731" << endl;
+		// }
+		// cout<<(uint)(*old_value)<<endl;
+		// cout<<(uint)(*value)<<endl;
+		*value = *old_value;
+		// cout << "ici 74" << endl;
+
+	}
+	// cout << "ici 8" << endl;
+	delete this->menu;
+	// cout << "ici 9" << endl;
+	this->menu=big_brother;
+	// cout << "ici 10" << endl;
+	this->params=*new_params;
+}
 
 #endif

@@ -97,7 +97,7 @@ vector<int> kmer_full::compute_interleaved(const Parameters & params) const {
 	// cout << kmer2str(this->kmer_s, k) << endl;
 
 	uint64_t suff_size = this->suffix_size() + suff_reduc;
-	uint64_t pref_size = k - params.m_small - suff_size;
+	uint64_t pref_size = k - params.b - suff_size;
 	// cout << "kmer sizes " << pref_size << " " << suff_size << " " << (uint64_t)minimizer_idx << endl;
 	uint64_t max_idx = 2 * max(suff_size, pref_size);
 	interleaved.resize(max_idx, -2);
@@ -111,7 +111,7 @@ vector<int> kmer_full::compute_interleaved(const Parameters & params) const {
 
 	// Compute prefix interleved
 	for (uint offset=0 ; offset<pref_size ; offset++) {
-		uint8_t nucl_idx = suff_size + params.m_small + offset;
+		uint8_t nucl_idx = suff_size + params.b + offset;
 		uint8_t byte = ((uint8_t*)&kmer_s)[nucl_idx/4];
 		interleaved[2*offset+1] = lookup[nucl_idx%4][byte];
 	}
@@ -353,7 +353,7 @@ kint canonize(kint x, uint64_t n) {
 }
 
 bool canonized(kint x, uint64_t n) {
-	if (x < canonize(x,n)) {
+	if (x == canonize(x,n)) {
 		return true;
 	}
 	return false;
@@ -371,49 +371,43 @@ bool canonized(kint x, uint64_t n) {
   */
 uint64_t get_minimizer(kint seq, const uint8_t k, uint8_t& min_position, const uint8_t m, bool & reversed, const uint64_t m_mask,DecyclingSet* dede) {
 	// Init with the first possible minimizer
-	uint64_t mini, mmer;
-	uint64_t fwd_mini = seq & m_mask;
-	mini = mmer = canonize(fwd_mini, m);
-	uint64_t hash_mini = bfc_hash_64(mmer,m_mask,dede);
-	// Update values regarding the minimizer
-	reversed=(mini!=fwd_mini);
+	uint64_t mini, mmer, hash_mini, new_hash;
+	uint64_t fwd_mmer = seq & m_mask;
+	uint64_t cur_seq = seq;
+	mini = canonize(fwd_mmer, m);
+	hash_mini = bfc_hash_64(mini,m_mask,dede);
+	reversed=(mini!=fwd_mmer);
 	min_position = 0;
 
 	// Search in all possible position (from 1) the minimizer
 	for (uint64_t i=1; i <= (uint)k - m; i++) {
-		seq >>= (kint)2;
-		fwd_mini = ((uint64_t)seq) & m_mask;
-		mmer = canonize(fwd_mini, m);
-		uint64_t new_hash = bfc_hash_64(mmer,m_mask,dede);
+		cur_seq >>= (kint)2;
+		fwd_mmer = ((uint64_t)cur_seq) & m_mask;
+		mmer = canonize(fwd_mmer, m);
+		new_hash = bfc_hash_64(mmer,m_mask,dede);
 
 		// new mmer is smaller than previous minimizer
-		if (hash_mini > new_hash) {
+		if (new_hash < hash_mini) {
 			min_position = i;
 			mini = mmer;
-			reversed=(mini!=fwd_mini);		
+			reversed = (mini!=fwd_mmer);
 			hash_mini = new_hash;
 
 		// new mmer is equal to previous minimizer
 		} else if (hash_mini == new_hash) {
 			// new mmer's position is closer to kmer edge than previous minimizer
-			if(i < k-m-i){
-				min_position = i;
-				reversed = false;
-			// old mmer's position is closer to kmer edge than previous minimizer
-			}else if(k-m-i < i){
+			if(k-m-i < min_position){
 				min_position = k-m-i;
-				reversed = true;
-			// new mmer's position is as close to kmer edge as previous minimizer
-			}else{
+				mini = mmer;
+				reversed = (mini!=fwd_mmer);
+				hash_mini = new_hash;
+			// new mmer's position is as close to kmer edge than previous minimizer
+			}else if(k-m-i == min_position){
 				// - strand is the canonical strand
-				if(canonized(seq,k)){
-					reversed = false;
-					min_position = i;
-				// + strand is the canonical strand
-				}else{
-					reversed = true;
+				if(!canonized(seq,k)){
 					min_position = k-m-i;
-
+					mini = mmer;
+					reversed = false;
 				}
 			}
 		}
@@ -531,7 +525,6 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		current_rc_kmer <<= 2;
 		auto start = seq_idx - m;
 		init_kmer(seq.substr(k-m-1, m), start, mini_candidate, rc_mini_candidate, m, m_mask);
-
 		// Init real minimizer
 		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, m_mask,dede);
 		mini_hash = bfc_hash_64((uint64_t)mini,m_mask,dede);
@@ -613,3 +606,12 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 	return (kint)0;
 }
 
+void SuperKmerEnumerator::update(uint8_t new_m, DecyclingSet* new_dede){
+	cout << "old m: " << (uint)m << endl;
+	m = new_m;
+	m_mask = ((kint)1 << (2*m)) - 1;
+	dede = new_dede;
+	saved = false;
+	mini_pos = k-m+1;
+	cout << "new m: " << (uint)m << endl;
+}

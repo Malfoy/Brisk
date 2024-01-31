@@ -22,7 +22,7 @@ public:
 	uint8_t minimizer_idx;//1B
 
 
-	SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params);
+	SKL(kint kmer, const uint8_t mini_idx, uint16_t idx, uint8_t * nucleotides, uint16_t data_idx, const Parameters & params);
 	SKL(const SKL & otto);
 	SKL& operator=(const SKL& rhs);
 
@@ -64,7 +64,7 @@ private:
 	* @param kmer The unsigned int used to represent the binary kmer. The minimizer is not present
 	* @param mini_idx The minimizer position in the kmer (equivalent to suffix size).
 	*/
-SKL::SKL(kint kmer, const uint8_t mini_idx, uint32_t idx, uint8_t * nucleotides, uint32_t data_idx, const Parameters & params) {
+SKL::SKL(kint kmer, const uint8_t mini_idx, uint16_t idx, uint8_t * nucleotides, uint16_t data_idx, const Parameters & params) {
 	this->idx = idx;
 	this->data_idx = data_idx;
 	// memset(nucleotides, 0, params.allocated_bytes);
@@ -123,11 +123,11 @@ bool SKL::compact_right(const kmer_full & kmer, uint8_t * nucleotides, const Par
 	// Get the rightest nucleotides of the skmer
 	kint super_kmer_overlap = this->get_right_overlap(nucleotides, params);
 	// Get the rightest nucleotides of the kmer to compact
-	kint kmer_overlap = kmer.get_compacted(params.m_small,
+	kint kmer_overlap = kmer.get_compacted(params.b,
 																				 kmer.minimizer_idx + (params.m_reduc + 1) / 2);
 	int nuc = kmer_overlap % 4;
 	kmer_overlap >>= 2;
-	kmer_overlap %= ((kint)1 << (2 * (params.k - 1 - params.m_small)));
+	kmer_overlap %= ((kint)1 << (2 * (params.k - 1 - params.b)));
 
 	if(super_kmer_overlap == kmer_overlap){
 		int byte_to_update = byte_index(params.compacted_size + size - 1, params);
@@ -206,7 +206,7 @@ kint SKL::get_suffix(const uint8_t * nucleotides, const Parameters & params)cons
 kint SKL::get_right_overlap(uint8_t * nucleotides, const Parameters & params) const {
 	kint result(this->get_compacted_kmer(size-1, nucleotides, params));
 
-	result %= (kint)1 << (2 * (params.k - 1 - params.m_small));
+	result %= (kint)1 << (2 * (params.k - 1 - params.b));
 
 	return result;
 }
@@ -238,7 +238,7 @@ bool SKL::is_kmer_present(const kmer_full& kmer, uint8_t * nucleotides, const Pa
 			(uint64_t)this->minimizer_idx < kmer_mini_idx + size) { // Prefix long enougth
 		int kmer_idx = size - (this->minimizer_idx - kmer_mini_idx) - 1;
 		// exit(0);
-		return get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.m_small, kmer_mini_idx);
+		return get_compacted_kmer(kmer_idx, nucleotides, params) == kmer.get_compacted(params.b, kmer_mini_idx);
 	} else
 		return false;
 }
@@ -316,7 +316,7 @@ inline bool SKL::kmer_comparison(const kmer_full& kmer,const vector<int>& kmer_i
 		}
 		equal=true;
 		return true;
-		auto kmer_comp(kmer.get_compacted(params.m_small,
+		auto kmer_comp(kmer.get_compacted(params.b,
 																			kmer_mini_idx + (params.m_reduc + 1) / 2));
 		auto submer(get_compacted_kmer(kmer_idx, nucleotides, params));
 		equal=(submer==kmer_comp);
@@ -354,10 +354,10 @@ void SKL::get_kmer(const uint8_t kmer_idx, const uint8_t * nucleotides, const ki
 
 	// Prefix preparation
 	mask = ~mask;
-	kint prefix = (compacted & mask) << (2 * params.m_small);
+	kint prefix = (compacted & mask) << (2 * params.b);
 
 	// Minimizer
-	mask = ((kint)1 << (2 * params.m_small)) - 1;
+	mask = ((kint)1 << (2 * params.b)) - 1;
 	kmer.kmer_s = (mini & mask) << (2 * suffix_size);
 
 	// Assemble everything
@@ -558,7 +558,7 @@ void SKL::print(const uint8_t * nucleotides, const kint & mini, const Parameters
 	kint suffix = get_suffix(nucleotides, params);
 
 	print_kmer(prefix, prefix_size(params));
-	print_kmer(mini, params.m_small);
+	print_kmer(mini, params.b);
 	print_kmer(suffix, suffix_size());
 	cout << " " << (uint)minimizer_idx;
 }
