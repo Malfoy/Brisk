@@ -90,7 +90,7 @@ static bool check;
 int main(int argc, char** argv) {
 	string fasta = "";
 	string outfile = "";
-	uint8_t k=63, m=11, b=6;
+	uint8_t k=31, m=13, b=10;
 	uint mode = 0;
 	uint threads = 8;
 
@@ -325,7 +325,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			// Next superkmer
 			superkmer.clear();
 			// cout << "largest bucket: " << counter.menu->largest_bucket << endl;
-			if (counter.menu->largest_bucket >= 65536) {
+			if (counter.menu->largest_bucket >= 256) {
 				cout << "Starting reallocation" << endl;
 				counter.reallocate();
 				cout << "Finished reallocation" << endl;
