@@ -274,7 +274,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
-	// #pragma omp parallel
+	#pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
@@ -303,37 +303,22 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			newly_inserted.clear();
 
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
-			// cout << "newly_inserted size: " << newly_inserted.size() << endl;
-			// cout << "vec size: " << vec.size() << endl;
 			for(uint i(0); i < vec.size();++i){
-				// cout << "vec[" << i << "]: " << &vec[i] << endl;
 				uint8_t * data_pointer(vec[i]);
-				// cout << "newly_inserted[" << i << "]: " << newly_inserted[i] << endl;
-				if ((data_pointer)==NULL){
-					cout << "PROBLEME" << endl; cin.get();
-				}
 				if(newly_inserted[i]){
-					// cout << "1" << endl;
 					(*data_pointer)=1;
 				}else{
-					// cout << "2" << endl;
 					(*data_pointer)++;
 				}
 			}
-			// cout << "3"  << endl;
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
-			// cout << "largest bucket: " << counter.menu->largest_bucket << endl;
 			if (counter.menu->largest_bucket >= 256) {
-				cout << "Starting reallocation" << endl;
-				counter.reallocate();
-				cout << "Finished reallocation" << endl;
-				enumerator.update(counter.params.m,counter.params.dede);
-				string lanadine=sequence.substr(enumerator.seq_idx);
-				enumerator.seq=lanadine;
-				enumerator.seq_idx=0;
-				// cin.get();	
+					cout << "Starting reallocation" << endl;
+					counter.reallocate();
+					cout << "Finished reallocation" << endl;
+					enumerator.update(counter.params.m,counter.params.dede);
 			}
 
 			omp_set_lock(&local_mutex);
