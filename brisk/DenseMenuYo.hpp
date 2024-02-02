@@ -313,7 +313,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
 	total_number_kmers++;
 
-	bucket_size = bucketMatrix[mutex_idx][idx-1].data_reserved_number;
+	bucket_size = bucketMatrix[mutex_idx][idx-1].skml.size();
 
 	return value;
 }
