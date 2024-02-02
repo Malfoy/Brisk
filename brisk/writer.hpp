@@ -77,20 +77,7 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 	uint64_t nb_kmers = 0;
 
-	// Save the cursed kmers into a raw block
-	Section_Raw sr(current_file);
 	DenseMenuYo<DATA> * menu = index.menu;
-	uint8_t big_endian[32];
-	uint8_t biggest_usefull_byte = index.params.k % 4 == 0 ? index.params.k / 4 : index.params.k / 4 + 1;
-	for (auto it = menu->cursed_kmers.begin(); it != menu->cursed_kmers.end(); ++it) {
-		kint kmer = it->first;
-		// DATA & data = it.value();
-		DATA & data = it->second;
-		little_to_big_endian((uint8_t *)(&kmer), big_endian, biggest_usefull_byte);
-		sr.write_compacted_sequence(big_endian, index.params.k, (uint8_t *)&data);
-		nb_kmers += 1;
-	}
-	sr.close();
 
 	// TODO: Bucket overloads (overload_kmers) GROGRO
 
@@ -101,8 +88,6 @@ void BriskWriter::write(Brisk<DATA> & index) {
 	sgv.write_var("data_size", sizeof(DATA));
 	sgv.write_var("max", 2 * (index.params.k - index.params.m));
 	sgv.close();
-
-	// cout << "params: k=" << (uint64_t)index.params.k << " m=" << (uint64_t)index.params.m << " m_small=" << (uint64_t)index.params.b << " m_reduc=" << (uint64_t)index.params.m_reduc << endl;
 
 	// Prepare structures for minimizer enumeration
 	uint8_t bytes_mini = (index.params.m + 3) / 4;
@@ -117,7 +102,6 @@ void BriskWriter::write(Brisk<DATA> & index) {
 
 		// If the bucket for the minimizer exists
 		if (idx != 0) {
-			// cout << "coordinates " << small_mini << " " << idx << endl;
 			Section_Minimizer * sm = nullptr;
 			uint64_t current_minimizer = 0xFFFFFFFFFFFFFFFFUL;
 

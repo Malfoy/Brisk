@@ -56,8 +56,7 @@ public:
 	vector<omp_lock_t> MutexData;
 	vector<omp_lock_t> MutexBucket;
 
-	// Cursed kmer buckets
-	ankerl::unordered_dense::map<kint, DATA> cursed_kmers;
+	// threshold kmer buckets
 	ankerl::unordered_dense::map<kint, DATA> overload_kmers[bucket_overload];
 	omp_lock_t lock_overload[bucket_overload];
 
@@ -93,9 +92,7 @@ private:
 	kint buffered_minimizer;
 	kmer_full * buffered_kmer;
 	
-	// uint64_t getMemorySelfMaxUsed();
 	bool enumeration_started;
-	typename ankerl::unordered_dense::map<kint, DATA>::iterator cursed_iter;
 	typename ankerl::unordered_dense::map<kint, DATA>::iterator overload_iter;
 	uint32_t current_overload;
 	uint64_t current_minimizer;
@@ -133,7 +130,6 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	// }
 
 	enumeration_started = false;
-	cursed_iter = cursed_kmers.begin();
 	current_minimizer = 0;
 	current_overload=0;
 	enumeration_skmer_idx = 0;
@@ -483,7 +479,6 @@ void DenseMenuYo<DATA>::unprotect_data(const kmer_full & kmer) {
 template<class DATA>
 bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 	if (not enumeration_started) {
-		cursed_iter = cursed_kmers.begin();
 		current_overload=0;
 		overload_iter=overload_kmers[current_overload].begin();
 		enumeration_started = true;
