@@ -247,7 +247,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	//#pragma omp parallel
+	#pragma omp parallel
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
