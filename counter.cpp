@@ -90,7 +90,7 @@ static bool check;
 int main(int argc, char** argv) {
 	string fasta = "";
 	string outfile = "";
-	uint8_t k=31, m=13, b=10;
+	uint8_t k=31, m=15, b=14;
 	uint mode = 0;
 	uint threads = 8;
 
@@ -244,10 +244,9 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
   fs.close();
 
 	// Read file line by line
-	// cout << filename << " " << filename.length() << endl;
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
@@ -274,7 +273,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
@@ -314,11 +313,16 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
+
 			if (counter.menu->largest_bucket >= 256) {
+					// #pragma omp critical
+				{
 					cout << "Starting reallocation" << endl;
+					
 					counter.reallocate();
 					cout << "Finished reallocation" << endl;
 					enumerator.update(counter.params.m,counter.params.dede);
+				}
 			}
 
 			omp_set_lock(&local_mutex);
