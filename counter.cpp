@@ -23,12 +23,14 @@ void verif_counts(Brisk<uint8_t> & counter);
 
 
 
-int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint & mode, uint & threads) {
+int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint8_t & m, uint8_t & b, uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
   auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count")->required();
   file_opt->check(CLI::ExistingFile);
   app.add_option("-k", k, "Kmer size")->check(CLI::Range(5,63));
+  app.add_option("-m", m, "Minimizer size");
+  app.add_option("-b", b, "Bucket order of magnitude");
   app.add_option("-t", threads, "Number of threads to use");
   app.add_option("-o", outfile, "Output file (kff format https://github.com/yoann-dufresne/kmer_file_format)");
   app.add_option("--mode", mode, "Execution mode (0: output count, no checking | 1: performance mode, no output | 2: debug mode");
@@ -94,7 +96,7 @@ int main(int argc, char** argv) {
 	uint mode = 0;
 	uint threads = 8;
 
-	if (parse_args(argc, argv, fasta, outfile, k, mode, threads) != 0 or fasta == "")
+	if (parse_args(argc, argv, fasta, outfile, k, m, b, mode, threads) != 0 or fasta == "")
 		exit(0);
 
 	Parameters params(k, m, b);
@@ -246,7 +248,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// Read file line by line
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	// #pragma omp parallel
+	#pragma omp parallel
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
@@ -273,7 +275,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	omp_lock_t local_mutex;
 	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
-	// #pragma omp parallel
+	#pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
@@ -314,15 +316,12 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			// Next superkmer
 			superkmer.clear();
 
-			if (counter.menu->largest_bucket >= 256) {
-					// #pragma omp critical
-				{
+			if (counter.menu->largest_bucket >= 65536) {
 					cout << "Starting reallocation" << endl;
-					
+					exit(0);
 					counter.reallocate();
 					cout << "Finished reallocation" << endl;
 					enumerator.update(counter.params.m,counter.params.dede);
-				}
 			}
 
 			omp_set_lock(&local_mutex);
