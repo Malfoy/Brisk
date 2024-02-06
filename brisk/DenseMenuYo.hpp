@@ -307,6 +307,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 
 	// Insert the kmer in the right bucket
 	DATA * value = bucketMatrix[mutex_idx][idx-1].insert_kmer(kmer);
+	#pragma omp atomic
 	total_number_kmers++;
 
 	bucket_size = bucketMatrix[mutex_idx][idx-1].skml.size();
