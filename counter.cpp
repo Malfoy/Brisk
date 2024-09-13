@@ -189,7 +189,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 
 void clean_dna(string& str,string& previous){
-	for(uint i(0); i< str.size(); ++i){
+	bool dog(true);
+	uint i(0);
+	for(; i< str.size() and dog; ++i){
 		switch(str[i]){
 			case 'a':break;
 			case 'A':break;
@@ -199,10 +201,30 @@ void clean_dna(string& str,string& previous){
 			case 'G':break;
 			case 't':break;
 			case 'T':break;
-			default: 
-			previous=str.substr(i+1);
-			str=str.substr(0,i);
+			default:
+			dog=false; 
 		}
+	}
+	if(not dog){
+		uint32_t iforreturn(i-1);
+		for(; (i< str.size()) and (not dog); ++i){
+			switch(str[i]){
+				case 'a':dog=true;break;
+				case 'A':dog=true;break;
+				case 'c':dog=true;break;
+				case 'C':dog=true;break;
+				case 'g':dog=true;break;
+				case 'G':dog=true;break;
+				case 't':dog=true;break;
+				case 'T':dog=true;break;
+			}
+		}
+		if(dog){
+			previous=str.substr(i-1);
+		}else{
+			previous.clear();
+		}
+		str=str.substr(0,iforreturn);
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
 }
