@@ -226,7 +226,7 @@ DATA * Bucket<DATA>::insert_kmer(const kmer_full & kmer) {
 
 	// 2 - Sort if needed
 	//TAMPON
-	if(skml.size()-sorted_size>1000){
+	if(skml.size()-sorted_size>100){
 		this->insert_buffer();
 	}
 

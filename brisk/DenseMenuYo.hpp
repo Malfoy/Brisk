@@ -107,7 +107,7 @@ DenseMenuYo<DATA>::DenseMenuYo(Parameters & parameters): params( parameters ) {
 	this->m_mask = ((kint)1 << (2 * params.m)) - 1;
 
 	// Create the mutexes
-	mutex_order = min((uint8_t)10,params.b);
+	mutex_order = min((uint8_t)12,params.b);
 	mutex_number = ((uint64_t)1)<<(2*mutex_order); /* DO NOT MODIFY, to increase/decrease modify mutex_order*/
 	// Init the mutexes
 	MutexData.resize(mutex_number);
@@ -170,7 +170,6 @@ void DenseMenuYo<DATA>::bucket_to_map(uint64_t small_minimizer) {
 
 	// Enumerate and save all values
 	omp_set_lock(&lock_overload[small_minimizer%bucket_overload]);
-	// bucket.init_enumerator();
 	uint32_t enumeration_skmer_idx = 0;
 	uint32_t enumeration_kmer_idx = 0;
 	while (bucket.has_next_kmer(enumeration_skmer_idx,enumeration_kmer_idx)) {
@@ -455,10 +454,13 @@ template<class DATA>
 void DenseMenuYo<DATA>::protect_data(const kmer_full & kmer) {
     // Remove the minimizer suffix
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
+	// cout<<"small min"<<small_minimizer<<endl;
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
 
 	uint32_t mutex_idx = get_mutex(small_minimizer);
+	// cout<<"mutexidx"<<mutex_idx<<endl;
+	// cin.get();
 	omp_set_lock(&MutexData[mutex_idx]);
 }
 
