@@ -285,9 +285,6 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	uint64_t small_minimizer = kmer.minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
 	// Remove the minimizer prefix
 	small_minimizer &= this->mini_reduc_mask;
-	
-	// cout << "insert small mini " << kmer2str(small_minimizer, params.b) << endl;
-
 	uint32_t mutex_idx = get_mutex(small_minimizer);
 
 	// Works because m - reduc <= 16
@@ -297,9 +294,7 @@ DATA * DenseMenuYo<DATA>::insert_kmer_no_mutex(const kmer_full & kmer,bool& newl
 	
 	// Create the bucket if not already existing
 	if (idx == 0) {
-		// cout<<"emplaceback"<<endl;
 		bucketMatrix[mutex_idx].emplace_back();
-		// cout<<"ENDEB"<<endl;
 		bucket_indexes[matrix_idx] = bucketMatrix[mutex_idx].size();
 		idx = bucket_indexes[matrix_idx];
 		active_buckets++;
@@ -335,7 +330,6 @@ DATA * DenseMenuYo<DATA>::get_kmer(const kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// No bucket
 	if (idx == 0) {
-		// cout << "PAGLOP idx " << kmer2str(small_minimizer, params.b) << endl;
 		return (DATA *)NULL;
 	}
 
@@ -420,7 +414,6 @@ DATA * DenseMenuYo<DATA>::get_kmer_no_mutex(const kmer_full & kmer) {
 	uint32_t idx = bucket_indexes[matrix_idx];
 	// No bucket
 	if (idx == 0) {
-		//cout << "PAGLOP idx " << kmer2str(small_minimizer, params.b) << endl; cin.get();
 		return (DATA *)NULL;
 	}
 
@@ -484,7 +477,6 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		overload_iter=overload_kmers[current_overload].begin();
 		enumeration_started = true;
 	}
-	// cout<<"next0"<<endl;
 
 	uint32_t mutex_idx = get_mutex(current_minimizer);
 	uint32_t column_idx = get_column(current_minimizer);
@@ -496,7 +488,6 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 		column_idx = get_column(current_minimizer);
 		matrix_idx = get_matrix_position(mutex_idx, column_idx);
 		idx = bucket_indexes[matrix_idx];
-		// cout<<"next1"<<endl;
 
 		// Already enumerated kmers
 		if (idx != 0 and bucketMatrix[mutex_idx][idx-1].sorted_size<0) // Maybe a bug here
@@ -511,18 +502,15 @@ bool DenseMenuYo<DATA>::next(kmer_full & kmer) {
 
 	// Enumeration is over
 	if (current_minimizer >= bucket_number){
-		// cout<<"next2"<<endl;
 		return false;
 	}
 
 	if (not bucketMatrix[mutex_idx][idx-1].has_next_kmer(enumeration_skmer_idx,enumeration_kmer_idx)) {
-		// cout<<"next3"<<endl;
 		current_minimizer += 1;
 		enumeration_skmer_idx = 0;
 		enumeration_kmer_idx = 0;
 		return this->next(kmer);
 	}
-	// cout<<"next4"<<endl;
 	bucketMatrix[mutex_idx][idx-1].next_kmer(kmer, current_minimizer,enumeration_skmer_idx,enumeration_kmer_idx);
 	kmer.minimizer_idx -= (params.m_reduc + 1)/2;
 	kmer.compute_mini(params.m);

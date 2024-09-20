@@ -374,7 +374,6 @@ bool SKL::inf (const uint8_t * my_nucleotides, const SKL & skmer, const uint8_t 
 	// Compute my max number of iteration
 	uint8_t my_suff_size = this->suffix_size();
 	uint8_t my_pref_size = this->prefix_size(params);
-	// cout << (uint64_t)my_suff_size << " " << (uint64_t)my_pref_size << " " << (uint64_t)size << endl;
 	kint my_pref = this->get_prefix(my_nucleotides, params);
 	kint my_suff = this->get_suffix(my_nucleotides, params);
 

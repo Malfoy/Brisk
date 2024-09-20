@@ -637,17 +637,14 @@ vector<DATA *> Bucket<DATA>::find_kmer_vector(const vector<kmer_full>& kmers) {
 template <class DATA>
 bool Bucket<DATA>::has_next_kmer(uint32_t& enumeration_skmer_idx, uint32_t & enumeration_kmer_idx) {
 	if (enumeration_skmer_idx >= skml.size()){
-		// cout<<"hnk1"<<endl;
 		return false;
 	}
 	SKL & skmer = skml[enumeration_skmer_idx];
 	if (enumeration_kmer_idx >= skmer.size) {
-		// cout<<"hnk2"<<endl;
 		enumeration_skmer_idx += 1;
 		enumeration_kmer_idx = 0;
 		return has_next_kmer(enumeration_skmer_idx,enumeration_kmer_idx);
 	}
-	// cout<<"hnk3"<<endl;
 	return true;
 }
 
@@ -657,7 +654,6 @@ template <class DATA>
 void Bucket<DATA>::next_kmer(kmer_full & kmer, kint minimizer,uint32_t& enumeration_skmer_idx, uint32_t& enumeration_kmer_idx) {
 	// Nothing to do here
 	if (not has_next_kmer(enumeration_skmer_idx, enumeration_kmer_idx)){
-		// cout<<"coup special"<<endl;
 		return;
 	}
 

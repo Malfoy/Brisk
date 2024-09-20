@@ -94,11 +94,8 @@ vector<int> kmer_full::compute_interleaved(const Parameters & params) const {
 	uint64_t pref_reduc = params.m_reduc / 2;
 	uint64_t suff_reduc = params.m_reduc - pref_reduc;
 
-	// cout << kmer2str(this->kmer_s, k) << endl;
-
 	uint64_t suff_size = this->suffix_size() + suff_reduc;
 	uint64_t pref_size = k - params.b - suff_size;
-	// cout << "kmer sizes " << pref_size << " " << suff_size << " " << (uint64_t)minimizer_idx << endl;
 	uint64_t max_idx = 2 * max(suff_size, pref_size);
 	interleaved.resize(max_idx, -2);
 

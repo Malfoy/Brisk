@@ -157,12 +157,6 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
-	/*cout << "largest bucket: " << this->menu->largest_bucket << endl;
-	if (this->menu->largest_bucket >= 100){
-		cout << "doublaj" << endl;
-		reallocate();
-		cout << "doublage" << endl;
-	}*/
 
 	vector<DATA *> result;
 	// return result;
