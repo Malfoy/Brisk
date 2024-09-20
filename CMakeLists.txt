@@ -15,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_FLAGS "-Ofast -march=native -include cstdint")
+set(CMAKE_CXX_FLAGS "-Ofast -march=native -include cstdint -flto")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 # declare libraries
