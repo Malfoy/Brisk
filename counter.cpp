@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 	string outfile = "";
 	uint8_t k=31, m=15, b=14;
 	uint mode = 0;
-	uint threads = 8;
+	uint threads = 1;
 
 	if (parse_args(argc, argv, fasta, outfile, k, m, b, mode, threads) != 0 or fasta == "")
 		exit(0);
@@ -189,7 +189,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 
 void clean_dna(string& str,string& previous){
-	for(uint i(0); i< str.size(); ++i){
+	bool dog(true);
+	uint i(0);
+	for(; i< str.size() and dog; ++i){
 		switch(str[i]){
 			case 'a':break;
 			case 'A':break;
@@ -199,10 +201,30 @@ void clean_dna(string& str,string& previous){
 			case 'G':break;
 			case 't':break;
 			case 'T':break;
-			default: 
-			previous=str.substr(i+1);
-			str=str.substr(0,i);
+			default:
+			dog=false; 
 		}
+	}
+	if(not dog){
+		uint32_t iforreturn(i-1);
+		for(; (i< str.size()) and (not dog); ++i){
+			switch(str[i]){
+				case 'a':dog=true;break;
+				case 'A':dog=true;break;
+				case 'c':dog=true;break;
+				case 'C':dog=true;break;
+				case 'g':dog=true;break;
+				case 'G':dog=true;break;
+				case 't':dog=true;break;
+				case 'T':dog=true;break;
+			}
+		}
+		if(dog){
+			previous=str.substr(i-1);
+		}else{
+			previous.clear();
+		}
+		str=str.substr(0,iforreturn);
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
 }
@@ -248,7 +270,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// Read file line by line
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	#pragma omp parallel
+	#pragma omp parallel num_threads(threads)
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
@@ -272,22 +294,22 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	if (sequence.size() < counter.params.k){
 		return;
 	}
-	omp_lock_t local_mutex;
-	omp_init_lock(&local_mutex);
+	// omp_lock_t local_mutex;
+	// omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
-	#pragma omp parallel
+	// #pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
 		vector<uint8_t*> vec;
 
-		omp_set_lock(&local_mutex);
+		// omp_set_lock(&local_mutex);
 		kint minimizer = enumerator.next(superkmer);
-		omp_unset_lock(&local_mutex);
+		// cout<<"return of next"<<(uint64_t)minimizer<<endl;
+		// omp_unset_lock(&local_mutex);
 		while (superkmer.size() > 0) {
 			kmer_full local;
 			local.copy(superkmer[0]);
-			counter.protect_data(local);
 			// Add the values
 			if (check) {
 				for (kmer_full & kmer : superkmer) {
@@ -302,7 +324,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			newly_inserted.clear();
-
+			counter.protect_data(local);
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
 			for(uint i(0); i < vec.size();++i){
 				uint8_t * data_pointer(vec[i]);
@@ -324,9 +346,10 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 					enumerator.update(counter.params.m,counter.params.dede);
 			}
 
-			omp_set_lock(&local_mutex);
+			// omp_set_lock(&local_mutex);
 			minimizer = enumerator.next(superkmer);
-			omp_unset_lock(&local_mutex);
+			// cout<<"return of next<"<<(uint64_t)minimizer<<endl;
+			// omp_unset_lock(&local_mutex);
 
 			if(minimizer==0){
 				break;

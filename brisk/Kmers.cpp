@@ -521,7 +521,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		init_kmer(seq, seq_idx, current_kmer, current_rc_kmer, k-1, k_mask>>2);
 		current_rc_kmer <<= 2;
 		auto start = seq_idx - m;
-		init_kmer(seq.substr(k-m-1, m), start, mini_candidate, rc_mini_candidate, m, m_mask);
+		init_kmer(seq.substr(k-m-1, m), start, mini_candidate, rc_mini_candidate, m, m_mask>>2);
 		// Init real minimizer
 		mini = get_minimizer(current_kmer, k-1, mini_pos, m, reversed, m_mask,dede);
 		mini_hash = bfc_hash_64((uint64_t)mini,m_mask,dede);
@@ -546,6 +546,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 
 		//the previous MINIMIZER is outdated
 		if (mini_pos > k-m) {
+			// cout<<"outdated"<<endl;
 			// Save previous kmers from superkmer
 			if (reversed){
 				reverse(kmers.begin(), kmers.end());
@@ -559,6 +560,7 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 		}
 		// New minimizer
 		else if (current_hash < mini_hash) {
+			// cout<<"newmini"<<endl;
 			// Save previous kmers from superkmer
 			if (reversed){
 				reverse(kmers.begin(), kmers.end());
@@ -570,12 +572,14 @@ kint SuperKmerEnumerator::next(vector<kmer_full> & kmers) {
 			// Update for the new minimizer value
 			mini_hash = current_hash;
 			mini_pos = 0;
+			mini=candidate_canon;
 		
 			reversed = (candidate_canon == rc_mini_candidate);
 		}
 
 		if (not reversed) {
 			saved_kmer = kmer_full(current_kmer, mini_pos, m, dede);
+			saved_kmer.minimizer = mini;
 		} else {
 			saved_kmer = kmer_full(current_rc_kmer, k - m - mini_pos, m, dede);
 			saved_kmer.minimizer = mini;
