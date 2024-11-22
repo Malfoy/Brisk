@@ -35,12 +35,7 @@ set(HEADERS
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 link_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# Add kff as a dependency
-set(KFF_BUILD_BENCHMARKS OFF CACHE BOOL "Disable kff benchmarks")
-set(KFF_BUILD_EXAMPLES OFF CACHE BOOL "Disable kff examples")
-add_subdirectory(lib/kff)
-
-# Add unordered_dense
+# Add unordered_dense as a subdirectory
 add_subdirectory(lib/unordered_dense)
 
 # Create brisk library
@@ -51,7 +46,14 @@ target_include_directories(brisk
     PUBLIC
     ./
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/unordered_dense/include
+    ${CMAKE_BINARY_DIR}/kff_install/include
 )
 
-# Link dependencies for brisk
-target_link_libraries(brisk kff unordered_dense)
+# Ensure brisk depends on kff_project
+add_dependencies(brisk kff_project)
+
+# Link libraries for brisk
+target_link_libraries(brisk
+    ${CMAKE_BINARY_DIR}/kff_install/lib/libkff.a
+    unordered_dense
+)

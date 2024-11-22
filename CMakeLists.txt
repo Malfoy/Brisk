@@ -13,27 +13,22 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "-Ofast -march=native -include cstdint -flto")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-# Add subdirectories for other components
+# Path to the kff submodule
+set(KFF_DIR ${CMAKE_SOURCE_DIR}/brisk/lib/kff)
+
+# Build kff using ExternalProject_Add
+include(ExternalProject)
+ExternalProject_Add(kff_project
+    SOURCE_DIR ${KFF_DIR}
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/kff_install
+    BINARY_DIR ${CMAKE_BINARY_DIR}/kff_build
+    BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/kff_build --target all
+    INSTALL_COMMAND ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR}/kff_build --prefix ${CMAKE_BINARY_DIR}/kff_install
+)
+
+# Add subdirectories for brisk and apps
 add_subdirectory(brisk)
-add_subdirectory(apps)
+# add_subdirectory(apps)
 
-# Source files for the counter executable
-set(SRCS
-    counter.cpp  # Only source files go here
-)
-
-# Add the executable
-add_executable(counter ${SRCS})
-
-# Include directories for header files
-target_include_directories(counter PRIVATE brisk)
-
-# Link libraries
-find_package(ZLIB REQUIRED)
-find_package(OpenMP REQUIRED)
-
-target_link_libraries(counter 
-    ZLIB::ZLIB 
-    OpenMP::OpenMP_CXX 
-    brisk
-)
+# Add dependencies for kff_project
+add_custom_target(kff_dependency ALL DEPENDS kff_project)
