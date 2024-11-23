@@ -36,24 +36,21 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 link_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Add unordered_dense as a subdirectory
+add_subdirectory(lib/kff)
 add_subdirectory(lib/unordered_dense)
 
 # Create brisk library
-add_library(brisk ${SRCS} ${HEADERS})
+add_library(brisk ${SRCS} ${HEADERS} )
 
 # Include directories for brisk
 target_include_directories(brisk
     PUBLIC
     ./
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/unordered_dense/include
-    ${CMAKE_BINARY_DIR}/kff_install/include
 )
-
-# Ensure brisk depends on kff_project
-add_dependencies(brisk kff_project)
 
 # Link libraries for brisk
 target_link_libraries(brisk
-    ${CMAKE_BINARY_DIR}/kff_install/lib/libkff.a
+    kff
     unordered_dense
 )

@@ -3,12 +3,12 @@
 #include <chrono>
 #include <unordered_map>
 
-#include "brisk/CLI11.hpp"
-#include "brisk/zstr.hpp"
-#include "brisk/buckets.hpp"
-#include "brisk/Brisk.hpp"
-#include "brisk/Kmers.hpp"
-#include "brisk/writer.hpp"
+#include "CLI11.hpp"
+#include "zstr.hpp"
+#include "buckets.hpp"
+#include "Brisk.hpp"
+#include "Kmers.hpp"
+#include "writer.hpp"
 
 
 
