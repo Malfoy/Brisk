@@ -12,7 +12,7 @@ The library takes advantage of overlapping kmers to store them in a compact way.
 
 
 ```bash
-git clone --recurvive https://github.com/Malfoy/Brisk/;
+git clone --recursive https://github.com/Malfoy/Brisk/;
 cd Brisk;
 mkdir build;
 cd build;
