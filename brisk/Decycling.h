@@ -1,6 +1,5 @@
 #ifndef _DECYCLING
 #define _DECYCLING
-
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <vector>
@@ -26,5 +25,7 @@ class DecyclingSet {
     bool mem(uint64_t seq);
     uint memDouble(uint64_t seq);
 };
+
+
 
 #endif

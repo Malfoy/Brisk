@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <omp.h>
 #include <vector>
-
+#include <cstdint>
 #include <sys/resource.h>
 
 #include "Kmers.hpp"

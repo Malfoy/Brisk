@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <exception>
+#include <cstdint>
 
 #define packed_layout __attribute__((__packed__))
 #define noinline_fun __attribute__((noinline))

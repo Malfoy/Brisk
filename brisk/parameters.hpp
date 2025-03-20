@@ -1,7 +1,10 @@
 #include "Decycling.h"
+#include <cstdint>
 
 #ifndef PARAMS_H
 #define PARAMS_H
+
+
 
 class Parameters {
 public:
@@ -13,7 +16,6 @@ public:
 	uint8_t compacted_size;
 	uint64_t mask_large_minimizer;
 	DecyclingSet* dede;
-
 	/** Datastruct to hold all the parameters needed for Brisk
 	 *  @param k kmer size
 	 *  @param m minimizer size [1, k].
@@ -31,5 +33,7 @@ public:
 		this->dede = dd;
 	}
 };
+
+
 
 #endif
