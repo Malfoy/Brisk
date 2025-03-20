@@ -1,4 +1,4 @@
-#include "lib/kff/kff_io.hpp"
+#include "kff_io.hpp"
 #include "Brisk.hpp"
 #include "hashing.hpp"
 

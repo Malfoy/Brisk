@@ -103,7 +103,15 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		hash_skmer(superkmer, this->params.m);
-		result = this->menu->get_kmer_vector(superkmer);
+		// Remove the minimizer suffix
+		uint64_t small_minimizer = superkmer[0].minimizer >> (2 * ((this->params.m_reduc + 1) / 2));
+		// Remove the minimizer prefix
+		uint32_t mutex_idx = ((small_minimizer)%this->menu->mutex_number);
+
+		small_minimizer &= (((kint)1) << (this->params.b * 2)) - 1;
+		omp_set_lock(&(this->menu->MutexBucket[mutex_idx]));
+		result=this->menu->get_kmer_vector(superkmer);
+		omp_unset_lock(&(this->menu->MutexBucket[mutex_idx]));
 		unhash_skmer(superkmer, this->params.m);
 	}
 	return result;
@@ -113,6 +121,13 @@ vector<DATA *> Brisk<DATA>::get_superkmer( vector<kmer_full>& superkmer) {
 
 template<class DATA>
 vector<DATA *> Brisk<DATA>::insert_superkmer(vector<kmer_full>& superkmer, vector<bool>& newly_inserted){
+	/*cout << "largest bucket: " << this->menu->largest_bucket << endl;
+	if (this->menu->largest_bucket >= 100){
+		cout << "doublaj" << endl;
+		reallocate();
+		cout << "doublage" << endl;
+	}*/
+
 	vector<DATA *> result;
 	if (superkmer.size() > 0) {
 		hash_skmer(superkmer, this->params.m);

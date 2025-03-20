@@ -8,9 +8,18 @@ The library takes advantage of overlapping kmers to store them in a compact way.
 
 **Limitations**: The maximum k size is 64 due to underlying uint128 operations.
 
-## Brisk datastructure overview
+## Install
 
-TODO
+
+```bash
+git clone --recursive https://github.com/Malfoy/Brisk/;
+cd Brisk;
+mkdir build;
+cd build;
+cmake ..;
+make -j;
+
+```
 
 ## Brisk API
 
@@ -25,8 +34,8 @@ A Brisk index is created using 3 parameters:
   #include "Brisk.hpp"
 
   uint8_t k = 63;
-  uint8_t m = 11;
-  uint8_t b = 4;
+  uint8_t m = 21;
+  uint8_t b = 14;
 
   Parameters params(k, m, b);
 

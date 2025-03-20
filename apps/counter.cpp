@@ -5,10 +5,10 @@
 
 #include "CLI11.hpp"
 #include "zstr.hpp"
-#include "brisk/buckets.hpp"
-#include "brisk/Brisk.hpp"
-#include "brisk/Kmers.hpp"
-#include "brisk/writer.hpp"
+#include "buckets.hpp"
+#include "Brisk.hpp"
+#include "Kmers.hpp"
+#include "writer.hpp"
 
 
 
@@ -23,11 +23,12 @@ void verif_counts(Brisk<uint8_t> & counter);
 
 
 
-int parse_args(int argc, char** argv, string & fasta, string & outfile, uint8_t & k, uint8_t & m, uint8_t & b, uint & mode, uint & threads) {
+int parse_args(int argc, char** argv, string & fasta,string & query,  string & outfile, uint8_t & k, uint8_t & m, uint8_t & b, uint & mode, uint & threads) {
 	CLI::App app{"Brisk library demonstrator - kmer counter"};
 
   auto file_opt = app.add_option("-f,--file", fasta, "Fasta file to count")->required();
   file_opt->check(CLI::ExistingFile);
+  auto file_opt2 = app.add_option("-q,--query", query, "Fasta file to query");
   app.add_option("-k", k, "Kmer size")->check(CLI::Range(5,63));
   app.add_option("-m", m, "Minimizer size");
   app.add_option("-b", b, "Bucket order of magnitude");
@@ -80,71 +81,9 @@ string pretty_int(uint64_t n){
 }
 
 
-
-// static robin_hood::unordered_map<kint, int16_t> verif;
-// static tsl::sparse_map<kint, int16_t> verif;
-// typename ankerl::unordered_dense::map<kint, int16_t> verif;
 static unordered_map<kint, int16_t> verif;
 static bool check;
 
-
-
-int main(int argc, char** argv) {
-	string fasta = "";
-	string outfile = "";
-	uint8_t k=31, m=15, b=14;
-	uint mode = 0;
-	uint threads = 8;
-
-	if (parse_args(argc, argv, fasta, outfile, k, m, b, mode, threads) != 0 or fasta == "")
-		exit(0);
-
-	Parameters params(k, m, b);
-
-	if (mode > 1) {
-		check = true;
-		cout << "LETS CHECK THE RESULTS" << endl;
-	}
-
-
-	cout << "I'm counting " << fasta << endl;
-	cout << "Kmer size:	" << (uint)k << endl;
-	cout << "Minimizer size:	" << (uint)m << endl;
-	cout << "Bucket size:     " << (uint)b << endl;
-  
-	auto start = std::chrono::system_clock::now();
-	Brisk<uint8_t> counter(params);	
-	count_fasta(counter, fasta, threads);
-	
-	auto end = std::chrono::system_clock::now();
-	chrono::duration<double> elapsed_seconds = end - start;
-	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
-	cout << endl;
-
-	if (check)
-		verif_counts(counter);
-
-	uint64_t nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket;
-	counter.stats(nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket);
-	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.b)) << " possible)" << endl;
-	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
-	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
-	cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
-	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
-	cout << "average superkmer / bucket: " << ((float)nb_skmers / (float)nb_buckets) << endl;
-	cout << "Largest bucket :	"<<pretty_int(largest_bucket) <<endl;
-	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
-	cout << "bits / kmer: " << ((float)(memory * 1024 * 8) / (float)nb_kmers) << endl;
-
-	// --- Save Brisk index ---
-	if (mode == 0 and outfile != "") {
-		BriskWriter writer(outfile);
-		writer.write(counter);
-		writer.close();
-	}
-
-	return 0;
-}
 
 
 
@@ -189,7 +128,9 @@ void verif_counts(Brisk<uint8_t> & counter) {
 
 
 void clean_dna(string& str,string& previous){
-	for(uint i(0); i< str.size(); ++i){
+	bool dog(true);
+	uint i(0);
+	for(; i< str.size() and dog; ++i){
 		switch(str[i]){
 			case 'a':break;
 			case 'A':break;
@@ -199,10 +140,30 @@ void clean_dna(string& str,string& previous){
 			case 'G':break;
 			case 't':break;
 			case 'T':break;
-			default: 
-			previous=str.substr(i+1);
-			str=str.substr(0,i);
+			default:
+			dog=false; 
 		}
+	}
+	if(not dog){
+		uint32_t iforreturn(i-1);
+		for(; (i< str.size()) and (not dog); ++i){
+			switch(str[i]){
+				case 'a':dog=true;break;
+				case 'A':dog=true;break;
+				case 'c':dog=true;break;
+				case 'C':dog=true;break;
+				case 'g':dog=true;break;
+				case 'G':dog=true;break;
+				case 't':dog=true;break;
+				case 'T':dog=true;break;
+			}
+		}
+		if(dog){
+			previous=str.substr(i-1);
+		}else{
+			previous.clear();
+		}
+		str=str.substr(0,iforreturn);
 	}
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
 }
@@ -248,7 +209,7 @@ void count_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads
 	// Read file line by line
 	zstr::ifstream in(filename);
 	// omp_set_nested(2);
-	#pragma omp parallel
+	#pragma omp parallel num_threads(threads)
 	{
 		string line,prev;
 		while (in.good() or prev.size()!=0) {
@@ -272,22 +233,16 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 	if (sequence.size() < counter.params.k){
 		return;
 	}
-	omp_lock_t local_mutex;
-	omp_init_lock(&local_mutex);
 	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
-	#pragma omp parallel
 	{
 		vector<kmer_full> superkmer;
 		vector<bool> newly_inserted;
 		vector<uint8_t*> vec;
 
-		omp_set_lock(&local_mutex);
 		kint minimizer = enumerator.next(superkmer);
-		omp_unset_lock(&local_mutex);
 		while (superkmer.size() > 0) {
 			kmer_full local;
 			local.copy(superkmer[0]);
-			counter.protect_data(local);
 			// Add the values
 			if (check) {
 				for (kmer_full & kmer : superkmer) {
@@ -302,7 +257,7 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 				}
 			}
 			newly_inserted.clear();
-
+			counter.protect_data(local);
 			vec=(counter.insert_superkmer(superkmer,newly_inserted));
 			for(uint i(0); i < vec.size();++i){
 				uint8_t * data_pointer(vec[i]);
@@ -315,22 +270,146 @@ void count_sequence(Brisk<uint8_t> & counter, string & sequence) {
 			counter.unprotect_data(local);
 			// Next superkmer
 			superkmer.clear();
-
-			if (counter.menu->largest_bucket >= 65536) {
-					cout << "Starting reallocation" << endl;
-					exit(0);
-					counter.reallocate();
-					cout << "Finished reallocation" << endl;
-					enumerator.update(counter.params.m,counter.params.dede);
-			}
-
-			omp_set_lock(&local_mutex);
 			minimizer = enumerator.next(superkmer);
-			omp_unset_lock(&local_mutex);
+		}
+	}
+}
 
+
+
+
+uint64_t query_sequence(Brisk<uint8_t> & counter, string & sequence) {
+	// Line too short
+	if (sequence.size() < counter.params.k){
+		return 0;
+	}
+	uint64_t total(0);
+	SuperKmerEnumerator enumerator(sequence, counter.params.k, counter.params.m,counter.params.dede);
+	{
+		vector<kmer_full> superkmer;
+		vector<bool> newly_inserted;
+		vector<uint8_t*> vec;
+
+		kint minimizer = enumerator.next(superkmer);
+		while (superkmer.size() > 0) {
+			vec=(counter.get_superkmer(superkmer));
+			for(uint i(0); i < vec.size();++i){
+				if((vec[i])!=NULL){
+					total+=*(vec[i]);
+				}
+				
+			}
+			superkmer.clear();
+			minimizer = enumerator.next(superkmer);
 			if(minimizer==0){
 				break;
 			}
 		}
 	}
+	return total;
 }
+
+
+
+void query_fasta(Brisk<uint8_t> & counter, string & filename, const uint threads) {
+	cout<<"I query "<<filename<<endl;
+	kmer_full init;
+	// Test file existance
+	ifstream fs;
+	fs.open(filename);
+  	bool file_existance = fs ? true : false;
+	if(not file_existance){
+		cerr<<"Problem with file opening:	"<<filename<<endl;
+		exit(1);
+	}
+  	fs.close();
+
+	// Read file line by line
+	zstr::ifstream in(filename);
+	#pragma omp parallel num_threads(threads)
+	{
+		string line,prev;
+		uint64_t total(0);
+		while (in.good() or prev.size()!=0) {
+			
+			#pragma omp critical
+			{
+				line = getLineFasta(&in,prev);
+			}
+
+			if (line != "") {
+				total+=query_sequence(counter, line);
+			}
+		}
+		cout<<total<<endl;
+	}
+}
+
+
+
+
+
+int main(int argc, char** argv) {
+	string fasta,query = "";
+	string outfile = "";
+	uint8_t k=31, m=15, b=14;
+	uint mode = 0;
+	uint threads = 1;
+
+	if (parse_args(argc, argv, fasta,query, outfile, k, m, b, mode, threads) != 0 or fasta == "")
+		exit(0);
+
+	Parameters params(k, m, b);
+
+	if (mode > 1) {
+		check = true;
+		cout << "LETS CHECK THE RESULTS" << endl;
+	}
+
+
+	cout << "I'm counting " << fasta << endl;
+	cout << "Kmer size:	" << (uint)k << endl;
+	cout << "Minimizer size:	" << (uint)m << endl;
+	cout << "Bucket size:     " << (uint)b << endl;
+  
+	auto start = std::chrono::system_clock::now();
+	Brisk<uint8_t> counter(params);	
+	count_fasta(counter, fasta, threads);
+	
+	auto end = std::chrono::system_clock::now();
+	chrono::duration<double> elapsed_seconds = end - start;
+	cout << "Kmer counted elapsed time: " << elapsed_seconds.count() << "s\n";
+	cout << endl;
+
+	if (check)
+		verif_counts(counter);
+
+	if(not query.empty()){
+		query_fasta(counter, query, threads);
+		auto end2 = std::chrono::system_clock::now();
+		chrono::duration<double> elapsed_seconds = end2 - end;
+		cout << "Query elapsed time: " << elapsed_seconds.count() << "s\n";
+	}
+
+
+	uint64_t nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket;
+	counter.stats(nb_buckets, nb_skmers, nb_kmers, memory, largest_bucket);
+	cout << pretty_int(nb_buckets) << " bucket used (/" << pretty_int(pow(4, counter.params.b)) << " possible)" << endl;
+	cout << "nb superkmers: " << pretty_int(nb_skmers) << endl;
+	cout << "nb kmers: " << pretty_int(nb_kmers) << endl;
+	cout << "kmer / second: " << pretty_int((float)nb_kmers / elapsed_seconds.count()) << endl;
+	cout << "average kmer / superkmer: " << ((float)nb_kmers / (float)nb_skmers) << endl;
+	cout << "average superkmer / bucket: " << ((float)nb_skmers / (float)nb_buckets) << endl;
+	cout << "Largest bucket :	"<<pretty_int(largest_bucket) <<endl;
+	cout << "Memory usage: " << (memory / 1024) << "Mo" << endl;
+
+	// --- Save Brisk index ---
+	if (mode == 0 and outfile != "") {
+		BriskWriter writer(outfile);
+		writer.write(counter);
+		writer.close();
+	}
+
+	return 0;
+}
+

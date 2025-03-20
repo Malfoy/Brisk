@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 # declare libraries
 
 set(SRCS
-    colorer.cpp
+    counter.cpp
     )
     
 set(HEADERS
@@ -14,9 +14,9 @@ set(HEADERS
     )
 
 # add the executable
-add_executable(colorer ${SRCS} ${HEADERS})
+add_executable(counter ${SRCS} ${HEADERS})
 
 # link libraries
 find_package(ZLIB)
 find_package(OpenMP)
-target_link_libraries(colorer ZLIB::ZLIB OpenMP::OpenMP_CXX brisk kff)
+target_link_libraries(counter ZLIB::ZLIB OpenMP::OpenMP_CXX brisk kff)
